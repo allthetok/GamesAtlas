@@ -1,0 +1,1 @@
+Gamesatlas Root containing TS frontend as well as NodeJS backend

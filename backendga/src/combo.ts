@@ -80,7 +80,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 			game_localizations: searchResults.game_localizations.join(','),
 			rating: searchResults.total_rating,
 			ratingCount: searchResults.total_rating_count,
-			releaseDate: new Date(searchResults.first_release_date),
+			releaseDate: new Date(searchResults.first_release_date*1000),
 			likes: searchResults.follows,
 			title: searchResults.name,
 			story: searchResults.storyline,
@@ -128,6 +128,109 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 	.catch((err) => {
 		console.log(err)
 		errSearch = true
+	})
+
+	searchConfig.url=`${process.env.API_ROOT_URL}external_games`
+	searchConfig.data=`fields category, url; where id=(${responseObj.external_games}) & category=(1,5,10,11,13,15,26,31,36);`
+	//change to use enum
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data
+		let arrOfUrls: object[] = []
+		for (let i = 0; i < searchResults.length; i++) {
+			arrOfUrls.push({
+				category: searchResults[i].category,
+				url: searchResults[i].url
+			})
+		}
+		responseObj.external_games = arrOfUrls
+	})
+	.catch((err) => {
+		console.log(err)
+		errSearch = true
+	})
+
+	searchConfig.url=`${process.env.API_ROOT_URL}game_modes`
+	searchConfig.data=`fields name; where id=(${responseObj.game_modes});`
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data[0]
+		responseObj.game_modes = searchResults.name
+	})
+	.catch((err) => {
+		console.log(err)
+		errSearch = true
+	})
+
+	searchConfig.url=`${process.env.API_ROOT_URL}genres`
+	searchConfig.data=`fields name; where id=(${responseObj.genres});`
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data
+		let arrOfGenres: string[] = []
+		for (let i = 0; i < searchResults.length; i++) {
+			arrOfGenres.push(searchResults[i].name)
+		}
+		responseObj.genres = arrOfGenres
+	})
+	.catch((err) => {
+		console.log(err)
+		errSearch = true
+	})
+
+	searchConfig.url=`${process.env.API_ROOT_URL}involved_companies`
+	searchConfig.data=`fields company; where id=(${responseObj.involved_companies});`
+	let idofCompanies = ''
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data
+		for (let i = 0; i < searchResults.length; i++) {
+			if (i === searchResults.length - 1) {
+				idofCompanies = idofCompanies.concat(searchResults[i].company)
+			}
+			else {
+				idofCompanies = idofCompanies.concat(`${searchResults[i].company},`)
+			}
+		}
+	})
+	.catch((err) => {
+		console.log(err)
+		errSearch = true
+	})
+	searchConfig.url=`${process.env.API_ROOT_URL}companies`
+	searchConfig.data=`fields name, logo; where id=(${idofCompanies});`
+	let arrOfCompanies: any[] = []
+	let logoids = ''
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data
+		for (let i = 0; i < searchResults.length; i++) {
+			arrOfCompanies.push({
+				name: searchResults[i].name,
+				logoid: searchResults[i].logo
+			})
+			if (i === searchResults.length - 1) {
+				logoids = logoids.concat(searchResults[i].logo)
+			}
+			else {
+				logoids = logoids.concat(`${searchResults[i].logo},`)
+			}
+		}
+	})
+	searchConfig.url=`${process.env.API_ROOT_URL}company_logos`
+	searchConfig.data=`fields url; where id=(${logoids});`
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data
+		for (let i = 0; i < searchResults.length; i++) {
+			let objIndex = arrOfCompanies.findIndex((obj => obj.logoid === searchResults[i].id))
+			let oldValatIndex = arrOfCompanies[objIndex]
+			arrOfCompanies[objIndex] = {
+				...oldValatIndex,
+				url: searchResults[i].url
+			}
+		}
+		responseObj.involved_companies = arrOfCompanies
 	})
 
 	

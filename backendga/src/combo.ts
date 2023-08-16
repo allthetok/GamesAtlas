@@ -224,13 +224,128 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		searchResults = response.data
 		for (let i = 0; i < searchResults.length; i++) {
 			let objIndex = arrOfCompanies.findIndex((obj => obj.logoid === searchResults[i].id))
-			let oldValatIndex = arrOfCompanies[objIndex]
+			let oldValAtIndex = arrOfCompanies[objIndex]
 			arrOfCompanies[objIndex] = {
-				...oldValatIndex,
+				...oldValAtIndex,
 				url: searchResults[i].url
 			}
 		}
 		responseObj.involved_companies = arrOfCompanies
+	})
+
+	searchConfig.url=`${process.env.API_ROOT_URL}keywords`
+	searchConfig.data=`fields name; where id=(${responseObj.keywords});`
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data
+		let arrOfKeywords: string[] = []
+		for (let i = 0; i < searchResults.length; i++) {
+			arrOfKeywords.push(searchResults[i].name)
+		}
+		responseObj.keywords = arrOfKeywords
+	})
+	.catch((err) => {
+		console.log(err)
+		errSearch = true
+	})
+
+	let arrOfPlatforms: any[] = []
+	let platformlogoids = ''
+	searchConfig.url=`${process.env.API_ROOT_URL}platforms`
+	searchConfig.data=`fields name, category, platform_logo; where id=(${responseObj.platforms});`
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data
+		for (let i = 0; i < searchResults.length; i++) {
+			arrOfPlatforms.push({
+				name: searchResults[i].name,
+				category: searchResults[i].category,
+				platform_logo: searchResults[i].platform_logo
+			})
+			if (i === searchResults.length - 1) {
+				platformlogoids = platformlogoids.concat(searchResults[i].platform_logo)
+			}
+			else {
+				platformlogoids = platformlogoids.concat(`${searchResults[i].platform_logo},`)
+			}
+		}
+	})
+	.catch((err) => {
+		console.log(err)
+		errSearch = true
+	})
+
+	searchConfig.url=`${process.env.API_ROOT_URL}platform_logos`
+	searchConfig.data=`fields url; where id=(${platformlogoids});`
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data
+		for (let i = 0; i < searchResults.length; i++) {
+			let objIndex = arrOfPlatforms.findIndex((obj => obj.platform_logo === searchResults[i].id))
+			let oldValAtIndex = arrOfPlatforms[objIndex]
+			arrOfPlatforms[objIndex] = {
+				...oldValAtIndex,
+				url: searchResults[i].url
+			}
+		}
+		responseObj.platforms = arrOfPlatforms
+	})
+
+	searchConfig.url=`${process.env.API_ROOT_URL}player_perspectives`
+	searchConfig.data=`fields name; where id=(${responseObj.player_perspectives});`
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data[0]
+		responseObj.player_perspectives = searchResults.name
+	})
+	.catch((err) => {
+		console.log(err)
+		errSearch = true
+	})
+
+	searchConfig.url=`${process.env.API_ROOT_URL}screenshots`
+	searchConfig.data=`fields url; where id=(${responseObj.screenshots});`
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data
+		let arrOfScreenshots: string[] = []
+		for (let i = 0; i < searchResults.length; i++) {
+			arrOfScreenshots.push(searchResults[i].url)
+		}
+		responseObj.screenshots = arrOfScreenshots
+	})
+	.catch((err) => {
+		console.log(err)
+		errSearch = true
+	})
+
+	searchConfig.url=`${process.env.API_ROOT_URL}games`
+	searchConfig.data=`fields name; where id=(${responseObj.similar_games});`
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data
+		let arrOfSimilarGames: string[] = []
+		for (let i = 0; i < searchResults.length; i++) {
+			arrOfSimilarGames.push(searchResults[i].name)
+		}
+		responseObj.similar_games = arrOfSimilarGames
+	})
+
+	searchConfig.url=`${process.env.API_ROOT_URL}games`
+	searchConfig.data=`fields name; where id=(${responseObj.similar_games});`
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data
+		let arrOfSimilarGames: string[] = []
+		for (let i = 0; i < searchResults.length; i++) {
+			arrOfSimilarGames.push(searchResults[i].name)
+		}
+		responseObj.similar_games = arrOfSimilarGames
+	})
+
+	.catch((err) => {
+		console.log(err)
+		errSearch = true
 	})
 
 	

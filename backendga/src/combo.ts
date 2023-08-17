@@ -426,8 +426,12 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		}
 
 	})
+	.catch((err) => {
+		console.log(err)
+		errSearch = true
+	})
+
 	searchConfig.url=`${process.env.API_ROOT_URL}languages`
-	console.log(languageids)
 	searchConfig.data=`fields locale, name, native_name; where id=(${languageids});`
 	await axios(searchConfig)
 	.then((response) => {
@@ -444,10 +448,25 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		}
 		responseObj.language_supports = arrOfLanguages
 	})
+	.catch((err) => {
+		console.log(err)
+		errSearch = true
+	})
+
+	searchConfig.url=`${process.env.API_ROOT_URL}game_localizations`
+	searchConfig.data=`fields name; where id=(${responseObj.game_localizations});`
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data[0]
+		responseObj.game_localizations = searchResults.name
+	})
+	.catch((err) => {
+		console.log(err)
+		errSearch = true
+	})
 	
 	return response.status(200).json(responseObj)
 })
-
 
 const PORT = process.env.API_PORT || 3001
 

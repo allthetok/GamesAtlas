@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
+import { Language_support_types } from '../helpers/enums'
 require('dotenv').config()
 import express, { NextFunction, Request, Response } from 'express'
 import axios from 'axios'
@@ -331,23 +332,118 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		responseObj.similar_games = arrOfSimilarGames
 	})
 
-	searchConfig.url=`${process.env.API_ROOT_URL}games`
-	searchConfig.data=`fields name; where id=(${responseObj.similar_games});`
+	searchConfig.url=`${process.env.API_ROOT_URL}themes`
+	searchConfig.data=`fields name; where id=(${responseObj.themes});`
 	await axios(searchConfig)
 	.then((response) => {
 		searchResults = response.data
-		let arrOfSimilarGames: string[] = []
+		let arrOfThemes: string[] = []
 		for (let i = 0; i < searchResults.length; i++) {
-			arrOfSimilarGames.push(searchResults[i].name)
+			arrOfThemes.push(searchResults[i].name)
 		}
-		responseObj.similar_games = arrOfSimilarGames
+		responseObj.themes = arrOfThemes
 	})
 
+	searchConfig.url=`${process.env.API_ROOT_URL}game_videos`
+	searchConfig.data=`fields name, video_id; where id=(${responseObj.videos});`
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data
+		let arrOfVideos: object[] = []
+		for (let i = 0; i < searchResults.length; i++) {
+			arrOfVideos.push({
+				name: searchResults[i].name,
+				ytlink: `https://youtube.com/watch?v=${searchResults[i].video_id}`
+			})
+		}
+		responseObj.videos = arrOfVideos
+	})
 	.catch((err) => {
 		console.log(err)
 		errSearch = true
 	})
 
+	searchConfig.url=`${process.env.API_ROOT_URL}websites`
+	searchConfig.data=`fields category, url; where id=(${responseObj.websites});`
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data
+		let arrOfSites: object[] = []
+		for (let i = 0; i < searchResults.length; i++) {
+			arrOfSites.push({
+				category: searchResults[i].category,
+				url: searchResults[i].url
+			})
+		}
+		responseObj.websites = arrOfSites
+	})
+	.catch((err) => {
+		console.log(err)
+		errSearch = true
+	})
+
+	searchConfig.url=`${process.env.API_ROOT_URL}language_supports`
+	searchConfig.data=`fields language, language_support_type; where id=(${responseObj.language_supports});`
+	let arrOfLanguages: any[] = []
+	let supporttypes = ''
+	let languageids = ''
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data
+		for (let i = 0; i < searchResults.length; i++) {
+			arrOfLanguages.push({
+				language: searchResults[i].language,
+				language_support_type: searchResults[i].language_support_type === 1 ? 'Audio' : searchResults[i].language_support_type === 2 ? 'Subtitles' : 'Interface',
+				marked: false
+			})
+			if (i === searchResults.length - 1) {
+				supporttypes = supporttypes.concat(searchResults[i].language_support_type)
+				languageids = languageids.concat(searchResults[i].language)
+			}
+			else {
+				supporttypes = supporttypes.concat(`${searchResults[i].language_support_type},`)
+				languageids = languageids.concat(`${searchResults[i].language},`)
+			}
+		}
+	})
+	.catch((err) => {
+		console.log(err)
+		errSearch = true
+	})
+	//enum
+	searchConfig.url=`${process.env.API_ROOT_URL}language_support_types`
+	searchConfig.data=`fields name; where id=(${supporttypes});`
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data
+		for (let i = 0; i < searchResults.length; i++) {
+			let objIndex = arrOfLanguages.findIndex((obj => obj.language_support_type === searchResults[i].id))
+			let oldValAtIndex = arrOfLanguages[objIndex]
+			arrOfLanguages[objIndex] = {
+				...oldValAtIndex,
+				language_support_type: searchResults[i].name
+			}
+		}
+
+	})
+	searchConfig.url=`${process.env.API_ROOT_URL}languages`
+	console.log(languageids)
+	searchConfig.data=`fields locale, name, native_name; where id=(${languageids});`
+	await axios(searchConfig)
+	.then((response) => {
+		searchResults = response.data
+		for (let i = 0; i < arrOfLanguages.length; i++) {
+			let language = searchResults.filter((obj: { id: number }) => obj.id === arrOfLanguages[i].language)[0]
+			let oldValAtIndex = arrOfLanguages[i]
+			arrOfLanguages[i] = {
+				...oldValAtIndex,
+				language: language.name,
+				locale: language.locale,
+				native: language.native_name
+			}
+		}
+		responseObj.language_supports = arrOfLanguages
+	})
 	
 	return response.status(200).json(responseObj)
 })

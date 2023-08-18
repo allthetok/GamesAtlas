@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
 import { Language_support_types } from '../helpers/enums'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig } from '../helpers/requests'
 require('dotenv').config()
 import express, { NextFunction, Request, Response } from 'express'
 import axios from 'axios'
@@ -9,20 +10,6 @@ import cors from 'cors'
 import pg, { QueryResult } from 'pg'
 import bcrypt from 'bcrypt'
 const app = express()
-
-const corsOptions = {
-	origin: 'http://localhost:3000',
-	credentials: true,	//access-control-allow-credentials:true
-	optionSuccessStatus: 200
-}
-
-const requestLogger = (request: Request, response: Response, next: NextFunction): void => {
-	console.log('Method:', request.method)
-	console.log('Path: ', request.url)
-	console.log('Body: ', request.body)
-	console.log('---')
-	next()
-}
 
 app.use(express.json())
 app.use(requestLogger)
@@ -33,17 +20,15 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 	let searchResults: any
 	let responseObj: any
 	let errSearch = false
-	// return response.status(400).json({
-	// 	error: 'No search term specified'
-	// })
+	let searchConfig: SearchConfig
 	const searchterm = body.searchterm 
 	if (searchterm === '' || !searchterm) {
 		return response.status(400).json({
 			error: 'No search term specified'
 		})
 	}
-
-	let searchConfig = {
+	// searchConfig = updateIGDBSearchConfig('post', 'games', '')
+	searchConfig = {
 		method: 'post',
 		url: `${process.env.API_ROOT_URL}games`,
 		headers: {

@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { Request, Response, NextFunction } from 'express'
@@ -104,35 +105,26 @@ const updateIGDBSearchConfig = (endpoint: string, datafields: string, stringofid
 		},
 		data: ''
 	}
-	// searchConfig = {
-	// 	method,
-	// 	url: `${process.env.API_ROOT_URL}${endpoint}`,
-	// 	headers: {
-	// 		'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
-	// 		'Client-ID': process.env.CLIENT_ID,
-	// 		'Content-Type': 'text/plain',
-	// 		'Cookie': '__cf_bm=Utg5TKlZGdxCgCn2UeuGW.LLOCZm6oHCCazU5AOMZjM-1692063194-0-AUdu+e0vn6rY+xWhK86IVLzsp03BXN3Wgq3P2CkRrTl56PwoVdQdbQaa1ysHtYnuWmX/WNREfgqIMVkEQEc9AEs='
-	// 	},
-	// 	data: ''
-	// }
 	if (search) {
 		searchConfig.data = `search "${searchterm}"; fields ${datafields}; ${limit !== 0 ? ` limit ${limit};` : ''}`
 	}
 	else {
 		searchConfig.data = `fields ${datafields}; where id=(${stringofids})${additionalfilter !== '' ? ` & ${additionalfilter}` : ''};`
 	}
-	// return {
-	// 	method,
-	// 	url: `${process.env.API_ROOT_URL}${endpoint}`,
-	// 	headers: {
-	// 		'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
-	// 		'Client-ID': process.env.CLIENT_ID,
-	// 		'Content-Type': 'text/plain',
-	// 		'Cookie': '__cf_bm=Utg5TKlZGdxCgCn2UeuGW.LLOCZm6oHCCazU5AOMZjM-1692063194-0-AUdu+e0vn6rY+xWhK86IVLzsp03BXN3Wgq3P2CkRrTl56PwoVdQdbQaa1ysHtYnuWmX/WNREfgqIMVkEQEc9AEs='
-	// 	},
-	// 	data: `fields ${datafields}; where id=(${stringofids}) ${additionalfilter !== '' ? ` & ${additionalfilter}` : ''};`
-	// }
 	return searchConfig
 }
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages  }
+const iterateResponse = (data: any[], type: string | undefined, toPush: string[]): string[] => {
+	console.log(data)
+	let arr: any[] = []
+	if (toPush[0] === 'url' && toPush.length === 1) {
+		for (let i = 0; i < data.length; i++) {
+			arr.push(data[i].url)
+		}
+	}
+	return arr
+}
+
+
+
+export { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse }

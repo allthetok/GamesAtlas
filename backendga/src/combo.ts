@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse } from '../helpers/requests'
 require('dotenv').config()
 import express, { Request, Response } from 'express'
 import axios from 'axios'
@@ -92,7 +92,6 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 		.catch((err) => {
 			console.log(err)
-			errSearch = true
 		})
 	if (errSearch) {
 		return response.status(404).json({
@@ -111,22 +110,22 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 		.catch((err) => {
 			console.log(err)
-			errSearch = true
 		})
 
 	searchConfig = updateIGDBSearchConfig('artworks', 'url', responseObj.artworks, '', false, '', 0)
 	await axios(searchConfig)
 		.then((response) => {
+			// searchResults = response.data
 			searchResults = response.data
-			let arrOfImages: string[] = []
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfImages.push(`https:${searchResults[i].url}`)
-			}
-			responseObj.artworks = arrOfImages
+			responseObj.artworks = iterateResponse(searchResults, '', ['url'])
+			// let arrOfImages: string[] = []
+			// for (let i = 0; i < searchResults.length; i++) {
+			// 	arrOfImages.push(`https:${searchResults[i].url}`)
+			// }
+			// responseObj.artworks = arrOfImages
 		})
 		.catch((err) => {
 			console.log(err)
-			errSearch = true
 		})
 
 	searchConfig = updateIGDBSearchConfig('external_games', 'category, url', responseObj.external_games, 'category=(1,5,10,11,13,15,26,31,36)', false, '', 0)
@@ -145,7 +144,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 		.catch((err) => {
 			console.log(err)
-			errSearch = true
+
 		})
 
 	searchConfig = updateIGDBSearchConfig('game_modes', 'name', responseObj.game_modes, '', false, '', 0)
@@ -156,7 +155,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 		.catch((err) => {
 			console.log(err)
-			errSearch = true
+
 		})
 
 
@@ -172,7 +171,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 		.catch((err) => {
 			console.log(err)
-			errSearch = true
+
 		})
 
 	searchConfig = updateIGDBSearchConfig('involved_companies', 'company', responseObj.involved_companies, '', false, '', 0)
@@ -191,7 +190,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 		.catch((err) => {
 			console.log(err)
-			errSearch = true
+
 		})
 
 	searchConfig = updateIGDBSearchConfig('companies', 'name,logo', idofCompanies, '', false, '', 0)
@@ -244,7 +243,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 		.catch((err) => {
 			console.log(err)
-			errSearch = true
+
 		})
 
 	let arrOfPlatforms: Platforms[] = []
@@ -272,7 +271,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 		.catch((err) => {
 			console.log(err)
-			errSearch = true
+
 		})
 
 	searchConfig = updateIGDBSearchConfig('platform_logos', 'url', platformlogoids, '', false, '', 0)
@@ -300,7 +299,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 		.catch((err) => {
 			console.log(err)
-			errSearch = true
+
 		})
 
 	searchConfig = updateIGDBSearchConfig('screenshots', 'url', responseObj.screenshots, '', false, '', 0)
@@ -316,7 +315,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 		.catch((err) => {
 			console.log(err)
-			errSearch = true
+
 		})
 
 
@@ -361,7 +360,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 		.catch((err) => {
 			console.log(err)
-			errSearch = true
+
 		})
 
 	searchConfig = updateIGDBSearchConfig('websites', 'category,url', responseObj.websites, '', false, '', 0)
@@ -380,7 +379,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 		.catch((err) => {
 			console.log(err)
-			errSearch = true
+
 		})
 
 	searchConfig = updateIGDBSearchConfig('language_supports', 'language,language_support_type', responseObj.language_supports, '', false, '', 0)
@@ -411,7 +410,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 		.catch((err) => {
 			console.log(err)
-			errSearch = true
+
 		})
 
 	searchConfig = updateIGDBSearchConfig('language_support_types', 'name', supporttypes, '', false, '', 0)
@@ -431,7 +430,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 		.catch((err) => {
 			console.log(err)
-			errSearch = true
+
 		})
 
 	searchConfig = updateIGDBSearchConfig('languages', 'locale,name,native_name', languageids, '', false, '', 0)
@@ -453,7 +452,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 		.catch((err) => {
 			console.log(err)
-			errSearch = true
+
 		})
 
 	searchConfig = updateIGDBSearchConfig('game_localizations', 'name', responseObj.game_localizations, '', false, '', 0)
@@ -465,7 +464,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 		.catch((err) => {
 			console.log(err)
-			errSearch = true
+
 		})
 
 	return response.status(200).json(responseObj)
@@ -476,3 +475,7 @@ const PORT = process.env.API_PORT || 3001
 app.listen(PORT, () => {
 	console.log(`Server running on port: ${PORT}`)
 })
+
+function err(reason: any): PromiseLike<never> {
+	throw new Error('Function not implemented.')
+}

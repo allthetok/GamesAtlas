@@ -69,7 +69,7 @@ type Videos = {
 }
 
 type Languages = {
-	'language': string,
+	'language': string | number,
 	'language_support_type': string,
 	'marked': boolean,
 	'locale': string,
@@ -92,9 +92,9 @@ const corsOptions = {
 	optionSuccessStatus: 200
 }
 
-const updateIGDBSearchConfig = (method: string, endpoint: string, datafields: string, stringofids: any, additionalfilter: string, search: boolean, searchterm: string, limit: number): SearchConfig => {
+const updateIGDBSearchConfig = (endpoint: string, datafields: string, stringofids: any, additionalfilter: string, search: boolean, searchterm: string, limit: number): SearchConfig => {
 	const searchConfig: SearchConfig = {
-		method,
+		method: 'post',
 		url: `${process.env.API_ROOT_URL}${endpoint}`,
 		headers: {
 			'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
@@ -119,7 +119,7 @@ const updateIGDBSearchConfig = (method: string, endpoint: string, datafields: st
 		searchConfig.data = `search "${searchterm}"; fields ${datafields}; ${limit !== 0 ? ` limit ${limit};` : ''}`
 	}
 	else {
-		searchConfig.data = `fields ${datafields}; where id=(${stringofids}) ${additionalfilter !== '' ? ` & ${additionalfilter}` : ''};`
+		searchConfig.data = `fields ${datafields}; where id=(${stringofids})${additionalfilter !== '' ? ` & ${additionalfilter}` : ''};`
 	}
 	// return {
 	// 	method,

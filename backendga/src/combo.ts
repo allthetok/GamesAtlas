@@ -23,6 +23,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		id: null,
 		age_ratings: '',
 		artworks: '',
+		cover: null,
 		external_games: '',
 		game_modes: '',
 		genres: '',
@@ -64,6 +65,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 				id: searchResults.id,
 				age_ratings: searchResults.age_ratings.join(','),
 				artworks: searchResults.artworks.join(','),
+				cover: searchResults.cover,
 				external_games: searchResults.external_games.join(','),
 				game_modes: searchResults.game_modes.join(','),
 				genres: searchResults.genres.join(','),
@@ -117,12 +119,24 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		.then((response) => {
 			// searchResults = response.data
 			searchResults = response.data
-			responseObj.artworks = iterateResponse(searchResults, '', ['url'])
-			// let arrOfImages: string[] = []
-			// for (let i = 0; i < searchResults.length; i++) {
-			// 	arrOfImages.push(`https:${searchResults[i].url}`)
-			// }
-			// responseObj.artworks = arrOfImages
+			// responseObj.artworks = iterateResponse(searchResults, '', ['url'])
+			let arrOfImages: string[] = []
+			for (let i = 0; i < searchResults.length; i++) {
+				arrOfImages.push(`https:${searchResults[i].url}`)
+			}
+			responseObj.artworks = arrOfImages
+		})
+		.catch((err) => {
+			console.log(err)
+		})
+
+	searchConfig = updateIGDBSearchConfig('covers', 'url', responseObj.cover, '', false, '', 0)
+	await axios(searchConfig)
+		.then((response) => {
+			// searchResults = response.data
+			searchResults = response.data
+			// responseObj.artworks = iterateResponse(searchResults, '', ['url'])
+			responseObj.cover = `https:${response.data[0].url}`
 		})
 		.catch((err) => {
 			console.log(err)

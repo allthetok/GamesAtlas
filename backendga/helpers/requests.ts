@@ -15,6 +15,7 @@ type GameDetailObj = {
 	id: number | null,
 	age_ratings: string | AgeRatings,
 	artworks: string | string[],
+	cover: number | string | null,
 	external_games: string | Categories[],
 	game_modes: string,
 	genres: string | string[],
@@ -115,7 +116,6 @@ const updateIGDBSearchConfig = (endpoint: string, datafields: string, stringofid
 }
 
 const iterateResponse = (data: any[], type: string | undefined, toPush: string[]): string[] => {
-	console.log(data)
 	let arr: any[] = []
 	if (toPush[0] === 'url' && toPush.length === 1) {
 		for (let i = 0; i < data.length; i++) {

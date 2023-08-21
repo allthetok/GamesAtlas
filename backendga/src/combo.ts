@@ -122,6 +122,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 			// responseObj.artworks = iterateResponse(searchResults, '', ['url'])
 			let arrOfImages: string[] = []
 			for (let i = 0; i < searchResults.length; i++) {
+				searchResults[i].url = searchResults[i].url.replace('t_thumb', 'cover_big')
 				arrOfImages.push(`https:${searchResults[i].url}`)
 			}
 			responseObj.artworks = arrOfImages
@@ -136,6 +137,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 			// searchResults = response.data
 			searchResults = response.data
 			// responseObj.artworks = iterateResponse(searchResults, '', ['url'])
+			response.data[0].url = response.data[0].url.replace('t_thumb', 'cover_big')
 			responseObj.cover = `https:${response.data[0].url}`
 		})
 		.catch((err) => {
@@ -323,6 +325,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 			searchResults = response.data
 			let arrOfScreenshots: string[] = []
 			for (let i = 0; i < searchResults.length; i++) {
+				searchResults[i].url = searchResults[i].url.replace('t_thumb', 'screenshot_big')
 				arrOfScreenshots.push(`https:${searchResults[i].url}`)
 			}
 			responseObj.screenshots = arrOfScreenshots

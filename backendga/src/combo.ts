@@ -117,9 +117,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 	searchConfig = updateIGDBSearchConfig('artworks', 'url', responseObj.artworks, '', false, '', 0)
 	await axios(searchConfig)
 		.then((response) => {
-			// searchResults = response.data
 			searchResults = response.data
-			// responseObj.artworks = iterateResponse(searchResults, '', ['url'])
 			let arrOfImages: string[] = []
 			for (let i = 0; i < searchResults.length; i++) {
 				searchResults[i].url = searchResults[i].url.replace('thumb', 'screenshot_big')
@@ -134,9 +132,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 	searchConfig = updateIGDBSearchConfig('covers', 'url', responseObj.cover, '', false, '', 0)
 	await axios(searchConfig)
 		.then((response) => {
-			// searchResults = response.data
 			searchResults = response.data
-			// responseObj.artworks = iterateResponse(searchResults, '', ['url'])
 			response.data[0].url = response.data[0].url.replace('thumb', 'cover_big')
 			responseObj.cover = `https:${response.data[0].url}`
 		})

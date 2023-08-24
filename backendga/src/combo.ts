@@ -310,8 +310,12 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 
 	await axios(searchConfig)
 		.then((response) => {
-			searchResults = response.data[0]
-			responseObj.player_perspectives = searchResults.name
+			searchResults = response.data
+			let arrOfPerspectives: string[] = []
+			for (let i = 0; i < searchResults.length; i++) {
+				arrOfPerspectives.push(searchResults[i].name)
+			}
+			responseObj.player_perspectives = arrOfPerspectives
 		})
 		.catch((err) => {
 			console.log(err)

@@ -23,7 +23,7 @@ type GameDetailObj = {
 	involved_companies: string | Companies[],
 	keywords: string | string[],
 	platforms: string | Platforms[],
-	player_perspectives: string,
+	player_perspectives: string | string[],
 	screenshots: string | string[],
 	similar_games: string | string[],
 	tags: string,

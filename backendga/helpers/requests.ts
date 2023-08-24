@@ -17,7 +17,7 @@ type GameDetailObj = {
 	artworks: string | string[],
 	cover: number | string | null,
 	external_games: string | Categories[],
-	game_modes: string,
+	game_modes: string | string[],
 	genres: string | string[],
 	hypes: number | null,
 	involved_companies: string | Companies[],

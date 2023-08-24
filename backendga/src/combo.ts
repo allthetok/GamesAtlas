@@ -162,8 +162,12 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 	searchConfig = updateIGDBSearchConfig('game_modes', 'name', responseObj.game_modes, '', false, '', 0)
 	await axios(searchConfig)
 		.then((response) => {
-			searchResults = response.data[0]
-			responseObj.game_modes = searchResults.name
+			searchResults = response.data
+			let arrOfGameModes: string[] = []
+			for (let i = 0; i < searchResults.length; i++) {
+				arrOfGameModes.push(searchResults[i].name)
+			}
+			responseObj.game_modes = arrOfGameModes
 		})
 		.catch((err) => {
 			console.log(err)

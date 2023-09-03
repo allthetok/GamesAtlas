@@ -374,7 +374,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 			for (let i = 0; i < searchResults.length; i++) {
 				arrOfVideos.push({
 					name: searchResults[i].name,
-					ytlink: `https://youtube.com/embed/${searchResults[i].video_id}`
+					ytlink: searchResults[i].video_id
 				})
 			}
 			responseObj.videos = arrOfVideos

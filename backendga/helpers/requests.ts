@@ -1,6 +1,7 @@
 /* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
+import axios from 'axios'
 import { Request, Response, NextFunction } from 'express'
 require('dotenv').config()
 
@@ -16,7 +17,7 @@ type GameDetailObj = {
 	age_ratings: string | AgeRatings,
 	artworks: string | string[],
 	cover: number | string | null,
-	external_games: string | Categories[],
+	external_games: string[] | Categories[],
 	game_modes: string | string[],
 	genres: string | string[],
 	hypes: number | null,
@@ -30,7 +31,7 @@ type GameDetailObj = {
 	themes: string | string[],
 	videos: string | Videos[],
 	websites: string | Categories[],
-	language_supports: string | Languages[],
+	language_supports: string[] | Languages[],
 	game_localizations: string,
 	rating: number | null,
 	ratingCount: number | null,
@@ -125,6 +126,118 @@ const iterateResponse = (data: any[], type: string | undefined, toPush: string[]
 	return arr
 }
 
+const splitIGDBSearch = (data: string[] | Categories[] | Languages[]) => {
+	const dataStr: string[] = []
+	const chunkSize = 10
+	let chunkJoined: string
+	for (let i = 0; i < data.length; i+= chunkSize) {
+		const chunk = data.slice(i, i + chunkSize)
+		chunkJoined = chunk.join(',')
+		dataStr.push(chunkJoined)
+	}
+	return dataStr
+}
+const getExternalGamesIter = async (external_games: string[]) => {
+	let searchResults: any
+	let searchConfig: SearchConfig
+	let arrOfUrls: Categories[] = []
+	for (let i = 0; i < external_games.length; i++) {
+		searchConfig = updateIGDBSearchConfig('external_games', 'category, url', external_games[i], 'category=(1,5,10,11,13,15,26,31,36)', false, '', 0)
+		await axios(searchConfig)
+			.then((response) => {
+				searchResults = response.data
+				for (let i = 0; i < searchResults.length; i++) {
+					arrOfUrls.push({
+						category: searchResults[i].category,
+						url: searchResults[i].url
+					})
+				}
+			})
+			.catch((err) => {
+				console.log(err)
+			})
+	}
+	return arrOfUrls
+}
+
+const getLanguagesIter = async (language_supports: string[]) => {
+	let searchResults: any
+	let searchConfig: SearchConfig
+	let arrOfLanguages: Languages[] = []
+	for (let i = 0; i < language_supports.length; i++) {
+		let currentArrOfLanguages: Languages[] = []
+		searchConfig = updateIGDBSearchConfig('language_supports', 'language,language_support_type', language_supports[i], '', false, '', 0)
+		let supporttypes = ''
+		let languageids = ''
+		await axios(searchConfig)
+			.then((response) => {
+				searchResults = response.data
+				for (let i = 0; i < searchResults.length; i++) {
+					currentArrOfLanguages.push({
+						language: searchResults[i].language,
+						language_support_type: searchResults[i].language_support_type === 1 ? 'Audio' : searchResults[i].language_support_type === 2 ? 'Subtitles' : 'Interface',
+						marked: false,
+						locale: '',
+						native: ''
+					})
+					if (i === searchResults.length - 1) {
+						supporttypes = supporttypes.concat(searchResults[i].language_support_type)
+						languageids = languageids.concat(searchResults[i].language)
+					}
+					else {
+						supporttypes = supporttypes.concat(`${searchResults[i].language_support_type},`)
+						languageids = languageids.concat(`${searchResults[i].language},`)
+					}
+				}
+			})
+			.catch((err) => {
+				console.log(err)
+			})
+
+		searchConfig = updateIGDBSearchConfig('language_support_types', 'name', supporttypes, '', false, '', 0)
+		await axios(searchConfig)
+			.then((response) => {
+				searchResults = response.data
+				for (let i = 0; i < searchResults.length; i++) {
+					let objIndex = currentArrOfLanguages.findIndex((obj => obj.language_support_type === searchResults[i].id))
+					let oldValAtIndex = currentArrOfLanguages[objIndex]
+					currentArrOfLanguages[objIndex] = {
+						...oldValAtIndex,
+						language_support_type: searchResults[i].name
+					}
+				}
+
+			})
+			.catch((err) => {
+				console.log(err)
+			})
+
+		searchConfig = updateIGDBSearchConfig('languages', 'locale,name,native_name', languageids, '', false, '', 0)
+		await axios(searchConfig)
+			.then((response) => {
+				searchResults = response.data
+				for (let i = 0; i < currentArrOfLanguages.length; i++) {
+					let language = searchResults.filter((obj: { id: number }) => obj.id === currentArrOfLanguages[i].language)[0]
+					let oldValAtIndex = currentArrOfLanguages[i]
+					currentArrOfLanguages[i] = {
+						...oldValAtIndex,
+						language: language.name,
+						locale: language.locale,
+						native: language.native_name
+					}
+				}
+			})
+			.catch((err) => {
+				console.log(err)
+			})
+		arrOfLanguages = arrOfLanguages.concat(currentArrOfLanguages)
+	}
+	return arrOfLanguages
+}
 
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse }
+
+
+
+
+export { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter }

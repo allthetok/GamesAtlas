@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter } from '../helpers/requests'
 require('dotenv').config()
 import express, { Request, Response } from 'express'
 import axios from 'axios'
@@ -24,7 +24,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		age_ratings: '',
 		artworks: '',
 		cover: null,
-		external_games: '',
+		external_games: [],
 		game_modes: '',
 		genres: '',
 		hypes: null,
@@ -38,7 +38,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		themes: '',
 		videos: '',
 		websites: '',
-		language_supports: '',
+		language_supports: [],
 		game_localizations: '',
 		rating: null,
 		ratingCount: null,
@@ -50,6 +50,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		url: ''
 	}
 	let errSearch = false
+	let arrOfLanguages: Languages[] = []
 	let searchConfig: SearchConfig
 	const searchterm = body.searchterm
 	if (searchterm === '' || !searchterm) {
@@ -66,7 +67,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 				age_ratings: searchResults.age_ratings.join(','),
 				artworks: searchResults.artworks.join(','),
 				cover: searchResults.cover,
-				external_games: searchResults.external_games.join(','),
+				external_games: searchResults.external_games,
 				game_modes: searchResults.game_modes.join(','),
 				genres: searchResults.genres.join(','),
 				hypes: searchResults.hypes,
@@ -80,7 +81,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 				themes: searchResults.themes.join(','),
 				videos: searchResults.videos.join(','),
 				websites: searchResults.websites.join(','),
-				language_supports: searchResults.language_supports.join(','),
+				language_supports: searchResults.language_supports,
 				game_localizations: searchResults.game_localizations.join(','),
 				rating: searchResults.total_rating,
 				ratingCount: searchResults.total_rating_count,
@@ -100,6 +101,12 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 			Message: 'Search yielded no results'
 		})
 	}
+
+	//Catch and alter any fields (external_games, language_supports) to be split into multiple string arrays of 10 as IGDB limits each id=*string of ids* into a maximum of 10 ids searched at one time
+	responseObj.external_games = splitIGDBSearch(responseObj.external_games)
+	responseObj.language_supports = splitIGDBSearch(responseObj.language_supports.map(String))
+
+
 	searchConfig = updateIGDBSearchConfig('age_ratings', 'category,rating', responseObj!.age_ratings, 'category=(1,2)', false, '', 0)
 	await axios(searchConfig)
 		.then((response) => {
@@ -139,25 +146,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		.catch((err) => {
 			console.log(err)
 		})
-
-	searchConfig = updateIGDBSearchConfig('external_games', 'category, url', responseObj.external_games, 'category=(1,5,10,11,13,15,26,31,36)', false, '', 0)
-	//change to use enum
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			let arrOfUrls: Categories[] = []
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfUrls.push({
-					category: searchResults[i].category,
-					url: searchResults[i].url
-				})
-			}
-			responseObj.external_games = arrOfUrls
-		})
-		.catch((err) => {
-			console.log(err)
-
-		})
+	responseObj.external_games = await getExternalGamesIter(responseObj.external_games)
 
 	searchConfig = updateIGDBSearchConfig('game_modes', 'name', responseObj.game_modes, '', false, '', 0)
 	await axios(searchConfig)
@@ -403,78 +392,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 
 		})
 
-	searchConfig = updateIGDBSearchConfig('language_supports', 'language,language_support_type', responseObj.language_supports, '', false, '', 0)
-
-	let arrOfLanguages: Languages[] = []
-	let supporttypes = ''
-	let languageids = ''
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfLanguages.push({
-					language: searchResults[i].language,
-					language_support_type: searchResults[i].language_support_type === 1 ? 'Audio' : searchResults[i].language_support_type === 2 ? 'Subtitles' : 'Interface',
-					marked: false,
-					locale: '',
-					native: ''
-				})
-				if (i === searchResults.length - 1) {
-					supporttypes = supporttypes.concat(searchResults[i].language_support_type)
-					languageids = languageids.concat(searchResults[i].language)
-				}
-				else {
-					supporttypes = supporttypes.concat(`${searchResults[i].language_support_type},`)
-					languageids = languageids.concat(`${searchResults[i].language},`)
-				}
-			}
-		})
-		.catch((err) => {
-			console.log(err)
-
-		})
-
-	searchConfig = updateIGDBSearchConfig('language_support_types', 'name', supporttypes, '', false, '', 0)
-
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				let objIndex = arrOfLanguages.findIndex((obj => obj.language_support_type === searchResults[i].id))
-				let oldValAtIndex = arrOfLanguages[objIndex]
-				arrOfLanguages[objIndex] = {
-					...oldValAtIndex,
-					language_support_type: searchResults[i].name
-				}
-			}
-
-		})
-		.catch((err) => {
-			console.log(err)
-
-		})
-
-	searchConfig = updateIGDBSearchConfig('languages', 'locale,name,native_name', languageids, '', false, '', 0)
-
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < arrOfLanguages.length; i++) {
-				let language = searchResults.filter((obj: { id: number }) => obj.id === arrOfLanguages[i].language)[0]
-				let oldValAtIndex = arrOfLanguages[i]
-				arrOfLanguages[i] = {
-					...oldValAtIndex,
-					language: language.name,
-					locale: language.locale,
-					native: language.native_name
-				}
-			}
-			responseObj.language_supports = arrOfLanguages
-		})
-		.catch((err) => {
-			console.log(err)
-
-		})
+	responseObj.language_supports = await getLanguagesIter(responseObj.language_supports)
 
 	searchConfig = updateIGDBSearchConfig('game_localizations', 'name', responseObj.game_localizations, '', false, '', 0)
 

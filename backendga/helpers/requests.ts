@@ -142,15 +142,18 @@ const getExternalGamesIter = async (external_games: string[]) => {
 	let searchConfig: SearchConfig
 	let arrOfUrls: Categories[] = []
 	for (let i = 0; i < external_games.length; i++) {
-		searchConfig = updateIGDBSearchConfig('external_games', 'category, url', external_games[i], 'category=(1,5,10,11,13,15,26,31,36)', false, '', 0)
+		searchConfig = updateIGDBSearchConfig('external_games', 'category, url', external_games[i], 'category=(1,5,10,11,13,15,20,22,23,26,28,30,31,32,36,37,54,55)', false, '', 0)
+		// searchConfig = updateIGDBSearchConfig('external_games', 'category, url', external_games[i], '', false, '', 0)
 		await axios(searchConfig)
 			.then((response) => {
 				searchResults = response.data
 				for (let i = 0; i < searchResults.length; i++) {
-					arrOfUrls.push({
-						category: searchResults[i].category,
-						url: searchResults[i].url
-					})
+					if (searchResults[i].url) {
+						arrOfUrls.push({
+							category: searchResults[i].category,
+							url: searchResults[i].url
+						})
+					}
 				}
 			})
 			.catch((err) => {

@@ -50,7 +50,6 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		url: ''
 	}
 	let errSearch = false
-	let arrOfLanguages: Languages[] = []
 	let searchConfig: SearchConfig
 	const searchterm = body.searchterm
 	if (searchterm === '' || !searchterm) {

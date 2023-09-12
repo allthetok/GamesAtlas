@@ -26,7 +26,7 @@ type GameDetailObj = {
 	platforms: string | Platforms[],
 	player_perspectives: string | string[],
 	screenshots: string | string[],
-	similar_games: string | string[],
+	similar_games: string | string[] | Covers[],
 	tags: string,
 	themes: string | string[],
 	videos: string | Videos[],
@@ -77,6 +77,11 @@ type Languages = {
 	'marked': boolean,
 	'locale': string,
 	'native': string
+}
+
+type Covers = {
+	'name': string,
+	'cover': string | number
 }
 
 
@@ -243,4 +248,4 @@ const getLanguagesIter = async (language_supports: string[]) => {
 
 
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter }
+export { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers }

@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers } from '../helpers/requests'
 require('dotenv').config()
 import express, { Request, Response } from 'express'
 import axios from 'axios'
@@ -51,6 +51,8 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 	}
 	let errSearch = false
 	let searchConfig: SearchConfig
+	let arrOfSimilarGames: Covers[] = []
+	let coverids: string
 	const searchterm = body.searchterm
 	if (searchterm === '' || !searchterm) {
 		return response.status(400).json({
@@ -328,20 +330,49 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 
 
-	searchConfig = updateIGDBSearchConfig('games', 'name', responseObj.similar_games, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('games', 'name,cover', responseObj.similar_games, '', false, '', 0)
 
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data
-			let arrOfSimilarGames: string[] = []
 			for (let i = 0; i < searchResults.length; i++) {
-				arrOfSimilarGames.push(searchResults[i].name)
+				arrOfSimilarGames.push(
+					{
+						name: searchResults[i].name,
+						cover: searchResults[i].cover
+					}
+				)
 			}
 			responseObj.similar_games = arrOfSimilarGames
 		})
+	coverids = arrOfSimilarGames.map((cov) => cov.cover).join(',')
 
+	//get cover url's of each similar game
+	searchConfig = updateIGDBSearchConfig('covers', 'url', coverids, '', false, '', 0)
+
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data
+			searchResults = searchResults.map((cov: any) => {
+				return { ...cov, url: cov.url.replace('thumb', 'cover_big') }
+			})
+			console.log(searchResults)
+			for (let i = 0; i < searchResults.length; i++) {
+				const covIndex: number = arrOfSimilarGames.findIndex((cov) => cov.cover === searchResults[i].id)
+				let oldValAtIndex = arrOfSimilarGames[covIndex]
+				arrOfSimilarGames[covIndex] = {
+					...oldValAtIndex,
+					cover: `https:${searchResults[i].url}`
+				}
+			}
+			responseObj.similar_games = arrOfSimilarGames
+		})
+		.catch((err) => {
+			console.log(err)
+		})
 
 	searchConfig = updateIGDBSearchConfig('themes', 'name', responseObj.themes, '', false, '', 0)
+
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data

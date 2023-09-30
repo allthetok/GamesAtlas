@@ -343,7 +343,7 @@ app.post('/api/artwork', async (request: Request, response: Response) => {
 	searchConfig = updateIGDBSearchConfig('games', 'id,artworks,name,storyline,summary', gameid, '', false, '', 0)
 	await axios(searchConfig)
 		.then((response) => {
-			searchResults = response.data
+			searchResults = response.data[0]
 			responseObj = {
 				id: searchResults.id,
 				artworks: searchResults.artworks.join(','),
@@ -399,7 +399,7 @@ app.post('/api/language', async (request: Request, response: Response) => {
 	searchConfig = updateIGDBSearchConfig('games', 'id,language_supports,name,storyline,summary', gameid, '', false, '', 0)
 	await axios(searchConfig)
 		.then((response) => {
-			searchResults = response.data
+			searchResults = response.data[0]
 			responseObj = {
 				id: searchResults.id,
 				language_supports: searchResults.language_supports,
@@ -444,7 +444,7 @@ app.post('/api/screenshots', async (request: Request, response: Response) => {
 	searchConfig = updateIGDBSearchConfig('games', 'id,screenshots,name,storyline,summary', gameid, '', false, '', 0)
 	await axios(searchConfig)
 		.then((response) => {
-			searchResults = response.data
+			searchResults = response.data[0]
 			responseObj = {
 				id: searchResults.id,
 				screenshots: searchResults.screenshots.join(','),
@@ -503,7 +503,7 @@ app.post('/api/similargames', async (request: Request, response: Response) => {
 	searchConfig = updateIGDBSearchConfig('games', 'id,similar_games,name,storyline,summary', gameid, '', false, '', 0)
 	await axios(searchConfig)
 		.then((response) => {
-			searchResults = response.data
+			searchResults = response.data[0]
 			responseObj = {
 				id: searchResults.id,
 				similar_games: searchResults.similar_games.join(','),
@@ -582,7 +582,7 @@ app.post('/api/videos', async (request: Request, response: Response) => {
 	searchConfig = updateIGDBSearchConfig('games', 'id,videos,name,storyline,summary', gameid, '', false, '', 0)
 	await axios(searchConfig)
 		.then((response) => {
-			searchResults = response.data
+			searchResults = response.data[0]
 			responseObj = {
 				id: searchResults.id,
 				videos: searchResults.videos.join(','),
@@ -641,7 +641,7 @@ app.post('/api/websites', async (request: Request, response: Response) => {
 	searchConfig = updateIGDBSearchConfig('games', 'id,websites,name,storyline,summary', gameid, '', false, '', 0)
 	await axios(searchConfig)
 		.then((response) => {
-			searchResults = response.data
+			searchResults = response.data[0]
 			responseObj = {
 				id: searchResults.id,
 				websites: searchResults.websites.join(','),

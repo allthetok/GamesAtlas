@@ -43,6 +43,80 @@ type GameDetailObj = {
 	url: string
 }
 
+type OverviewObj = {
+	id: number | null,
+	age_ratings: string | AgeRatings,
+	cover: number | string | null,
+	external_games: string[] | Categories[],
+	game_modes: string | string[],
+	genres: string | string[],
+	hypes: number | null,
+	involved_companies: string | Companies[],
+	keywords: string | string[],
+	platforms: string | Platforms[],
+	player_perspectives: string | string[],
+	tags: string,
+	themes: string | string[],
+	websites: string | Categories[],
+	game_localizations: string,
+	rating: number | null,
+	ratingCount: number | null,
+	releaseDate: Date | null,
+	likes: number | null,
+	title: string,
+	story: string,
+	summary: string,
+	url: string
+}
+
+type ArtworkObj = {
+	id: number | null,
+	artworks: string | string[],
+	title: string,
+	story: string,
+	summary: string,
+}
+
+type LanguageObj = {
+	id: number | null,
+	language_supports: string[] | Languages[],
+	title: string,
+	story: string,
+	summary: string,
+}
+
+type ScreenshotsObj = {
+	id: number | null,
+	screenshots: string[],
+	title: string,
+	story: string,
+	summary: string,
+}
+
+type SimilarObj = {
+	id: number | null,
+	similar_games: string | string[] | Covers[],
+	title: string,
+	story: string,
+	summary: string,
+}
+
+type VideoObj = {
+	id: number | null,
+	videos: string | Videos[],
+	title: string,
+	story: string,
+	summary: string,
+}
+
+type WebsiteObj = {
+	id: number | null,
+	websites: string | Categories[],
+	title: string,
+	story: string,
+	summary: string,
+}
+
 type AgeRatings = {
 	'ESRB': number,
 	'PEGI': number
@@ -83,6 +157,7 @@ type Covers = {
 	'name': string,
 	'cover': string | number
 }
+
 
 
 
@@ -248,4 +323,4 @@ const getLanguagesIter = async (language_supports: string[]) => {
 
 
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers }
+export { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj }

@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "devapi": "nodemon src/combo.ts",
+	"devapimulti": "nodemon src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

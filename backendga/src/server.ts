@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj } from '../helpers/requests'
 require('dotenv').config()
 import express, { Request, Response } from 'express'
 import axios from 'axios'
@@ -16,13 +16,12 @@ app.use(express.json())
 app.use(requestLogger)
 app.use(cors(corsOptions))
 
-app.post('/api/gamedetails', async (request: Request, response: Response) => {
+app.post('/api/overview', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
-	let responseObj: GameDetailObj = {
+	let responseObj: OverviewObj = {
 		id: null,
 		age_ratings: '',
-		artworks: '',
 		cover: null,
 		external_games: [],
 		game_modes: '',
@@ -32,13 +31,9 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		keywords: '' ,
 		platforms: '',
 		player_perspectives: '',
-		screenshots: '',
-		similar_games: '',
 		tags: '',
 		themes: '',
-		videos: '',
 		websites: '',
-		language_supports: [],
 		game_localizations: '',
 		rating: null,
 		ratingCount: null,
@@ -51,22 +46,19 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 	}
 	let errSearch = false
 	let searchConfig: SearchConfig
-	let arrOfSimilarGames: Covers[] = []
-	let coverids: string
 	const searchterm = body.searchterm
 	if (searchterm === '' || !searchterm) {
 		return response.status(400).json({
 			error: 'No search term specified'
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings,artworks,category,cover,first_release_date,external_games,follows,game_modes,genres,hypes,involved_companies,keywords,name,platforms,player_perspectives,total_rating,total_rating_count,screenshots,similar_games,slug,storyline,summary,tags,themes,url,videos,websites,language_supports,game_localizations', '', '', true, searchterm, 1)
+	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings,category,cover,first_release_date,external_games,follows,game_modes,genres,hypes,involved_companies,keywords,name,platforms,player_perspectives,total_rating,total_rating_count,slug,storyline,summary,tags,themes,url,websites,game_localizations', '', '', true, searchterm, 1)
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data[0]
 			responseObj = {
 				id: searchResults.id,
 				age_ratings: searchResults.age_ratings.join(','),
-				artworks: searchResults.artworks.join(','),
 				cover: searchResults.cover,
 				external_games: searchResults.external_games,
 				game_modes: searchResults.game_modes.join(','),
@@ -76,13 +68,9 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 				keywords: searchResults.keywords.join(','),
 				platforms: searchResults.platforms.join(','),
 				player_perspectives: searchResults.player_perspectives.join(','),
-				screenshots: searchResults.screenshots.join(','),
-				similar_games: searchResults.similar_games.join(','),
 				tags: searchResults.tags.join(','),
 				themes: searchResults.themes.join(','),
-				videos: searchResults.videos.join(','),
 				websites: searchResults.websites.join(','),
-				language_supports: searchResults.language_supports,
 				game_localizations: searchResults.game_localizations.join(','),
 				rating: searchResults.total_rating,
 				ratingCount: searchResults.total_rating_count,
@@ -105,8 +93,6 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 
 	//Catch and alter any fields (external_games, language_supports) to be split into multiple string arrays of 10 as IGDB limits each id=*string of ids* into a maximum of 10 ids searched at one time
 	responseObj.external_games = splitIGDBSearch(responseObj.external_games)
-	responseObj.language_supports = splitIGDBSearch(responseObj.language_supports.map(String))
-
 
 	searchConfig = updateIGDBSearchConfig('age_ratings', 'category,rating', responseObj!.age_ratings, 'category=(1,2)', false, '', 0)
 	await axios(searchConfig)
@@ -117,21 +103,6 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 				'PEGI': response.data[1].rating
 			}
 			responseObj.age_ratings = age_ratingsobj
-		})
-		.catch((err) => {
-			console.log(err)
-		})
-
-	searchConfig = updateIGDBSearchConfig('artworks', 'url', responseObj.artworks, '', false, '', 0)
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			let arrOfImages: string[] = []
-			for (let i = 0; i < searchResults.length; i++) {
-				searchResults[i].url = searchResults[i].url.replace('thumb', '1080p')
-				arrOfImages.push(`https:${searchResults[i].url}`)
-			}
-			responseObj.artworks = arrOfImages
 		})
 		.catch((err) => {
 			console.log(err)
@@ -237,7 +208,6 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 
 
 	searchConfig = updateIGDBSearchConfig('keywords', 'name', responseObj.keywords, '', false, '', 0)
-
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data
@@ -256,7 +226,6 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 	let platformlogoids = ''
 
 	searchConfig = updateIGDBSearchConfig('platforms', 'name,category,platform_logo', responseObj.platforms, '', false, '', 0)
-
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data
@@ -281,7 +250,6 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 
 	searchConfig = updateIGDBSearchConfig('platform_logos', 'url', platformlogoids, '', false, '', 0)
-
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data
@@ -297,7 +265,6 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 
 	searchConfig = updateIGDBSearchConfig('player_perspectives', 'name', responseObj.player_perspectives, '', false, '', 0)
-
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data
@@ -312,8 +279,190 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 
 		})
 
-	searchConfig = updateIGDBSearchConfig('screenshots', 'url', responseObj.screenshots, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('themes', 'name', responseObj.themes, '', false, '', 0)
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data
+			let arrOfThemes: string[] = []
+			for (let i = 0; i < searchResults.length; i++) {
+				arrOfThemes.push(searchResults[i].name)
+			}
+			responseObj.themes = arrOfThemes
+		})
 
+	searchConfig = updateIGDBSearchConfig('websites', 'category,url', responseObj.websites, '', false, '', 0)
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data
+			let arrOfSites: Categories[] = []
+			for (let i = 0; i < searchResults.length; i++) {
+				arrOfSites.push({
+					category: searchResults[i].category,
+					url: searchResults[i].url
+				})
+			}
+			responseObj.websites = arrOfSites
+		})
+		.catch((err) => {
+			console.log(err)
+
+		})
+
+	searchConfig = updateIGDBSearchConfig('game_localizations', 'name', responseObj.game_localizations, '', false, '', 0)
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data[0]
+			responseObj.game_localizations = searchResults.name
+		})
+		.catch((err) => {
+			console.log(err)
+
+		})
+
+	return response.status(200).json(responseObj)
+})
+
+app.post('/api/artwork', async (request: Request, response: Response) => {
+	const body = request.body
+	let searchResults: any
+	let responseObj: ArtworkObj = {
+		id: null,
+		artworks: '',
+		title: '',
+		story: '',
+		summary: ''
+	}
+	let errSearch = false
+	let searchConfig: SearchConfig
+	const gameid = body.gameid
+	if (gameid === null || gameid === '' || !gameid) {
+		return response.status(400).json({
+			error: `No game id specified: ${gameid}`
+		})
+	}
+	searchConfig = updateIGDBSearchConfig('games', 'id,artworks,name,storyline,summary', gameid, '', false, '', 0)
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data
+			responseObj = {
+				id: searchResults.id,
+				artworks: searchResults.artworks.join(','),
+				title: searchResults.name,
+				story: searchResults.storyline,
+				summary: searchResults.summary
+			}
+		})
+		.catch((err) => {
+			console.log(err)
+		})
+	if (errSearch) {
+		return response.status(404).json({
+			Message: 'Search yielded no results'
+		})
+	}
+
+	searchConfig = updateIGDBSearchConfig('artworks', 'url', responseObj.artworks, '', false, '', 0)
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data
+			let arrOfImages: string[] = []
+			for (let i = 0; i < searchResults.length; i++) {
+				searchResults[i].url = searchResults[i].url.replace('thumb', '1080p')
+				arrOfImages.push(`https:${searchResults[i].url}`)
+			}
+			responseObj.artworks = arrOfImages
+		})
+		.catch((err) => {
+			console.log(err)
+		})
+	return response.status(200).json(responseObj)
+})
+
+app.post('/api/language', async (request: Request, response: Response) => {
+	const body = request.body
+	let searchResults: any
+	let responseObj: LanguageObj = {
+		id: null,
+		language_supports: [],
+		title: '',
+		story: '',
+		summary: ''
+	}
+	let errSearch = false
+	let searchConfig: SearchConfig
+	const gameid = body.gameid
+	if (gameid === null || gameid === '' || !gameid) {
+		return response.status(400).json({
+			error: `No game id specified: ${gameid}`
+		})
+	}
+	searchConfig = updateIGDBSearchConfig('games', 'id,language_supports,name,storyline,summary', gameid, '', false, '', 0)
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data
+			responseObj = {
+				id: searchResults.id,
+				language_supports: searchResults.language_supports,
+				title: searchResults.name,
+				story: searchResults.storyline,
+				summary: searchResults.summary
+			}
+		})
+		.catch((err) => {
+			console.log(err)
+		})
+	if (errSearch) {
+		return response.status(404).json({
+			Message: 'Search yielded no results'
+		})
+	}
+
+	responseObj.language_supports = splitIGDBSearch(responseObj.language_supports.map(String))
+	responseObj.language_supports = await getLanguagesIter(responseObj.language_supports)
+
+	return response.status(200).json(responseObj)
+})
+
+app.post('/api/screenshots', async (request: Request, response: Response) => {
+	const body = request.body
+	let searchResults: any
+	let responseObj: ScreenshotsObj = {
+		id: null,
+		screenshots: [],
+		title: '',
+		story: '',
+		summary: ''
+	}
+	let errSearch = false
+	let searchConfig: SearchConfig
+	const gameid = body.gameid
+	if (gameid === null || gameid === '' || !gameid) {
+		return response.status(400).json({
+			error: `No game id specified: ${gameid}`
+		})
+	}
+	searchConfig = updateIGDBSearchConfig('games', 'id,screenshots,name,storyline,summary', gameid, '', false, '', 0)
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data
+			responseObj = {
+				id: searchResults.id,
+				screenshots: searchResults.screenshots.join(','),
+				title: searchResults.name,
+				story: searchResults.storyline,
+				summary: searchResults.summary
+			}
+		})
+		.catch((err) => {
+			console.log(err)
+		})
+	if (errSearch) {
+		return response.status(404).json({
+			Message: 'Search yielded no results'
+		})
+	}
+
+	searchConfig = updateIGDBSearchConfig('screenshots', 'url', responseObj.screenshots, '', false, '', 0)
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data
@@ -328,10 +477,51 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 			console.log(err)
 
 		})
+	return response.status(200).json(responseObj)
+})
 
+app.post('/api/similargames', async (request: Request, response: Response) => {
+	const body = request.body
+	let searchResults: any
+	let responseObj: SimilarObj = {
+		id: null,
+		similar_games: '',
+		title: '',
+		story: '',
+		summary: ''
+	}
+	let errSearch = false
+	let searchConfig: SearchConfig
+	let arrOfSimilarGames: Covers[] = []
+	let coverids: string
+	const gameid = body.gameid
+	if (gameid === null || gameid === '' || !gameid) {
+		return response.status(400).json({
+			error: `No game id specified: ${gameid}`
+		})
+	}
+	searchConfig = updateIGDBSearchConfig('games', 'id,similar_games,name,storyline,summary', gameid, '', false, '', 0)
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data
+			responseObj = {
+				id: searchResults.id,
+				similar_games: searchResults.similar_games.join(','),
+				title: searchResults.name,
+				story: searchResults.storyline,
+				summary: searchResults.summary
+			}
+		})
+		.catch((err) => {
+			console.log(err)
+		})
+	if (errSearch) {
+		return response.status(404).json({
+			Message: 'Search yielded no results'
+		})
+	}
 
 	searchConfig = updateIGDBSearchConfig('games', 'name,cover', responseObj.similar_games, '', false, '', 0)
-
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data
@@ -346,7 +536,6 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 			responseObj.similar_games = arrOfSimilarGames
 		})
 	coverids = arrOfSimilarGames.map((cov) => cov.cover).join(',')
-
 	//get cover url's of each similar game
 	searchConfig = updateIGDBSearchConfig('covers', 'url', coverids, '', false, '', 0)
 
@@ -369,19 +558,47 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		.catch((err) => {
 			console.log(err)
 		})
+	return response.status(200).json(responseObj)
+})
 
-	searchConfig = updateIGDBSearchConfig('themes', 'name', responseObj.themes, '', false, '', 0)
-
+app.post('/api/videos', async (request: Request, response: Response) => {
+	const body = request.body
+	let searchResults: any
+	let responseObj: VideoObj = {
+		id: null,
+		videos: '',
+		title: '',
+		story: '',
+		summary: ''
+	}
+	let errSearch = false
+	let searchConfig: SearchConfig
+	const gameid = body.gameid
+	if (gameid === null || gameid === '' || !gameid) {
+		return response.status(400).json({
+			error: `No game id specified: ${gameid}`
+		})
+	}
+	searchConfig = updateIGDBSearchConfig('games', 'id,videos,name,storyline,summary', gameid, '', false, '', 0)
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data
-			let arrOfThemes: string[] = []
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfThemes.push(searchResults[i].name)
+			responseObj = {
+				id: searchResults.id,
+				videos: searchResults.videos.join(','),
+				title: searchResults.name,
+				story: searchResults.storyline,
+				summary: searchResults.summary
 			}
-			responseObj.themes = arrOfThemes
 		})
-
+		.catch((err) => {
+			console.log(err)
+		})
+	if (errSearch) {
+		return response.status(404).json({
+			Message: 'Search yielded no results'
+		})
+	}
 
 	searchConfig = updateIGDBSearchConfig('game_videos', 'name,video_id', responseObj.videos, '', false, '', 0)
 
@@ -399,8 +616,48 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 		.catch((err) => {
 			console.log(err)
-
 		})
+	return response.status(200).json(responseObj)
+})
+
+app.post('/api/websites', async (request: Request, response: Response) => {
+	const body = request.body
+	let searchResults: any
+	let responseObj: WebsiteObj = {
+		id: null,
+		websites: '',
+		title: '',
+		story: '',
+		summary: ''
+	}
+	let errSearch = false
+	let searchConfig: SearchConfig
+	const gameid = body.gameid
+	if (gameid === null || gameid === '' || !gameid) {
+		return response.status(400).json({
+			error: `No game id specified: ${gameid}`
+		})
+	}
+	searchConfig = updateIGDBSearchConfig('games', 'id,websites,name,storyline,summary', gameid, '', false, '', 0)
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data
+			responseObj = {
+				id: searchResults.id,
+				websites: searchResults.websites.join(','),
+				title: searchResults.name,
+				story: searchResults.storyline,
+				summary: searchResults.summary
+			}
+		})
+		.catch((err) => {
+			console.log(err)
+		})
+	if (errSearch) {
+		return response.status(404).json({
+			Message: 'Search yielded no results'
+		})
+	}
 
 	searchConfig = updateIGDBSearchConfig('websites', 'category,url', responseObj.websites, '', false, '', 0)
 
@@ -420,23 +677,9 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 			console.log(err)
 
 		})
-
-	responseObj.language_supports = await getLanguagesIter(responseObj.language_supports)
-
-	searchConfig = updateIGDBSearchConfig('game_localizations', 'name', responseObj.game_localizations, '', false, '', 0)
-
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data[0]
-			responseObj.game_localizations = searchResults.name
-		})
-		.catch((err) => {
-			console.log(err)
-
-		})
-
 	return response.status(200).json(responseObj)
 })
+
 
 const PORT = process.env.API_PORT || 3001
 

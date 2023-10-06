@@ -326,13 +326,7 @@ app.post('/api/artwork', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
 	let responseObj: ArtworkObj = {
-		id: null,
-		artworks: '',
-		involved_companies: '',
-		releaseDate: null,
-		title: '',
-		story: '',
-		summary: ''
+		artworks: ''
 	}
 	let errSearch = false
 	let searchConfig: SearchConfig
@@ -342,19 +336,13 @@ app.post('/api/artwork', async (request: Request, response: Response) => {
 			error: `No game id specified: ${gameid}`
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,artworks,involved_companies,first_release_date,name,storyline,summary', gameid, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('games', 'artworks', gameid, '', false, '', 0)
 
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data[0]
 			responseObj = {
-				id: searchResults.id,
-				artworks: searchResults.artworks.join(','),
-				involved_companies: searchResults.involved_companies.join(','),
-				releaseDate: new Date(searchResults.first_release_date*1000),
-				title: searchResults.name,
-				story: searchResults.storyline,
-				summary: searchResults.summary
+				artworks: searchResults.artworks.join(',')
 			}
 		})
 		.catch((err) => {
@@ -380,60 +368,6 @@ app.post('/api/artwork', async (request: Request, response: Response) => {
 		.catch((err) => {
 			console.log(err)
 		})
-
-	searchConfig = updateIGDBSearchConfig('involved_companies', 'company', responseObj.involved_companies, '', false, '', 0)
-	let idofCompanies = ''
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				if (i === searchResults.length - 1) {
-					idofCompanies = idofCompanies.concat(searchResults[i].company)
-				}
-				else {
-					idofCompanies = idofCompanies.concat(`${searchResults[i].company},`)
-				}
-			}
-		})
-		.catch((err) => {
-			console.log(err)
-		})
-
-	searchConfig = updateIGDBSearchConfig('companies', 'name,logo', idofCompanies, '', false, '', 0)
-	let arrOfCompanies: Companies[] = []
-	let logoids = ''
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfCompanies.push({
-					name: searchResults[i].name,
-					logoid: searchResults[i].logo,
-					url: ''
-				})
-				if (i === searchResults.length - 1) {
-					logoids = logoids.concat(searchResults[i].logo)
-				}
-				else {
-					logoids = logoids.concat(`${searchResults[i].logo},`)
-				}
-			}
-		})
-
-	searchConfig = updateIGDBSearchConfig('company_logos', 'url', logoids, '', false, '', 0)
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				let objIndex = arrOfCompanies.findIndex((obj => obj.logoid === searchResults[i].id))
-				let oldValAtIndex = arrOfCompanies[objIndex]
-				arrOfCompanies[objIndex] = {
-					...oldValAtIndex,
-					url: `https:${searchResults[i].url}`
-				}
-			}
-			responseObj.involved_companies = arrOfCompanies
-		})
 	return response.status(200).json(responseObj)
 })
 
@@ -441,13 +375,7 @@ app.post('/api/language', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
 	let responseObj: LanguageObj = {
-		id: null,
-		language_supports: [],
-		involved_companies: '',
-		releaseDate: null,
-		title: '',
-		story: '',
-		summary: ''
+		language_supports: []
 	}
 	let errSearch = false
 	let searchConfig: SearchConfig
@@ -457,18 +385,12 @@ app.post('/api/language', async (request: Request, response: Response) => {
 			error: `No game id specified: ${gameid}`
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,language_supports,involved_companies,first_release_date,name,storyline,summary', gameid, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('games', 'language_supports', gameid, '', false, '', 0)
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data[0]
 			responseObj = {
-				id: searchResults.id,
-				language_supports: searchResults.language_supports,
-				involved_companies: searchResults.involved_companies.join(','),
-				releaseDate: new Date(searchResults.first_release_date*1000),
-				title: searchResults.name,
-				story: searchResults.storyline,
-				summary: searchResults.summary
+				language_supports: searchResults.language_supports
 			}
 		})
 		.catch((err) => {
@@ -483,60 +405,6 @@ app.post('/api/language', async (request: Request, response: Response) => {
 	responseObj.language_supports = splitIGDBSearch(responseObj.language_supports.map(String))
 	responseObj.language_supports = await getLanguagesIter(responseObj.language_supports)
 
-	searchConfig = updateIGDBSearchConfig('involved_companies', 'company', responseObj.involved_companies, '', false, '', 0)
-	let idofCompanies = ''
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				if (i === searchResults.length - 1) {
-					idofCompanies = idofCompanies.concat(searchResults[i].company)
-				}
-				else {
-					idofCompanies = idofCompanies.concat(`${searchResults[i].company},`)
-				}
-			}
-		})
-		.catch((err) => {
-			console.log(err)
-		})
-
-	searchConfig = updateIGDBSearchConfig('companies', 'name,logo', idofCompanies, '', false, '', 0)
-	let arrOfCompanies: Companies[] = []
-	let logoids = ''
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfCompanies.push({
-					name: searchResults[i].name,
-					logoid: searchResults[i].logo,
-					url: ''
-				})
-				if (i === searchResults.length - 1) {
-					logoids = logoids.concat(searchResults[i].logo)
-				}
-				else {
-					logoids = logoids.concat(`${searchResults[i].logo},`)
-				}
-			}
-		})
-
-	searchConfig = updateIGDBSearchConfig('company_logos', 'url', logoids, '', false, '', 0)
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				let objIndex = arrOfCompanies.findIndex((obj => obj.logoid === searchResults[i].id))
-				let oldValAtIndex = arrOfCompanies[objIndex]
-				arrOfCompanies[objIndex] = {
-					...oldValAtIndex,
-					url: `https:${searchResults[i].url}`
-				}
-			}
-			responseObj.involved_companies = arrOfCompanies
-		})
-
 	return response.status(200).json(responseObj)
 })
 
@@ -544,13 +412,7 @@ app.post('/api/screenshots', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
 	let responseObj: ScreenshotsObj = {
-		id: null,
-		screenshots: [],
-		involved_companies: '',
-		releaseDate: null,
-		title: '',
-		story: '',
-		summary: ''
+		screenshots: []
 	}
 	let errSearch = false
 	let searchConfig: SearchConfig
@@ -560,18 +422,12 @@ app.post('/api/screenshots', async (request: Request, response: Response) => {
 			error: `No game id specified: ${gameid}`
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,screenshots,involved_companies,first_release_date,name,storyline,summary', gameid, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('games', 'screenshots', gameid, '', false, '', 0)
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data[0]
 			responseObj = {
-				id: searchResults.id,
-				screenshots: searchResults.screenshots.join(','),
-				involved_companies: searchResults.involved_companies.join(','),
-				releaseDate: new Date(searchResults.first_release_date*1000),
-				title: searchResults.name,
-				story: searchResults.storyline,
-				summary: searchResults.summary
+				screenshots: searchResults.screenshots.join(',')
 			}
 		})
 		.catch((err) => {
@@ -598,59 +454,7 @@ app.post('/api/screenshots', async (request: Request, response: Response) => {
 			console.log(err)
 
 		})
-	searchConfig = updateIGDBSearchConfig('involved_companies', 'company', responseObj.involved_companies, '', false, '', 0)
-	let idofCompanies = ''
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				if (i === searchResults.length - 1) {
-					idofCompanies = idofCompanies.concat(searchResults[i].company)
-				}
-				else {
-					idofCompanies = idofCompanies.concat(`${searchResults[i].company},`)
-				}
-			}
-		})
-		.catch((err) => {
-			console.log(err)
-		})
 
-	searchConfig = updateIGDBSearchConfig('companies', 'name,logo', idofCompanies, '', false, '', 0)
-	let arrOfCompanies: Companies[] = []
-	let logoids = ''
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfCompanies.push({
-					name: searchResults[i].name,
-					logoid: searchResults[i].logo,
-					url: ''
-				})
-				if (i === searchResults.length - 1) {
-					logoids = logoids.concat(searchResults[i].logo)
-				}
-				else {
-					logoids = logoids.concat(`${searchResults[i].logo},`)
-				}
-			}
-		})
-
-	searchConfig = updateIGDBSearchConfig('company_logos', 'url', logoids, '', false, '', 0)
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				let objIndex = arrOfCompanies.findIndex((obj => obj.logoid === searchResults[i].id))
-				let oldValAtIndex = arrOfCompanies[objIndex]
-				arrOfCompanies[objIndex] = {
-					...oldValAtIndex,
-					url: `https:${searchResults[i].url}`
-				}
-			}
-			responseObj.involved_companies = arrOfCompanies
-		})
 	return response.status(200).json(responseObj)
 })
 
@@ -658,13 +462,7 @@ app.post('/api/similargames', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
 	let responseObj: SimilarObj = {
-		id: null,
-		similar_games: '',
-		involved_companies: '',
-		releaseDate: null,
-		title: '',
-		story: '',
-		summary: ''
+		similar_games: ''
 	}
 	let errSearch = false
 	let searchConfig: SearchConfig
@@ -676,18 +474,12 @@ app.post('/api/similargames', async (request: Request, response: Response) => {
 			error: `No game id specified: ${gameid}`
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,similar_games,involved_companies,first_release_date,name,storyline,summary', gameid, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('games', 'similar_games', gameid, '', false, '', 0)
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data[0]
 			responseObj = {
-				id: searchResults.id,
-				similar_games: searchResults.similar_games.join(','),
-				involved_companies: searchResults.involved_companies.join(','),
-				releaseDate: new Date(searchResults.first_release_date*1000),
-				title: searchResults.name,
-				story: searchResults.storyline,
-				summary: searchResults.summary
+				similar_games: searchResults.similar_games.join(',')
 			}
 		})
 		.catch((err) => {
@@ -736,59 +528,7 @@ app.post('/api/similargames', async (request: Request, response: Response) => {
 		.catch((err) => {
 			console.log(err)
 		})
-	searchConfig = updateIGDBSearchConfig('involved_companies', 'company', responseObj.involved_companies, '', false, '', 0)
-	let idofCompanies = ''
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				if (i === searchResults.length - 1) {
-					idofCompanies = idofCompanies.concat(searchResults[i].company)
-				}
-				else {
-					idofCompanies = idofCompanies.concat(`${searchResults[i].company},`)
-				}
-			}
-		})
-		.catch((err) => {
-			console.log(err)
-		})
 
-	searchConfig = updateIGDBSearchConfig('companies', 'name,logo', idofCompanies, '', false, '', 0)
-	let arrOfCompanies: Companies[] = []
-	let logoids = ''
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfCompanies.push({
-					name: searchResults[i].name,
-					logoid: searchResults[i].logo,
-					url: ''
-				})
-				if (i === searchResults.length - 1) {
-					logoids = logoids.concat(searchResults[i].logo)
-				}
-				else {
-					logoids = logoids.concat(`${searchResults[i].logo},`)
-				}
-			}
-		})
-
-	searchConfig = updateIGDBSearchConfig('company_logos', 'url', logoids, '', false, '', 0)
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				let objIndex = arrOfCompanies.findIndex((obj => obj.logoid === searchResults[i].id))
-				let oldValAtIndex = arrOfCompanies[objIndex]
-				arrOfCompanies[objIndex] = {
-					...oldValAtIndex,
-					url: `https:${searchResults[i].url}`
-				}
-			}
-			responseObj.involved_companies = arrOfCompanies
-		})
 	return response.status(200).json(responseObj)
 })
 
@@ -796,13 +536,7 @@ app.post('/api/videos', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
 	let responseObj: VideoObj = {
-		id: null,
-		videos: '',
-		involved_companies: '',
-		releaseDate: null,
-		title: '',
-		story: '',
-		summary: ''
+		videos: ''
 	}
 	let errSearch = false
 	let searchConfig: SearchConfig
@@ -812,18 +546,12 @@ app.post('/api/videos', async (request: Request, response: Response) => {
 			error: `No game id specified: ${gameid}`
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,videos,involved_companies,first_release_date,name,storyline,summary', gameid, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('games', 'videos', gameid, '', false, '', 0)
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data[0]
 			responseObj = {
-				id: searchResults.id,
-				videos: searchResults.videos.join(','),
-				involved_companies: searchResults.involved_companies.join(','),
-				releaseDate: new Date(searchResults.first_release_date*1000),
-				title: searchResults.name,
-				story: searchResults.storyline,
-				summary: searchResults.summary
+				videos: searchResults.videos.join(',')
 			}
 		})
 		.catch((err) => {
@@ -853,59 +581,6 @@ app.post('/api/videos', async (request: Request, response: Response) => {
 			console.log(err)
 		})
 
-	searchConfig = updateIGDBSearchConfig('involved_companies', 'company', responseObj.involved_companies, '', false, '', 0)
-	let idofCompanies = ''
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				if (i === searchResults.length - 1) {
-					idofCompanies = idofCompanies.concat(searchResults[i].company)
-				}
-				else {
-					idofCompanies = idofCompanies.concat(`${searchResults[i].company},`)
-				}
-			}
-		})
-		.catch((err) => {
-			console.log(err)
-		})
-
-	searchConfig = updateIGDBSearchConfig('companies', 'name,logo', idofCompanies, '', false, '', 0)
-	let arrOfCompanies: Companies[] = []
-	let logoids = ''
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfCompanies.push({
-					name: searchResults[i].name,
-					logoid: searchResults[i].logo,
-					url: ''
-				})
-				if (i === searchResults.length - 1) {
-					logoids = logoids.concat(searchResults[i].logo)
-				}
-				else {
-					logoids = logoids.concat(`${searchResults[i].logo},`)
-				}
-			}
-		})
-
-	searchConfig = updateIGDBSearchConfig('company_logos', 'url', logoids, '', false, '', 0)
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				let objIndex = arrOfCompanies.findIndex((obj => obj.logoid === searchResults[i].id))
-				let oldValAtIndex = arrOfCompanies[objIndex]
-				arrOfCompanies[objIndex] = {
-					...oldValAtIndex,
-					url: `https:${searchResults[i].url}`
-				}
-			}
-			responseObj.involved_companies = arrOfCompanies
-		})
 	return response.status(200).json(responseObj)
 })
 
@@ -913,13 +588,7 @@ app.post('/api/websites', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
 	let responseObj: WebsiteObj = {
-		id: null,
-		websites: '',
-		involved_companies: '',
-		releaseDate: null,
-		title: '',
-		story: '',
-		summary: ''
+		websites: ''
 	}
 	let errSearch = false
 	let searchConfig: SearchConfig
@@ -929,18 +598,12 @@ app.post('/api/websites', async (request: Request, response: Response) => {
 			error: `No game id specified: ${gameid}`
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,websites,involved_companies,first_release_date,name,storyline,summary', gameid, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('games', 'websites', gameid, '', false, '', 0)
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data[0]
 			responseObj = {
-				id: searchResults.id,
-				websites: searchResults.websites.join(','),
-				involved_companies: searchResults.involved_companies.join(','),
-				releaseDate: new Date(searchResults.first_release_date*1000),
-				title: searchResults.name,
-				story: searchResults.storyline,
-				summary: searchResults.summary
+				websites: searchResults.websites.join(',')
 			}
 		})
 		.catch((err) => {
@@ -969,59 +632,6 @@ app.post('/api/websites', async (request: Request, response: Response) => {
 		.catch((err) => {
 			console.log(err)
 
-		})
-	searchConfig = updateIGDBSearchConfig('involved_companies', 'company', responseObj.involved_companies, '', false, '', 0)
-	let idofCompanies = ''
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				if (i === searchResults.length - 1) {
-					idofCompanies = idofCompanies.concat(searchResults[i].company)
-				}
-				else {
-					idofCompanies = idofCompanies.concat(`${searchResults[i].company},`)
-				}
-			}
-		})
-		.catch((err) => {
-			console.log(err)
-		})
-
-	searchConfig = updateIGDBSearchConfig('companies', 'name,logo', idofCompanies, '', false, '', 0)
-	let arrOfCompanies: Companies[] = []
-	let logoids = ''
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfCompanies.push({
-					name: searchResults[i].name,
-					logoid: searchResults[i].logo,
-					url: ''
-				})
-				if (i === searchResults.length - 1) {
-					logoids = logoids.concat(searchResults[i].logo)
-				}
-				else {
-					logoids = logoids.concat(`${searchResults[i].logo},`)
-				}
-			}
-		})
-
-	searchConfig = updateIGDBSearchConfig('company_logos', 'url', logoids, '', false, '', 0)
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				let objIndex = arrOfCompanies.findIndex((obj => obj.logoid === searchResults[i].id))
-				let oldValAtIndex = arrOfCompanies[objIndex]
-				arrOfCompanies[objIndex] = {
-					...oldValAtIndex,
-					url: `https:${searchResults[i].url}`
-				}
-			}
-			responseObj.involved_companies = arrOfCompanies
 		})
 	return response.status(200).json(responseObj)
 })

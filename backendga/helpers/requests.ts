@@ -151,7 +151,7 @@ const corsOptions = {
 	optionSuccessStatus: 200
 }
 
-const updateIGDBSearchConfig = (endpoint: string, datafields: string, stringofids: any, additionalfilter: string, search: boolean, searchterm: string, limit: number): SearchConfig => {
+const updateIGDBSearchConfig = (endpoint: string, datafields: string, stringofids: any, additionalfilter: string, search: boolean, searchterm: string, limit: number, sortby: string): SearchConfig => {
 	const searchConfig: SearchConfig = {
 		method: 'post',
 		url: `${process.env.API_ROOT_URL}${endpoint}`,
@@ -165,6 +165,9 @@ const updateIGDBSearchConfig = (endpoint: string, datafields: string, stringofid
 	}
 	if (search) {
 		searchConfig.data = `search "${searchterm}"; fields ${datafields}; ${limit !== 0 ? ` limit ${limit};` : ''}`
+	}
+	else if (!search && sortby !== '') {
+		searchConfig.data = `fields ${datafields}; sort ${sortby}; where ${additionalfilter};`
 	}
 	else {
 		searchConfig.data = `fields ${datafields}; where id=(${stringofids})${additionalfilter !== '' ? ` & ${additionalfilter}` : ''};`
@@ -198,7 +201,7 @@ const getExternalGamesIter = async (external_games: string[]) => {
 	let searchConfig: SearchConfig
 	let arrOfUrls: Categories[] = []
 	for (let i = 0; i < external_games.length; i++) {
-		searchConfig = updateIGDBSearchConfig('external_games', 'category, url', external_games[i], 'category=(1,5,10,11,13,15,20,22,23,26,28,30,31,32,36,37,54,55)', false, '', 0)
+		searchConfig = updateIGDBSearchConfig('external_games', 'category, url', external_games[i], 'category=(1,5,10,11,13,15,20,22,23,26,28,30,31,32,36,37,54,55)', false, '', 0, '')
 		// searchConfig = updateIGDBSearchConfig('external_games', 'category, url', external_games[i], '', false, '', 0)
 		await axios(searchConfig)
 			.then((response) => {
@@ -225,7 +228,7 @@ const getLanguagesIter = async (language_supports: string[]) => {
 	let arrOfLanguages: Languages[] = []
 	for (let i = 0; i < language_supports.length; i++) {
 		let currentArrOfLanguages: Languages[] = []
-		searchConfig = updateIGDBSearchConfig('language_supports', 'language,language_support_type', language_supports[i], '', false, '', 0)
+		searchConfig = updateIGDBSearchConfig('language_supports', 'language,language_support_type', language_supports[i], '', false, '', 0, '')
 		let supporttypes = ''
 		let languageids = ''
 		await axios(searchConfig)
@@ -253,7 +256,7 @@ const getLanguagesIter = async (language_supports: string[]) => {
 				console.log(err)
 			})
 
-		searchConfig = updateIGDBSearchConfig('language_support_types', 'name', supporttypes, '', false, '', 0)
+		searchConfig = updateIGDBSearchConfig('language_support_types', 'name', supporttypes, '', false, '', 0, '')
 		await axios(searchConfig)
 			.then((response) => {
 				searchResults = response.data
@@ -271,7 +274,7 @@ const getLanguagesIter = async (language_supports: string[]) => {
 				console.log(err)
 			})
 
-		searchConfig = updateIGDBSearchConfig('languages', 'locale,name,native_name', languageids, '', false, '', 0)
+		searchConfig = updateIGDBSearchConfig('languages', 'locale,name,native_name', languageids, '', false, '', 0, '')
 		await axios(searchConfig)
 			.then((response) => {
 				searchResults = response.data

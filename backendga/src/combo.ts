@@ -59,7 +59,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 			error: 'No search term specified'
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings,artworks,category,cover,first_release_date,external_games,follows,game_modes,genres,hypes,involved_companies,keywords,name,platforms,player_perspectives,total_rating,total_rating_count,screenshots,similar_games,slug,storyline,summary,tags,themes,url,videos,websites,language_supports,game_localizations', '', '', true, searchterm, 1)
+	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings,artworks,category,cover,first_release_date,external_games,follows,game_modes,genres,hypes,involved_companies,keywords,name,platforms,player_perspectives,total_rating,total_rating_count,screenshots,similar_games,slug,storyline,summary,tags,themes,url,videos,websites,language_supports,game_localizations', '', '', true, searchterm, 1, '')
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data[0]
@@ -108,7 +108,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 	responseObj.language_supports = splitIGDBSearch(responseObj.language_supports.map(String))
 
 
-	searchConfig = updateIGDBSearchConfig('age_ratings', 'category,rating', responseObj!.age_ratings, 'category=(1,2)', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('age_ratings', 'category,rating', responseObj!.age_ratings, 'category=(1,2)', false, '', 0, '')
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data
@@ -122,7 +122,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 			console.log(err)
 		})
 
-	searchConfig = updateIGDBSearchConfig('artworks', 'url', responseObj.artworks, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('artworks', 'url', responseObj.artworks, '', false, '', 0, '')
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data
@@ -137,7 +137,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 			console.log(err)
 		})
 
-	searchConfig = updateIGDBSearchConfig('covers', 'url', responseObj.cover, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('covers', 'url', responseObj.cover, '', false, '', 0, '')
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data
@@ -149,7 +149,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 	responseObj.external_games = await getExternalGamesIter(responseObj.external_games)
 
-	searchConfig = updateIGDBSearchConfig('game_modes', 'name', responseObj.game_modes, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('game_modes', 'name', responseObj.game_modes, '', false, '', 0, '')
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data
@@ -165,7 +165,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 
 
-	searchConfig = updateIGDBSearchConfig('genres', 'name', responseObj.genres, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('genres', 'name', responseObj.genres, '', false, '', 0, '')
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data
@@ -180,7 +180,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 
 		})
 
-	searchConfig = updateIGDBSearchConfig('involved_companies', 'company', responseObj.involved_companies, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('involved_companies', 'company', responseObj.involved_companies, '', false, '', 0, '')
 	let idofCompanies = ''
 	await axios(searchConfig)
 		.then((response) => {
@@ -199,7 +199,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 
 		})
 
-	searchConfig = updateIGDBSearchConfig('companies', 'name,logo', idofCompanies, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('companies', 'name,logo', idofCompanies, '', false, '', 0, '')
 	let arrOfCompanies: Companies[] = []
 	let logoids = ''
 	await axios(searchConfig)
@@ -220,7 +220,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 			}
 		})
 
-	searchConfig = updateIGDBSearchConfig('company_logos', 'url', logoids, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('company_logos', 'url', logoids, '', false, '', 0, '')
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data
@@ -236,7 +236,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 
 
-	searchConfig = updateIGDBSearchConfig('keywords', 'name', responseObj.keywords, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('keywords', 'name', responseObj.keywords, '', false, '', 0, '')
 
 	await axios(searchConfig)
 		.then((response) => {
@@ -255,7 +255,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 	let arrOfPlatforms: Platforms[] = []
 	let platformlogoids = ''
 
-	searchConfig = updateIGDBSearchConfig('platforms', 'name,category,platform_logo', responseObj.platforms, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('platforms', 'name,category,platform_logo', responseObj.platforms, '', false, '', 0, '')
 
 	await axios(searchConfig)
 		.then((response) => {
@@ -280,7 +280,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 
 		})
 
-	searchConfig = updateIGDBSearchConfig('platform_logos', 'url', platformlogoids, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('platform_logos', 'url', platformlogoids, '', false, '', 0, '')
 
 	await axios(searchConfig)
 		.then((response) => {
@@ -296,7 +296,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 			responseObj.platforms = arrOfPlatforms
 		})
 
-	searchConfig = updateIGDBSearchConfig('player_perspectives', 'name', responseObj.player_perspectives, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('player_perspectives', 'name', responseObj.player_perspectives, '', false, '', 0, '')
 
 	await axios(searchConfig)
 		.then((response) => {
@@ -312,7 +312,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 
 		})
 
-	searchConfig = updateIGDBSearchConfig('screenshots', 'url', responseObj.screenshots, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('screenshots', 'url', responseObj.screenshots, '', false, '', 0, '')
 
 	await axios(searchConfig)
 		.then((response) => {
@@ -330,7 +330,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 
 
-	searchConfig = updateIGDBSearchConfig('games', 'name,cover', responseObj.similar_games, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('games', 'name,cover', responseObj.similar_games, '', false, '', 0, '')
 
 	await axios(searchConfig)
 		.then((response) => {
@@ -348,7 +348,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 	coverids = arrOfSimilarGames.map((cov) => cov.cover).join(',')
 
 	//get cover url's of each similar game
-	searchConfig = updateIGDBSearchConfig('covers', 'url', coverids, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('covers', 'url', coverids, '', false, '', 0, '')
 
 	await axios(searchConfig)
 		.then((response) => {
@@ -370,7 +370,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 			console.log(err)
 		})
 
-	searchConfig = updateIGDBSearchConfig('themes', 'name', responseObj.themes, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('themes', 'name', responseObj.themes, '', false, '', 0, '')
 
 	await axios(searchConfig)
 		.then((response) => {
@@ -383,7 +383,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 		})
 
 
-	searchConfig = updateIGDBSearchConfig('game_videos', 'name,video_id', responseObj.videos, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('game_videos', 'name,video_id', responseObj.videos, '', false, '', 0, '')
 
 	await axios(searchConfig)
 		.then((response) => {
@@ -402,7 +402,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 
 		})
 
-	searchConfig = updateIGDBSearchConfig('websites', 'category,url', responseObj.websites, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('websites', 'category,url', responseObj.websites, '', false, '', 0, '')
 
 	await axios(searchConfig)
 		.then((response) => {
@@ -423,7 +423,7 @@ app.post('/api/gamedetails', async (request: Request, response: Response) => {
 
 	responseObj.language_supports = await getLanguagesIter(responseObj.language_supports)
 
-	searchConfig = updateIGDBSearchConfig('game_localizations', 'name', responseObj.game_localizations, '', false, '', 0)
+	searchConfig = updateIGDBSearchConfig('game_localizations', 'name', responseObj.game_localizations, '', false, '', 0, '')
 
 	await axios(searchConfig)
 		.then((response) => {

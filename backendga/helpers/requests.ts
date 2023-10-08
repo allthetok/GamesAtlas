@@ -187,6 +187,22 @@ const updateIGDBSearchConfig = (endpoint: string, datafields: string, stringofid
 	return searchConfig
 }
 
+const updateIGDBSearchConfigMulti = (endpoint: string, datafields: string, additionalfilter: string, searchterm: string, limit: number, sortby: string): SearchConfig => {
+	const searchConfig: SearchConfig = {
+		method: 'post',
+		url: `${process.env.API_ROOT_URL}${endpoint}`,
+		headers: {
+			'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
+			'Client-ID': process.env.CLIENT_ID,
+			'Content-Type': 'text/plain',
+			'Cookie': '__cf_bm=Utg5TKlZGdxCgCn2UeuGW.LLOCZm6oHCCazU5AOMZjM-1692063194-0-AUdu+e0vn6rY+xWhK86IVLzsp03BXN3Wgq3P2CkRrTl56PwoVdQdbQaa1ysHtYnuWmX/WNREfgqIMVkEQEc9AEs='
+		},
+		data: ''
+	}
+	searchConfig.data = `query games "Filtered ${limit}" {fields ${datafields}; ${additionalfilter !== '' ? `where ${additionalfilter};` : ''} sort ${sortby}; limit ${limit};};`
+	return searchConfig
+}
+
 const iterateResponse = (data: any[], type: string | undefined, toPush: string[]): string[] => {
 	let arr: any[] = []
 	if (toPush[0] === 'url' && toPush.length === 1) {
@@ -197,7 +213,7 @@ const iterateResponse = (data: any[], type: string | undefined, toPush: string[]
 	return arr
 }
 
-const splitIGDBSearch = (data: string[] | Categories[] | Languages[]) => {
+const splitIGDBSearch = (data: string[] | number[] | Categories[] | Languages[]) => {
 	const dataStr: string[] = []
 	const chunkSize = 10
 	let chunkJoined: string
@@ -314,4 +330,4 @@ const getLanguagesIter = async (language_supports: string[]) => {
 
 
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, VideoObj, ScreenshotsObj, WebsiteObj, SimilarObj, ExploreObj }
+export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, VideoObj, ScreenshotsObj, WebsiteObj, SimilarObj, ExploreObj }

@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, ExploreObj } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, ExploreObj, updateIGDBSearchConfigMulti } from '../helpers/requests'
 require('dotenv').config()
 import express, { Request, Response } from 'express'
 import axios from 'axios'
@@ -635,16 +635,153 @@ app.post('/api/websites', async (request: Request, response: Response) => {
 	return response.status(200).json(responseObj)
 })
 
+// app.post('/api/explore', async (request: Request, response: Response) => {
+// 	const body = request.body
+// 	let searchResults: any
+// 	let errSearch = false
+// 	let searchConfig: SearchConfig
+// 	let responseObj: ExploreObj[] = []
+// 	let indResponseObj: ExploreObj
+// 	const sortBy = body.sortBy
+// 	const externalFilter = body.externalFilter
+// 	const limit = body.limit
+
+// 	if (sortBy === null || sortBy === '' || !sortBy) {
+// 		return response.status(400).json({
+// 			error: `No direction and sort specified: ${sortBy}`
+// 		})
+// 	}
+// 	else if (externalFilter === null || externalFilter === '' || !externalFilter) {
+// 		return response.status(400).json({
+// 			error: `No filter specified: ${externalFilter}`
+// 		})
+// 	}
+// 	else if (limit === null || limit === 0 || !limit) {
+// 		return response.status(400).json({
+// 			error: `No limit specified or limit equal to: ${limit}`
+// 		})
+// 	}
+
+
+// 	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings,cover,first_release_date,follows,name,platforms,total_rating,total_rating_count', '', externalFilter, false, '', limit, sortBy)
+// 	await axios(searchConfig)
+// 		.then(async (response) => {
+// 			searchResults = response.data
+// 			for (let i = 0; i < searchResults.length; i++) {
+// 				let otherSearchResults: any
+
+// 				indResponseObj = {
+// 					id: searchResults[i].id,
+// 					age_ratings: searchResults[i].age_ratings.join(','),
+// 					cover: searchResults[i].cover,
+// 					platforms: searchResults[i].platforms.join(','),
+// 					rating: searchResults[i].total_rating,
+// 					ratingCount: searchResults[i].total_rating_count,
+// 					releaseDate: new Date(searchResults[i].first_release_date*1000),
+// 					likes: searchResults[i].follows,
+// 					title: searchResults[i].name
+// 				}
+
+
+// 				searchConfig = updateIGDBSearchConfig('age_ratings', 'category,rating', indResponseObj!.age_ratings, 'category=(1,2)', false, '', 0, '')
+// 				await axios(searchConfig)
+// 					.then((response) => {
+// 						otherSearchResults = response.data
+// 						let age_ratingsobj: AgeRatings = {
+// 							'ESRB': response.data[0].rating,
+// 							'PEGI': response.data[1].rating
+// 						}
+// 						indResponseObj.age_ratings = age_ratingsobj
+// 					})
+// 					.catch((err) => {
+// 						console.log(err)
+// 					})
+
+// 				searchConfig = updateIGDBSearchConfig('covers', 'url', indResponseObj.cover, '', false, '', 0, '')
+// 				await axios(searchConfig)
+// 					.then((response) => {
+// 						otherSearchResults = response.data
+// 						response.data[0].url = response.data[0].url.replace('thumb', 'cover_big')
+// 						indResponseObj.cover = `https:${response.data[0].url}`
+// 					})
+// 					.catch((err) => {
+// 						console.log(err)
+// 					})
+
+// 				let arrOfPlatforms: Platforms[] = []
+// 				let platformlogoids = ''
+// 				searchConfig = updateIGDBSearchConfig('platforms', 'name,category,platform_logo', indResponseObj.platforms, '', false, '', 0, '')
+// 				await axios(searchConfig)
+// 					.then((response) => {
+// 						otherSearchResults = response.data
+// 						for (let i = 0; i < otherSearchResults.length; i++) {
+// 							arrOfPlatforms.push({
+// 								name: otherSearchResults[i].name,
+// 								category: otherSearchResults[i].category,
+// 								platform_logo: otherSearchResults[i].platform_logo,
+// 								url: ''
+// 							})
+// 							if (i === otherSearchResults.length - 1) {
+// 								platformlogoids = platformlogoids.concat(otherSearchResults[i].platform_logo)
+// 							}
+// 							else {
+// 								platformlogoids = platformlogoids.concat(`${otherSearchResults[i].platform_logo},`)
+// 							}
+// 						}
+// 					})
+// 					.catch((err) => {
+// 						console.log(err)
+// 					})
+
+// 				searchConfig = updateIGDBSearchConfig('platform_logos', 'url', platformlogoids, '', false, '', 0, '')
+// 				await axios(searchConfig)
+// 					.then((response) => {
+// 						otherSearchResults = response.data
+// 						for (let i = 0; i < otherSearchResults.length; i++) {
+// 							let objIndex = arrOfPlatforms.findIndex((obj => obj.platform_logo === otherSearchResults[i].id))
+// 							let oldValAtIndex = arrOfPlatforms[objIndex]
+// 							arrOfPlatforms[objIndex] = {
+// 								...oldValAtIndex,
+// 								url: `https:${otherSearchResults[i].url}`
+// 							}
+// 						}
+// 						indResponseObj.platforms = arrOfPlatforms
+// 					})
+// 					.catch((err) => {
+// 						console.log(err)
+// 					})
+// 				responseObj.push(indResponseObj)
+// 			}
+// 		})
+// 		.catch((err) => {
+// 			console.log(err)
+// 		})
+// 	if (errSearch) {
+// 		return response.status(404).json({
+// 			Message: 'Search yielded no results'
+// 		})
+// 	}
+
+// 	return response.status(200).json(responseObj)
+// })
+
 app.post('/api/explore', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
 	let errSearch = false
 	let searchConfig: SearchConfig
-	let responseObj: ExploreObj[] = []
-	let indResponseObj: ExploreObj
+	// let responseObj: ExploreObj[] = []
+	let responseObj: any[] = []
+	let indResponseObj: any
+	// let indResponseObj: ExploreObj
 	const sortBy = body.sortBy
 	const externalFilter = body.externalFilter
 	const limit = body.limit
+	// let logoHashmap = new Map<number, string>()
+	let logoSet: Set<number> = new Set<number>()
+	let allPlatforms: any
+	let arrOfPlatforms: Platforms[] = []
+
 
 	if (sortBy === null || sortBy === '' || !sortBy) {
 		return response.status(400).json({
@@ -662,19 +799,20 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 		})
 	}
 
-
-	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings,cover,first_release_date,follows,name,platforms,total_rating,total_rating_count', '', externalFilter, false, '', limit, sortBy)
+	searchConfig = updateIGDBSearchConfigMulti('multiquery','id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo,first_release_date,follows,name,total_rating,total_rating_count', externalFilter, '', limit, sortBy)
 	await axios(searchConfig)
 		.then(async (response) => {
-			searchResults = response.data
+			searchResults = response.data[0].result
+
 			for (let i = 0; i < searchResults.length; i++) {
 				let otherSearchResults: any
+				let platformlogoids = ''
 
 				indResponseObj = {
 					id: searchResults[i].id,
-					age_ratings: searchResults[i].age_ratings.join(','),
-					cover: searchResults[i].cover,
-					platforms: searchResults[i].platforms.join(','),
+					age_ratings: searchResults[i].age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2),
+					cover: `https:${searchResults[i].cover.url.replace('thumb', 'cover_big')}`,
+					platforms: searchResults[i].platforms,
 					rating: searchResults[i].total_rating,
 					ratingCount: searchResults[i].total_rating_count,
 					releaseDate: new Date(searchResults[i].first_release_date*1000),
@@ -682,56 +820,36 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 					title: searchResults[i].name
 				}
 
+				allPlatforms = indResponseObj.platforms.map((platform: any) => platform.platform_logo)
+				for (let k = 0; k < allPlatforms.length; k++) {
+					if (allPlatforms[k] > 0) {
+						logoSet.add(allPlatforms[k])
+					}
+					else {
+						continue
+					}
+				}
 
-				searchConfig = updateIGDBSearchConfig('age_ratings', 'category,rating', indResponseObj!.age_ratings, 'category=(1,2)', false, '', 0, '')
-				await axios(searchConfig)
-					.then((response) => {
-						otherSearchResults = response.data
-						let age_ratingsobj: AgeRatings = {
-							'ESRB': response.data[0].rating,
-							'PEGI': response.data[1].rating
-						}
-						indResponseObj.age_ratings = age_ratingsobj
-					})
-					.catch((err) => {
-						console.log(err)
-					})
+				const age_ratingsobj: AgeRatings = {
+					'ESRB': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1)[0].rating : 0,
+					'PEGI': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2)[0].rating : 0
+				}
+				indResponseObj.age_ratings = age_ratingsobj
 
-				searchConfig = updateIGDBSearchConfig('covers', 'url', indResponseObj.cover, '', false, '', 0, '')
-				await axios(searchConfig)
-					.then((response) => {
-						otherSearchResults = response.data
-						response.data[0].url = response.data[0].url.replace('thumb', 'cover_big')
-						indResponseObj.cover = `https:${response.data[0].url}`
-					})
-					.catch((err) => {
-						console.log(err)
-					})
-
-				let arrOfPlatforms: Platforms[] = []
-				let platformlogoids = ''
-				searchConfig = updateIGDBSearchConfig('platforms', 'name,category,platform_logo', indResponseObj.platforms, '', false, '', 0, '')
-				await axios(searchConfig)
-					.then((response) => {
-						otherSearchResults = response.data
-						for (let i = 0; i < otherSearchResults.length; i++) {
-							arrOfPlatforms.push({
-								name: otherSearchResults[i].name,
-								category: otherSearchResults[i].category,
-								platform_logo: otherSearchResults[i].platform_logo,
-								url: ''
-							})
-							if (i === otherSearchResults.length - 1) {
-								platformlogoids = platformlogoids.concat(otherSearchResults[i].platform_logo)
-							}
-							else {
-								platformlogoids = platformlogoids.concat(`${otherSearchResults[i].platform_logo},`)
-							}
-						}
-					})
-					.catch((err) => {
-						console.log(err)
-					})
+				for (let j = 0; j < indResponseObj.platforms.length; j++) {
+					if (indResponseObj.platforms[j].platform_logo > 0 ) {
+						arrOfPlatforms.push({
+							name: indResponseObj.platforms[j].name,
+							category: indResponseObj.platforms[j].category,
+							platform_logo: indResponseObj.platforms[j].platform_logo,
+							url: ''
+						})
+					}
+					else {
+						continue
+					}
+				}
+				platformlogoids = arrOfPlatforms.map((platform: any) => platform.platform_logo).join(',')
 
 				searchConfig = updateIGDBSearchConfig('platform_logos', 'url', platformlogoids, '', false, '', 0, '')
 				await axios(searchConfig)
@@ -756,6 +874,7 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 		.catch((err) => {
 			console.log(err)
 		})
+	const arrayofUniqueLogos = [...logoSet]
 	if (errSearch) {
 		return response.status(404).json({
 			Message: 'Search yielded no results'

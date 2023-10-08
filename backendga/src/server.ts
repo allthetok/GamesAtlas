@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, ExploreObj } from '../helpers/requests'
 require('dotenv').config()
 import express, { Request, Response } from 'express'
 import axios from 'axios'
@@ -132,7 +132,6 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 		})
 		.catch((err) => {
 			console.log(err)
-
 		})
 
 
@@ -639,25 +638,119 @@ app.post('/api/websites', async (request: Request, response: Response) => {
 app.post('/api/explore', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
-	let responseObj: SimilarObj = {
-		similar_games: ''
-	}
 	let errSearch = false
 	let searchConfig: SearchConfig
-	let arrOfSimilarGames: Covers[] = []
-	let coverids: string
-	const gameid = body.gameid
-	if (gameid === null || gameid === '' || !gameid) {
+	let responseObj: ExploreObj[] = []
+	let indResponseObj: ExploreObj
+	const sortBy = body.sortBy
+	const externalFilter = body.externalFilter
+	const limit = body.limit
+
+	if (sortBy === null || sortBy === '' || !sortBy) {
 		return response.status(400).json({
-			error: `No game id specified: ${gameid}`
+			error: `No direction and sort specified: ${sortBy}`
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'similar_games', gameid, '', false, '', 0, '')
+	else if (externalFilter === null || externalFilter === '' || !externalFilter) {
+		return response.status(400).json({
+			error: `No filter specified: ${externalFilter}`
+		})
+	}
+	else if (limit === null || limit === 0 || !limit) {
+		return response.status(400).json({
+			error: `No limit specified or limit equal to: ${limit}`
+		})
+	}
+
+
+	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings,cover,first_release_date,follows,name,platforms,total_rating,total_rating_count', '', externalFilter, false, '', limit, sortBy)
 	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data[0]
-			responseObj = {
-				similar_games: searchResults.similar_games.join(',')
+		.then(async (response) => {
+			searchResults = response.data
+			for (let i = 0; i < searchResults.length; i++) {
+				let otherSearchResults: any
+
+				indResponseObj = {
+					id: searchResults[i].id,
+					age_ratings: searchResults[i].age_ratings.join(','),
+					cover: searchResults[i].cover,
+					platforms: searchResults[i].platforms.join(','),
+					rating: searchResults[i].total_rating,
+					ratingCount: searchResults[i].total_rating_count,
+					releaseDate: new Date(searchResults[i].first_release_date*1000),
+					likes: searchResults[i].follows,
+					title: searchResults[i].name
+				}
+
+
+				searchConfig = updateIGDBSearchConfig('age_ratings', 'category,rating', indResponseObj!.age_ratings, 'category=(1,2)', false, '', 0, '')
+				await axios(searchConfig)
+					.then((response) => {
+						otherSearchResults = response.data
+						let age_ratingsobj: AgeRatings = {
+							'ESRB': response.data[0].rating,
+							'PEGI': response.data[1].rating
+						}
+						indResponseObj.age_ratings = age_ratingsobj
+					})
+					.catch((err) => {
+						console.log(err)
+					})
+
+				searchConfig = updateIGDBSearchConfig('covers', 'url', indResponseObj.cover, '', false, '', 0, '')
+				await axios(searchConfig)
+					.then((response) => {
+						otherSearchResults = response.data
+						response.data[0].url = response.data[0].url.replace('thumb', 'cover_big')
+						indResponseObj.cover = `https:${response.data[0].url}`
+					})
+					.catch((err) => {
+						console.log(err)
+					})
+
+				let arrOfPlatforms: Platforms[] = []
+				let platformlogoids = ''
+				searchConfig = updateIGDBSearchConfig('platforms', 'name,category,platform_logo', indResponseObj.platforms, '', false, '', 0, '')
+				await axios(searchConfig)
+					.then((response) => {
+						otherSearchResults = response.data
+						for (let i = 0; i < otherSearchResults.length; i++) {
+							arrOfPlatforms.push({
+								name: otherSearchResults[i].name,
+								category: otherSearchResults[i].category,
+								platform_logo: otherSearchResults[i].platform_logo,
+								url: ''
+							})
+							if (i === otherSearchResults.length - 1) {
+								platformlogoids = platformlogoids.concat(otherSearchResults[i].platform_logo)
+							}
+							else {
+								platformlogoids = platformlogoids.concat(`${otherSearchResults[i].platform_logo},`)
+							}
+						}
+					})
+					.catch((err) => {
+						console.log(err)
+					})
+
+				searchConfig = updateIGDBSearchConfig('platform_logos', 'url', platformlogoids, '', false, '', 0, '')
+				await axios(searchConfig)
+					.then((response) => {
+						otherSearchResults = response.data
+						for (let i = 0; i < otherSearchResults.length; i++) {
+							let objIndex = arrOfPlatforms.findIndex((obj => obj.platform_logo === otherSearchResults[i].id))
+							let oldValAtIndex = arrOfPlatforms[objIndex]
+							arrOfPlatforms[objIndex] = {
+								...oldValAtIndex,
+								url: `https:${otherSearchResults[i].url}`
+							}
+						}
+						indResponseObj.platforms = arrOfPlatforms
+					})
+					.catch((err) => {
+						console.log(err)
+					})
+				responseObj.push(indResponseObj)
 			}
 		})
 		.catch((err) => {
@@ -668,44 +761,6 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 			Message: 'Search yielded no results'
 		})
 	}
-
-	searchConfig = updateIGDBSearchConfig('games', 'name,cover', responseObj.similar_games, '', false, '', 0)
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfSimilarGames.push(
-					{
-						name: searchResults[i].name,
-						cover: searchResults[i].cover
-					}
-				)
-			}
-			responseObj.similar_games = arrOfSimilarGames
-		})
-	coverids = arrOfSimilarGames.map((cov) => cov.cover).join(',')
-	//get cover url's of each similar game
-	searchConfig = updateIGDBSearchConfig('covers', 'url', coverids, '', false, '', 0)
-
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			searchResults = searchResults.map((cov: any) => {
-				return { ...cov, url: cov.url.replace('thumb', 'cover_big') }
-			})
-			for (let i = 0; i < searchResults.length; i++) {
-				const covIndex: number = arrOfSimilarGames.findIndex((cov) => cov.cover === searchResults[i].id)
-				let oldValAtIndex = arrOfSimilarGames[covIndex]
-				arrOfSimilarGames[covIndex] = {
-					...oldValAtIndex,
-					cover: `https:${searchResults[i].url}`
-				}
-			}
-			responseObj.similar_games = arrOfSimilarGames
-		})
-		.catch((err) => {
-			console.log(err)
-		})
 
 	return response.status(200).json(responseObj)
 })

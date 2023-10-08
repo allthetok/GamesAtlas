@@ -93,6 +93,18 @@ type WebsiteObj = {
 	websites: string | Categories[]
 }
 
+type ExploreObj = {
+	id: number | null,
+	age_ratings: string | AgeRatings,
+	cover: number | string | null,
+	platforms: string | Platforms[],
+	rating: number | null,
+	ratingCount: number | null,
+	releaseDate: Date | null,
+	likes: number | null,
+	title: string
+}
+
 type AgeRatings = {
 	'ESRB': number,
 	'PEGI': number
@@ -167,7 +179,7 @@ const updateIGDBSearchConfig = (endpoint: string, datafields: string, stringofid
 		searchConfig.data = `search "${searchterm}"; fields ${datafields}; ${limit !== 0 ? ` limit ${limit};` : ''}`
 	}
 	else if (!search && sortby !== '') {
-		searchConfig.data = `fields ${datafields}; sort ${sortby}; where ${additionalfilter};`
+		searchConfig.data = `fields ${datafields}; sort ${sortby}; where ${additionalfilter}; limit ${limit};`
 	}
 	else {
 		searchConfig.data = `fields ${datafields}; where id=(${stringofids})${additionalfilter !== '' ? ` & ${additionalfilter}` : ''};`
@@ -302,4 +314,4 @@ const getLanguagesIter = async (language_supports: string[]) => {
 
 
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, VideoObj, ScreenshotsObj, WebsiteObj, SimilarObj }
+export { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, VideoObj, ScreenshotsObj, WebsiteObj, SimilarObj, ExploreObj }

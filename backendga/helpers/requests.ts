@@ -262,7 +262,7 @@ const getPlatformLogosIter = async (platformlogos: string[]) => {
 				for (let i = 0; i < searchResults.length; i++) {
 					let searchResultOrig = searchResults[i]
 					arrOfPlatformLogoUrls.push({
-						searchResultOrig,
+						...searchResultOrig,
 						url: `https:${searchResults[i].url}`
 					})
 				}

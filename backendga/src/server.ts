@@ -771,16 +771,17 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 	let errSearch = false
 	let searchConfig: SearchConfig
 	// let responseObj: ExploreObj[] = []
+	// let indResponseObj: ExploreObj
 	let responseObj: any[] = []
 	let indResponseObj: any
-	// let indResponseObj: ExploreObj
 	const sortBy = body.sortBy
 	const externalFilter = body.externalFilter
 	const limit = body.limit
-	// let logoHashmap = new Map<number, string>()
 	let logoSet: Set<number> = new Set<number>()
 	let allPlatforms: any
 	let arrOfPlatforms: Platforms[] = []
+	let arrayofUniqueLogos: string[] = []
+
 
 
 	if (sortBy === null || sortBy === '' || !sortBy) {
@@ -803,9 +804,7 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 	await axios(searchConfig)
 		.then(async (response) => {
 			searchResults = response.data[0].result
-
 			for (let i = 0; i < searchResults.length; i++) {
-				let otherSearchResults: any
 				let platformlogoids = ''
 
 				indResponseObj = {
@@ -825,9 +824,6 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 					if (allPlatforms[k] > 0) {
 						logoSet.add(allPlatforms[k])
 					}
-					else {
-						continue
-					}
 				}
 
 				const age_ratingsobj: AgeRatings = {
@@ -845,54 +841,38 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 							url: ''
 						})
 					}
-					else {
-						continue
-					}
 				}
 				platformlogoids = arrOfPlatforms.map((platform: any) => platform.platform_logo).join(',')
+				responseObj.push(indResponseObj)
 			}
-			responseObj.push(indResponseObj)
 		})
 		.catch((err) => {
 			console.log(err)
 		})
 
-	const arrayofUniqueLogos: string[] = splitIGDBSearch([...logoSet])
-	let arrOfPlatformLogos: any[] = await getPlatformLogosIter(arrayofUniqueLogos)
 
+	if (logoSet.size >= 10) {
+		arrayofUniqueLogos = splitIGDBSearch([...logoSet])
+	}
+	else {
+		arrayofUniqueLogos.push([...logoSet].join(','))
+	}
+	let arrOfPlatformLogos: any[] = await getPlatformLogosIter(arrayofUniqueLogos)
 	for (let i = 0; i < responseObj.length; i++) {
-		for (let j = 0; j < responseObj[i].platforms; j++) {
-			let originalPlatformVal = responseObj[i].platforms[j]
-			let platformUrl = arrOfPlatformLogos.filter((platform: any) => platform.id === originalPlatformVal.platform_logo)[0].url
-			responseObj = {
+		let editResponseObj = responseObj[i]
+		let arrofPlatformsInd = editResponseObj.platforms
+		for (let j = 0; j < arrofPlatformsInd.length; j++) {
+			let originalPlatformVal = arrofPlatformsInd[j]
+			let platformurl: string = arrOfPlatformLogos.filter((platform: any) => platform.id === originalPlatformVal.platform_logo).length !== 0 ? arrOfPlatformLogos.filter((platform: any) => platform.id === originalPlatformVal.platform_logo)[0].url : ''
+			arrofPlatformsInd[j] = {
 				...originalPlatformVal,
-				url: platformUrl
+				url: platformurl
 			}
 		}
+		responseObj[i].platforms = arrofPlatformsInd
 	}
-
-
-	// searchConfig = updateIGDBSearchConfig('platform_logos', 'url', platformlogoids, '', false, '', 0, '')
-	// 			await axios(searchConfig)
-	// 				.then((response) => {
-	// 					otherSearchResults = response.data
-	// 					for (let i = 0; i < otherSearchResults.length; i++) {
-	// 						let objIndex = arrOfPlatforms.findIndex((obj => obj.platform_logo === otherSearchResults[i].id))
-	// 						let oldValAtIndex = arrOfPlatforms[objIndex]
-	// 						arrOfPlatforms[objIndex] = {
-	// 							...oldValAtIndex,
-	// 							url: `https:${otherSearchResults[i].url}`
-	// 						}
-	// 					}
-	// 					indResponseObj.platforms = arrOfPlatforms
-	// 				})
-	// 				.catch((err) => {
-	// 					console.log(err)
-	// 				})
-
-
-
 	return response.status(200).json(responseObj)
+
 })
 
 

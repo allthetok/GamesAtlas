@@ -250,6 +250,30 @@ const getExternalGamesIter = async (external_games: string[]) => {
 	return arrOfUrls
 }
 
+const getPlatformLogosIter = async (platformlogos: string[]) => {
+	let searchResults: any
+	let searchConfig: SearchConfig
+	let arrOfPlatformLogoUrls: any = []
+	for (let i = 0; i < platformlogos.length; i++) {
+		searchConfig = updateIGDBSearchConfig('platform_logos', 'url', platformlogos[i], '', false, '', 0, '')
+		await axios(searchConfig)
+			.then((response) => {
+				searchResults = response.data
+				for (let i = 0; i < searchResults.length; i++) {
+					let searchResultOrig = searchResults[i]
+					arrOfPlatformLogoUrls.push({
+						searchResultOrig,
+						url: `https:${searchResults[i].url}`
+					})
+				}
+			})
+			.catch((err) => {
+				console.log(err)
+			})
+	}
+	return arrOfPlatformLogoUrls
+}
+
 const getLanguagesIter = async (language_supports: string[]) => {
 	let searchResults: any
 	let searchConfig: SearchConfig
@@ -330,4 +354,4 @@ const getLanguagesIter = async (language_supports: string[]) => {
 
 
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, VideoObj, ScreenshotsObj, WebsiteObj, SimilarObj, ExploreObj }
+export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, Covers, OverviewObj, ArtworkObj, LanguageObj, VideoObj, ScreenshotsObj, WebsiteObj, SimilarObj, ExploreObj }

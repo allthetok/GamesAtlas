@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, ExploreObj, updateIGDBSearchConfigMulti } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, ExploreObj, updateIGDBSearchConfigMulti, getPlatformLogosIter } from '../helpers/requests'
 require('dotenv').config()
 import express, { Request, Response } from 'express'
 import axios from 'axios'
@@ -850,36 +850,47 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 					}
 				}
 				platformlogoids = arrOfPlatforms.map((platform: any) => platform.platform_logo).join(',')
-
-				searchConfig = updateIGDBSearchConfig('platform_logos', 'url', platformlogoids, '', false, '', 0, '')
-				await axios(searchConfig)
-					.then((response) => {
-						otherSearchResults = response.data
-						for (let i = 0; i < otherSearchResults.length; i++) {
-							let objIndex = arrOfPlatforms.findIndex((obj => obj.platform_logo === otherSearchResults[i].id))
-							let oldValAtIndex = arrOfPlatforms[objIndex]
-							arrOfPlatforms[objIndex] = {
-								...oldValAtIndex,
-								url: `https:${otherSearchResults[i].url}`
-							}
-						}
-						indResponseObj.platforms = arrOfPlatforms
-					})
-					.catch((err) => {
-						console.log(err)
-					})
-				responseObj.push(indResponseObj)
 			}
+			responseObj.push(indResponseObj)
 		})
 		.catch((err) => {
 			console.log(err)
 		})
-	const arrayofUniqueLogos = [...logoSet]
-	if (errSearch) {
-		return response.status(404).json({
-			Message: 'Search yielded no results'
-		})
+
+	const arrayofUniqueLogos: string[] = splitIGDBSearch([...logoSet])
+	let arrOfPlatformLogos: any[] = await getPlatformLogosIter(arrayofUniqueLogos)
+
+	for (let i = 0; i < responseObj.length; i++) {
+		for (let j = 0; j < responseObj[i].platforms; j++) {
+			let originalPlatformVal = responseObj[i].platforms[j]
+			let platformUrl = arrOfPlatformLogos.filter((platform: any) => platform.id === originalPlatformVal.platform_logo)[0].url
+			responseObj = {
+				...originalPlatformVal,
+				url: platformUrl
+			}
+		}
 	}
+
+
+	// searchConfig = updateIGDBSearchConfig('platform_logos', 'url', platformlogoids, '', false, '', 0, '')
+	// 			await axios(searchConfig)
+	// 				.then((response) => {
+	// 					otherSearchResults = response.data
+	// 					for (let i = 0; i < otherSearchResults.length; i++) {
+	// 						let objIndex = arrOfPlatforms.findIndex((obj => obj.platform_logo === otherSearchResults[i].id))
+	// 						let oldValAtIndex = arrOfPlatforms[objIndex]
+	// 						arrOfPlatforms[objIndex] = {
+	// 							...oldValAtIndex,
+	// 							url: `https:${otherSearchResults[i].url}`
+	// 						}
+	// 					}
+	// 					indResponseObj.platforms = arrOfPlatforms
+	// 				})
+	// 				.catch((err) => {
+	// 					console.log(err)
+	// 				})
+
+
 
 	return response.status(200).json(responseObj)
 })

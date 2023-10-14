@@ -810,7 +810,7 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 				indResponseObj = {
 					id: searchResults[i].id,
 					age_ratings: searchResults[i].age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2),
-					cover: `https:${searchResults[i].cover.url.replace('thumb', 'cover_big')}`,
+					cover: `https:${searchResults[i].cover.url.replace('thumb', 't_1080p')}`,
 					platforms: searchResults[i].platforms,
 					rating: searchResults[i].total_rating,
 					ratingCount: searchResults[i].total_rating_count,

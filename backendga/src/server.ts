@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, ExploreObj, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, ExploreObj, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody } from '../helpers/requests'
 require('dotenv').config()
 import express, { Request, Response } from 'express'
 import axios from 'axios'
@@ -775,10 +775,11 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 	// let indResponseObj: ExploreObj
 	let responseObj: any[] = []
 	let indResponseObj: any
-	const sortBy = body.sortBy
-	const externalFilter = body.externalFilter
-	const platformFamily = body.platformFamily !== '' ? platformFamilyQuerified(body.platformFamily) : ''
-	const limit = body.limit
+	// const sortBy = sortMap.get(body.sortBy)
+	// const sortDirection = body.sortDirection
+	// const externalFilter = body.externalFilter
+	// const platformFamily = body.platformFamily !== '' ? platformFamilyQuerified(body.platformFamily) : ''
+	// const limit = body.limit
 	let logoSet: Set<number> = new Set<number>()
 	let allPlatforms: any
 	let arrOfPlatforms: Platforms[] = []
@@ -786,21 +787,28 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 
 
 
-	if (sortBy === null || sortBy === '' || !sortBy) {
+	if (body.sortBy === null || body.sortBy === '' || !body.sortBy) {
 		return response.status(400).json({
-			error: `No direction and sort specified: ${sortBy}`
+			error: `No direction and sort specified: ${body.sortBy}`
 		})
 	}
-	else if (externalFilter === null || externalFilter === '' || !externalFilter) {
+	else if (body.externalFilter === null || body.externalFilter === '' || !body.externalFilter) {
 		return response.status(400).json({
-			error: `No filter specified: ${externalFilter}`
+			error: `No filter specified: ${body.sortBy}`
 		})
 	}
-	else if (limit === null || limit === 0 || !limit) {
+	else if (body.limit === null || body.limit === 0 || !body.limit) {
 		return response.status(400).json({
-			error: `No limit specified or limit equal to: ${limit}`
+			error: `No limit specified or limit equal to: ${body.limit}`
 		})
 	}
+	else if (body.sortDirection === null || body.sortDirection === '' || !body.sortDirection) {
+		return response.status(400).json({
+			error: `No limit specified or limit equal to: ${body.limit}`
+		})
+	}
+
+	const { externalFilter, platformFamily, limit, sortBy } = parseBody(body)
 
 	searchConfig = updateIGDBSearchConfigMulti('multiquery','id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo,first_release_date,follows,name,total_rating,total_rating_count', externalFilter, platformFamily, limit, sortBy)
 	console.log(searchConfig)

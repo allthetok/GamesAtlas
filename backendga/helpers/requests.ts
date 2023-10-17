@@ -386,24 +386,35 @@ const parseBody = (requestBody: any) => {
 	// const externalFilter = requestBody.externalFilter
 	// const platformFamily = requestBody.platformFamily !== '' ? platformFamilyQuerified(requestBody.platformFamily) : ''
 	// const limit = requestBody.limit
-	const { sortBy, sortDirection, externalFilter, platformFamily, limit } = requestBody
+	const { sortBy, sortDirection, externalFilter, nullable, platformFamily, limit } = requestBody
 	const sortJoined = `${sortMap.get(sortBy)} ${sortDirection}`
 	const platformFamilyMapped = platformFamily !== '' ? platformFamilyQuerified(platformFamily) : ''
+	const externalFilterJoined = externalFilter.concat(parseNullable(nullable))
 	const SearchConfigObject = {
 		sortBy: sortJoined,
-		externalFilter: externalFilter,
+		externalFilter: externalFilterJoined,
 		platformFamily : platformFamilyMapped,
 		limit: limit
 	}
 	return SearchConfigObject
 }
 
+const parseNullable = (nullableStr: string) => {
+	const nullableArr: string[] = nullableStr.split(', ')
+	let formattedString = ''
+	for (let i = 0; i < nullableArr.length; i++) {
+		formattedString = formattedString.concat(' & ', nullableArr[i], '!=n')
+	}
+	return formattedString
+}
+
 // {
-//     "sortBy": "IGDB Rating desc",
+//     "sortBy": "IGDB Rating",
+//     "sortDirection": "desc",
 //     "externalFilter": "total_rating_count > 50 & age_ratings!=n & follows != n",
-//     "platformFamily": "PC",
-//     "limit": "2"
+//     "platformFamily": "",
+//     "limit": "10"
 // }
 
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, Covers, OverviewObj, ArtworkObj, LanguageObj, VideoObj, ScreenshotsObj, WebsiteObj, SimilarObj, ExploreObj, platformFamilyQuerified, parseBody }
+export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, Covers, OverviewObj, ArtworkObj, LanguageObj, VideoObj, ScreenshotsObj, WebsiteObj, SimilarObj, ExploreObj, platformFamilyQuerified, parseBody, parseNullable }

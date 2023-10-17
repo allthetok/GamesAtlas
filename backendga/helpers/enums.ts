@@ -21,4 +21,5 @@ const platformMap = new Map<string, string[]>([
 	['PC', ['6']]
 ])
 
+
 export { Language_support_types, sortMap, platformMap }

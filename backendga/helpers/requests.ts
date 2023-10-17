@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import axios from 'axios'
 import { Request, Response, NextFunction } from 'express'
+import { sortMap, platformMap } from '../helpers/enums'
 require('dotenv').config()
 
 type SearchConfig = {
@@ -187,7 +188,7 @@ const updateIGDBSearchConfig = (endpoint: string, datafields: string, stringofid
 	return searchConfig
 }
 
-const updateIGDBSearchConfigMulti = (endpoint: string, datafields: string, additionalfilter: string, searchterm: string, limit: number, sortby: string): SearchConfig => {
+const updateIGDBSearchConfigMulti = (endpoint: string, datafields: string, additionalfilter: string, platforms: string, limit: number, sortby: string): SearchConfig => {
 	const searchConfig: SearchConfig = {
 		method: 'post',
 		url: `${process.env.API_ROOT_URL}${endpoint}`,
@@ -199,7 +200,10 @@ const updateIGDBSearchConfigMulti = (endpoint: string, datafields: string, addit
 		},
 		data: ''
 	}
-	searchConfig.data = `query games "Filtered ${limit}" {fields ${datafields}; ${additionalfilter !== '' ? `where ${additionalfilter};` : ''} sort ${sortby}; limit ${limit};};`
+	searchConfig.data = `query games "Filtered ${limit}" {fields ${datafields}; ${additionalfilter !== '' ? `where ${additionalfilter} ${platforms !== '' ? platforms : ''};` : ''} sort ${sortby}; limit ${limit};};`
+
+	// searchConfig.data = `query games "Filtered ${limit}" {fields ${datafields}; ${additionalfilter !== '' ? `where ${additionalfilter};` : ''} sort ${sortby}; limit ${limit};};`
+	console.log(searchConfig)
 	return searchConfig
 }
 
@@ -349,9 +353,34 @@ const getLanguagesIter = async (language_supports: string[]) => {
 	return arrOfLanguages
 }
 
+const platformFamilyQuerified = (platform: string) => {
+	// const platformFamily = platformMap.get(platform)
+	// let platformStr = '&('
+
+	// if (platformFamily!.length === 1) {
+	// 	platformStr += `platforms = {${platformFamily![0]}}`
+	// }
+	// else if (platformFamily!.length === 2) {
+	// 	platformStr += `platforms = {${platformFamily![0]}} | platforms = {${platformFamily![1]}}`
+	// }
+	// else {
+	// 	for (let i = 0; i < platformFamily!.length; i++) {
+	// 		if (i === platformFamily!.length - 1) {
+	// 			platformStr += `platforms = {${platformFamily![i]}}`
+	// 		}
+	// 		else {
+	// 			platformStr += `platforms = {${platformFamily![i]}} | `
+	// 		}
+	// 	}
+	// }
+	// platformStr += ')'
+	// return platformStr
+	const platformFamily = platformMap.get(platform)
+	const platformStr = '& platforms=(' + platformFamily?.join(',') + ')'
+	return platformStr
+
+}
 
 
 
-
-
-export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, Covers, OverviewObj, ArtworkObj, LanguageObj, VideoObj, ScreenshotsObj, WebsiteObj, SimilarObj, ExploreObj }
+export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, Covers, OverviewObj, ArtworkObj, LanguageObj, VideoObj, ScreenshotsObj, WebsiteObj, SimilarObj, ExploreObj, platformFamilyQuerified }

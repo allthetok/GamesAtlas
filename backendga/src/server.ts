@@ -3,13 +3,14 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, ExploreObj, updateIGDBSearchConfigMulti, getPlatformLogosIter } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, ExploreObj, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified } from '../helpers/requests'
 require('dotenv').config()
 import express, { Request, Response } from 'express'
 import axios from 'axios'
 import cors from 'cors'
 import pg, { QueryResult } from 'pg'
 import bcrypt from 'bcrypt'
+import { sortMap, platformMap } from '../helpers/enums'
 const app = express()
 
 app.use(express.json())
@@ -776,6 +777,7 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 	let indResponseObj: any
 	const sortBy = body.sortBy
 	const externalFilter = body.externalFilter
+	const platformFamily = body.platformFamily !== '' ? platformFamilyQuerified(body.platformFamily) : ''
 	const limit = body.limit
 	let logoSet: Set<number> = new Set<number>()
 	let allPlatforms: any
@@ -800,16 +802,16 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 		})
 	}
 
-	searchConfig = updateIGDBSearchConfigMulti('multiquery','id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo,first_release_date,follows,name,total_rating,total_rating_count', externalFilter, '', limit, sortBy)
+	searchConfig = updateIGDBSearchConfigMulti('multiquery','id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo,first_release_date,follows,name,total_rating,total_rating_count', externalFilter, platformFamily, limit, sortBy)
+	console.log(searchConfig)
 	await axios(searchConfig)
 		.then(async (response) => {
 			searchResults = response.data[0].result
 			for (let i = 0; i < searchResults.length; i++) {
 				let platformlogoids = ''
-
 				indResponseObj = {
 					id: searchResults[i].id,
-					age_ratings: searchResults[i].age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2),
+					age_ratings: searchResults[i].age_ratings !== undefined ? searchResults[i].age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
 					cover: `https:${searchResults[i].cover.url.replace('thumb', '1080p')}`,
 					platforms: searchResults[i].platforms,
 					rating: searchResults[i].total_rating,

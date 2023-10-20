@@ -10,7 +10,7 @@ import axios from 'axios'
 import cors from 'cors'
 import pg, { QueryResult } from 'pg'
 import bcrypt from 'bcrypt'
-import { sortMap, platformMap } from '../helpers/enums'
+import { sortMap, platformMap, genreMap } from '../helpers/enums'
 const app = express()
 
 app.use(express.json())
@@ -884,6 +884,15 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 	return response.status(200).json(responseObj)
 
 })
+
+
+
+// query games "Filtered 2" {fields id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count, genres.name; 
+// 	where total_rating_count > 100 & age_ratings.rating!=n & platforms=(130,4,41,18,22,20,21,33,5);
+// 		sort total_rating desc; 
+// 		limit 25;
+// 	};
+	
 
 
 const PORT = process.env.API_PORT || 3001

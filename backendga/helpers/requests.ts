@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import axios from 'axios'
 import { Request, Response, NextFunction } from 'express'
-import { sortMap, platformMap } from '../helpers/enums'
+import { sortMap, platformMap, genreMap } from '../helpers/enums'
 require('dotenv').config()
 
 type SearchConfig = {
@@ -381,15 +381,11 @@ const platformFamilyQuerified = (platform: string) => {
 }
 
 const parseBody = (requestBody: any) => {
-	// const sortBy = sortMap.get(requestBody.sortBy)
-	// const sortDirection = requestBody.sortDirection
-	// const externalFilter = requestBody.externalFilter
-	// const platformFamily = requestBody.platformFamily !== '' ? platformFamilyQuerified(requestBody.platformFamily) : ''
-	// const limit = requestBody.limit
-	const { sortBy, sortDirection, externalFilter, nullable, platformFamily, limit } = requestBody
+	const { sortBy, sortDirection, externalFilter, nullable, platformFamily, limit, genres } = requestBody
 	const sortJoined = `${sortMap.get(sortBy)} ${sortDirection}`
 	const platformFamilyMapped = platformFamily !== '' ? platformFamilyQuerified(platformFamily) : ''
-	const externalFilterJoined = externalFilter.concat(parseNullable(nullable))
+
+	const externalFilterJoined = externalFilter.concat(parseNullable(nullable), genres !== '' ? ` ${parseGenres(genres)}` : '')
 	const SearchConfigObject = {
 		sortBy: sortJoined,
 		externalFilter: externalFilterJoined,
@@ -406,6 +402,22 @@ const parseNullable = (nullableStr: string) => {
 		formattedString = formattedString.concat(' & ', nullableArr[i], '!=n')
 	}
 	return formattedString
+}
+
+const parseGenres = (genres: string) => {
+	let formattedString = '& genres=['
+	if (!genres.includes(', ')) {
+		formattedString = formattedString.concat(`${genreMap.get(genres)}]`)
+		return formattedString
+	}
+	else {
+		const genresArr: string[] = genres.split(', ')
+		for (let i = 0; i < genresArr.length; i++) {
+			formattedString = i !== genresArr.length - 1 ? formattedString.concat(`${genreMap.get(genresArr[i])}, `) : formattedString.concat(`${genreMap.get(genresArr[i])}]`)
+		}
+	}
+	return formattedString
+	
 }
 
 // {

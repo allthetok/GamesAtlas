@@ -810,7 +810,7 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 
 	const { externalFilter, platformFamily, limit, sortBy } = parseBody(body)
 
-	searchConfig = updateIGDBSearchConfigMulti('multiquery','id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo,first_release_date,follows,name,total_rating,total_rating_count', externalFilter, platformFamily, limit, sortBy)
+	searchConfig = updateIGDBSearchConfigMulti('multiquery','id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo,first_release_date,follows,name,total_rating,total_rating_count,genres.name', externalFilter, platformFamily, limit, sortBy)
 	console.log(searchConfig)
 	await axios(searchConfig)
 		.then(async (response) => {
@@ -826,7 +826,8 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 					ratingCount: searchResults[i].total_rating_count,
 					releaseDate: new Date(searchResults[i].first_release_date*1000),
 					likes: searchResults[i].follows,
-					title: searchResults[i].name
+					title: searchResults[i].name,
+					genres: searchResults[i].genres
 				}
 
 				allPlatforms = indResponseObj.platforms.map((platform: any) => platform.platform_logo)

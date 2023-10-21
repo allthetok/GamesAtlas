@@ -780,10 +780,10 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 	// const externalFilter = body.externalFilter
 	// const platformFamily = body.platformFamily !== '' ? platformFamilyQuerified(body.platformFamily) : ''
 	// const limit = body.limit
-	let logoSet: Set<number> = new Set<number>()
-	let allPlatforms: any
-	let arrOfPlatforms: Platforms[] = []
-	let arrayofUniqueLogos: string[] = []
+	// let logoSet: Set<number> = new Set<number>()
+	// let allPlatforms: any
+	// let arrOfPlatforms: Platforms[] = []
+	// let arrayofUniqueLogos: string[] = []
 
 
 
@@ -816,12 +816,19 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 		.then(async (response) => {
 			searchResults = response.data[0].result
 			for (let i = 0; i < searchResults.length; i++) {
-				let platformlogoids = ''
+				// let platformlogoids = ''
 				indResponseObj = {
 					id: searchResults[i].id,
 					age_ratings: searchResults[i].age_ratings !== undefined ? searchResults[i].age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
 					cover: `https:${searchResults[i].cover.url.replace('thumb', '1080p')}`,
-					platforms: searchResults[i].platforms,
+					platforms: searchResults[i].platforms.map((indPlatform: any) => ({
+						name: indPlatform.name,
+						category: indPlatform.category,
+						platform_logo: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
+						id: indPlatform.id,
+						platform_amily: indPlatform.platform_family,
+
+					})),
 					rating: searchResults[i].total_rating,
 					ratingCount: searchResults[i].total_rating_count,
 					releaseDate: new Date(searchResults[i].first_release_date*1000),
@@ -834,12 +841,12 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 						officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''}))
 				}
 
-				allPlatforms = indResponseObj.platforms.map((platform: any) => platform.platform_logo)
-				for (let k = 0; k < allPlatforms.length; k++) {
-					if (allPlatforms[k] > 0) {
-						logoSet.add(allPlatforms[k])
-					}
-				}
+				// allPlatforms = indResponseObj.platforms.map((platform: any) => platform.platform_logo)
+				// for (let k = 0; k < allPlatforms.length; k++) {
+				// 	if (allPlatforms[k] > 0) {
+				// 		logoSet.add(allPlatforms[k])
+				// 	}
+				// }
 
 				const age_ratingsobj: AgeRatings = {
 					'ESRB': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1)[0].rating : 0,
@@ -847,17 +854,17 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 				}
 				indResponseObj.age_ratings = age_ratingsobj
 
-				for (let j = 0; j < indResponseObj.platforms.length; j++) {
-					if (indResponseObj.platforms[j].platform_logo > 0 ) {
-						arrOfPlatforms.push({
-							name: indResponseObj.platforms[j].name,
-							category: indResponseObj.platforms[j].category,
-							platform_logo: indResponseObj.platforms[j].platform_logo,
-							url: ''
-						})
-					}
-				}
-				platformlogoids = arrOfPlatforms.map((platform: any) => platform.platform_logo).join(',')
+				// for (let j = 0; j < indResponseObj.platforms.length; j++) {
+				// 	if (indResponseObj.platforms[j].platform_logo > 0 ) {
+				// 		arrOfPlatforms.push({
+				// 			name: indResponseObj.platforms[j].name,
+				// 			category: indResponseObj.platforms[j].category,
+				// 			platform_logo: indResponseObj.platforms[j].platform_logo,
+				// 			url: ''
+				// 		})
+				// 	}
+				// }
+				// platformlogoids = arrOfPlatforms.map((platform: any) => platform.platform_logo).join(',')
 				responseObj.push(indResponseObj)
 			}
 		})
@@ -866,26 +873,26 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 		})
 
 
-	if (logoSet.size >= 10) {
-		arrayofUniqueLogos = splitIGDBSearch([...logoSet])
-	}
-	else {
-		arrayofUniqueLogos.push([...logoSet].join(','))
-	}
-	let arrOfPlatformLogos: any[] = await getPlatformLogosIter(arrayofUniqueLogos)
-	for (let i = 0; i < responseObj.length; i++) {
-		let editResponseObj = responseObj[i]
-		let arrofPlatformsInd = editResponseObj.platforms
-		for (let j = 0; j < arrofPlatformsInd.length; j++) {
-			let originalPlatformVal = arrofPlatformsInd[j]
-			let platformurl: string = arrOfPlatformLogos.filter((platform: any) => platform.id === originalPlatformVal.platform_logo).length !== 0 ? arrOfPlatformLogos.filter((platform: any) => platform.id === originalPlatformVal.platform_logo)[0].url : ''
-			arrofPlatformsInd[j] = {
-				...originalPlatformVal,
-				url: platformurl
-			}
-		}
-		responseObj[i].platforms = arrofPlatformsInd
-	}
+	// if (logoSet.size >= 10) {
+	// 	arrayofUniqueLogos = splitIGDBSearch([...logoSet])
+	// }
+	// else {
+	// 	arrayofUniqueLogos.push([...logoSet].join(','))
+	// }
+	// let arrOfPlatformLogos: any[] = await getPlatformLogosIter(arrayofUniqueLogos)
+	// for (let i = 0; i < responseObj.length; i++) {
+	// 	let editResponseObj = responseObj[i]
+	// 	let arrofPlatformsInd = editResponseObj.platforms
+	// 	for (let j = 0; j < arrofPlatformsInd.length; j++) {
+	// 		let originalPlatformVal = arrofPlatformsInd[j]
+	// 		let platformurl: string = arrOfPlatformLogos.filter((platform: any) => platform.id === originalPlatformVal.platform_logo).length !== 0 ? arrOfPlatformLogos.filter((platform: any) => platform.id === originalPlatformVal.platform_logo)[0].url : ''
+	// 		arrofPlatformsInd[j] = {
+	// 			...originalPlatformVal,
+	// 			url: platformurl
+	// 		}
+	// 	}
+	// 	responseObj[i].platforms = arrofPlatformsInd
+	// }
 	return response.status(200).json(responseObj)
 
 })

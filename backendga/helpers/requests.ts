@@ -354,27 +354,6 @@ const getLanguagesIter = async (language_supports: string[]) => {
 }
 
 const platformFamilyQuerified = (platform: string) => {
-	// const platformFamily = platformMap.get(platform)
-	// let platformStr = '&('
-
-	// if (platformFamily!.length === 1) {
-	// 	platformStr += `platforms = {${platformFamily![0]}}`
-	// }
-	// else if (platformFamily!.length === 2) {
-	// 	platformStr += `platforms = {${platformFamily![0]}} | platforms = {${platformFamily![1]}}`
-	// }
-	// else {
-	// 	for (let i = 0; i < platformFamily!.length; i++) {
-	// 		if (i === platformFamily!.length - 1) {
-	// 			platformStr += `platforms = {${platformFamily![i]}}`
-	// 		}
-	// 		else {
-	// 			platformStr += `platforms = {${platformFamily![i]}} | `
-	// 		}
-	// 	}
-	// }
-	// platformStr += ')'
-	// return platformStr
 	const platformFamily = platformMap.get(platform)
 	const platformStr = '& platforms=(' + platformFamily?.join(',') + ')'
 	return platformStr
@@ -419,14 +398,5 @@ const parseGenres = (genres: string) => {
 	return formattedString
 	
 }
-
-// {
-//     "sortBy": "IGDB Rating",
-//     "sortDirection": "desc",
-//     "externalFilter": "total_rating_count > 50 & age_ratings!=n & follows != n",
-//     "platformFamily": "",
-//     "limit": "10"
-// }
-
 
 export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, Covers, OverviewObj, ArtworkObj, LanguageObj, VideoObj, ScreenshotsObj, WebsiteObj, SimilarObj, ExploreObj, platformFamilyQuerified, parseBody, parseNullable }

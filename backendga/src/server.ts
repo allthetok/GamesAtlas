@@ -810,7 +810,7 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 
 	const { externalFilter, platformFamily, limit, sortBy } = parseBody(body)
 
-	searchConfig = updateIGDBSearchConfigMulti('multiquery','id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo,first_release_date,follows,name,total_rating,total_rating_count,genres.name', externalFilter, platformFamily, limit, sortBy)
+	searchConfig = updateIGDBSearchConfigMulti('multiquery','id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count, genres.name, involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category', externalFilter, platformFamily, limit, sortBy)
 	console.log(searchConfig)
 	await axios(searchConfig)
 		.then(async (response) => {
@@ -827,7 +827,11 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 					releaseDate: new Date(searchResults[i].first_release_date*1000),
 					likes: searchResults[i].follows,
 					title: searchResults[i].name,
-					genres: searchResults[i].genres
+					genres: searchResults[i].genres,
+					involved_companies: searchResults[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({ 
+						name: indCompany.company.name,
+						url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
+						officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''}))
 				}
 
 				allPlatforms = indResponseObj.platforms.map((platform: any) => platform.platform_logo)
@@ -885,16 +889,6 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 	return response.status(200).json(responseObj)
 
 })
-
-
-
-// query games "Filtered 2" {fields id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count, genres.name; 
-// 	where total_rating_count > 100 & age_ratings.rating!=n & platforms=(130,4,41,18,22,20,21,33,5);
-// 		sort total_rating desc; 
-// 		limit 25;
-// 	};
-	
-
 
 const PORT = process.env.API_PORT || 3001
 

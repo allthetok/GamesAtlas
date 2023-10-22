@@ -831,7 +831,7 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 					})),
 					rating: searchResults[i].total_rating,
 					ratingCount: searchResults[i].total_rating_count,
-					releaseDate: new Date(searchResults[i].first_release_date*1000),
+					releaseDate: searchResults[i].first_release_date ? new Date(searchResults[i].first_release_date*1000) : 'N/A',
 					likes: searchResults[i].follows,
 					title: searchResults[i].name,
 					genres: searchResults[i].genres,

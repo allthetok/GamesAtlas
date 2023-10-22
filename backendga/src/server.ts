@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, ExploreObj, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, ExploreObj, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames } from '../helpers/requests'
 require('dotenv').config()
 import express, { Request, Response } from 'express'
 import axios from 'axios'
@@ -824,9 +824,9 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 					platforms: searchResults[i].platforms.map((indPlatform: any) => ({
 						name: indPlatform.name,
 						category: indPlatform.category,
-						platform_logo: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
+						url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
 						id: indPlatform.id,
-						platform_amily: indPlatform.platform_family,
+						platform_family: indPlatform.platform_family,
 
 					})),
 					rating: searchResults[i].total_rating,
@@ -835,10 +835,10 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 					likes: searchResults[i].follows,
 					title: searchResults[i].name,
 					genres: searchResults[i].genres,
-					involved_companies: searchResults[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({ 
+					involved_companies: searchResults[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({
 						name: indCompany.company.name,
 						url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
-						officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''}))
+						officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : '' }))
 				}
 
 				// allPlatforms = indResponseObj.platforms.map((platform: any) => platform.platform_logo)
@@ -848,11 +848,11 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 				// 	}
 				// }
 
-				const age_ratingsobj: AgeRatings = {
+				const ageRatingsobj: AgeRatings = {
 					'ESRB': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1)[0].rating : 0,
 					'PEGI': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2)[0].rating : 0
 				}
-				indResponseObj.age_ratings = age_ratingsobj
+				indResponseObj.age_ratings = ageRatingsobj
 
 				// for (let j = 0; j < indResponseObj.platforms.length; j++) {
 				// 	if (indResponseObj.platforms[j].platform_logo > 0 ) {
@@ -893,6 +893,85 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 	// 	}
 	// 	responseObj[i].platforms = arrofPlatformsInd
 	// }
+	return response.status(200).json(responseObj)
+
+})
+
+app.post('/api/altoverview', async (request: Request, response: Response) => {
+	const body = request.body
+	let searchResults: any
+	let responseObj: any
+	let errSearch = false
+	let searchConfig: SearchConfig
+	const searchterm = body.searchterm
+	if (searchterm === '' || !searchterm) {
+		return response.status(400).json({
+			error: 'No search term specified'
+		})
+	}
+	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings.category,age_ratings.rating,artworks.url,category,cover.url,first_release_date,external_games.category,external_games.url,follows,game_modes.name,genres.name,hypes,involved_companies,keywords.name,name,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,player_perspectives.name,total_rating,total_rating_count,screenshots.url,similar_games.name,similar_games.id,similar_games.age_ratings.category,similar_games.age_ratings.rating,similar_games.cover.url,similar_games.platforms.name,similar_games.platforms.category,similar_games.platforms.platform_logo.url,similar_games.platforms.platform_family,similar_games.first_release_date,similar_games.follows,similar_games.name,similar_games.total_rating,similar_games.total_rating_count, similar_games.genres.name, similar_games.involved_companies.company.name, similar_games.involved_companies.company.logo.url, similar_games.involved_companies.developer, similar_games.involved_companies.company.websites.url, similar_games.involved_companies.company.websites.category,slug,storyline,summary,tags,themes.name,url,videos.name,videos.video_id,websites.game,websites.category,websites.url,language_supports.language.name,language_supports.language.locale,language_supports.language.native_name,language_supports.language_support_type.name,game_localizations.name,game_localizations.region.name,involved_companies.company.name, involved_companies.company.websites.url', '', '', true, searchterm, 1, '')
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data[0]
+			responseObj = {
+				id: searchResults.id,
+				age_ratings: searchResults.age_ratings !== undefined ? searchResults.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
+				artworks: searchResults.artworks.map((indImage: any) => ({
+					url: `https:${indImage.url.replace('thumb', '1080p')}`
+				})),
+				category: searchResults.category,
+				cover: `https:${searchResults.cover.url.replace('thumb', '1080p')}`,
+				external_games: searchResults.external_games.filter((indExternal: any) => indExternal.url && indExternal.url !== ''),
+				releaseDate: new Date(searchResults.first_release_date*1000),
+				likes: searchResults.follows,
+				game_modes: searchResults.game_modes,
+				genres: searchResults.genres,
+				hypes: searchResults.hypes,
+				involved_companies: searchResults.involved_companies.map((indCompany: any) => ({
+					name: indCompany.company.name,
+					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
+					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
+				})),
+				keywords: searchResults.keywords,
+				title: searchResults.name,
+				platforms: searchResults.platforms.map((indPlatform: any) => ({
+					name: indPlatform.name,
+					category: indPlatform.category,
+					url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
+					id: indPlatform.id,
+					platform_family: indPlatform.platform_family,
+				})),
+				player_perspectives: searchResults.player_perspectives,
+				screenshots: searchResults.screenshots.map((indImage: any) => ({
+					url: `https:${indImage.url.replace('thumb', '1080p')}`
+				})),
+				similar_games: populateSimilarGames(searchResults.similar_games),
+				slug: searchResults.slug,
+				story: searchResults.story,
+				summary: searchResults.summary,
+				tags: searchResults.tags,
+				themes: searchResults.themes,
+				rating: searchResults.total_rating,
+				ratingCount: searchResults.total_rating_count,
+				url: searchResults.url,
+				videos: searchResults.videos,
+				websites: searchResults.websites,
+				languages: searchResults.language_supports.map((indLanguage: any) => ({
+					language: indLanguage.language.name,
+					language_support_type: indLanguage.language_support_type.name,
+					locale: indLanguage.language.locale,
+					native: indLanguage.language.native_name,
+					marked: false
+				})),
+				game_localizations: searchResults.game_localizations.map((indLocalization: any) => ({
+					name: indLocalization.name,
+					region: indLocalization.region.name
+				})),
+			}
+		})
+		.catch((err) => {
+			console.log(err)
+		})
 	return response.status(200).json(responseObj)
 
 })

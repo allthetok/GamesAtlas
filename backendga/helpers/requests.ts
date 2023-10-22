@@ -396,7 +396,42 @@ const parseGenres = (genres: string) => {
 		}
 	}
 	return formattedString
-	
 }
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, Covers, OverviewObj, ArtworkObj, LanguageObj, VideoObj, ScreenshotsObj, WebsiteObj, SimilarObj, ExploreObj, platformFamilyQuerified, parseBody, parseNullable }
+const populateSimilarGames = (gameArr: any[]) => {
+	let gameObjArr: any[] = []
+	for (let i = 0; i < gameArr.length; i++) {
+		const indGameObj = {
+			id: gameArr[i].id,
+			age_ratings: gameArr[i].age_ratings !== undefined ? gameArr[i].age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
+			cover: `https:${gameArr[i].cover.url.replace('thumb', '1080p')}`,
+			platforms: gameArr[i].platforms.map((indPlatform: any) => ({
+				name: indPlatform.name,
+				category: indPlatform.category,
+				url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
+				id: indPlatform.id,
+				platform_family: indPlatform.platform_family,
+
+			})),
+			rating: gameArr[i].total_rating,
+			ratingCount: gameArr[i].total_rating_count,
+			releaseDate: new Date(gameArr[i].first_release_date*1000),
+			likes: gameArr[i].follows,
+			title: gameArr[i].name,
+			genres: gameArr[i].genres,
+			involved_companies: gameArr[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({
+				name: indCompany.company.name,
+				url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
+				officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : '' }))
+		}
+		const ageRatingsobj: AgeRatings = {
+			'ESRB': indGameObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1).length !== 0 ? indGameObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1)[0].rating : 0,
+			'PEGI': indGameObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2).length !== 0 ? indGameObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2)[0].rating : 0
+		}
+		indGameObj.age_ratings = ageRatingsobj
+		gameObjArr.push(indGameObj)
+	}
+	return gameObjArr
+}
+
+export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, Covers, OverviewObj, ArtworkObj, LanguageObj, VideoObj, ScreenshotsObj, WebsiteObj, SimilarObj, ExploreObj, platformFamilyQuerified, parseBody, parseNullable, populateSimilarGames }

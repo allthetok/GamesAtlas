@@ -107,46 +107,46 @@ type ExploreObj = {
 }
 
 type AgeRatings = {
-	'ESRB': number,
-	'PEGI': number
+	ESRB: number,
+	PEGI: number
 }
 
 type Categories = {
-	'category': number,
-	'url': string
+	category: number,
+	url: string
 }
 
 type Companies = {
-	'name': string,
-	'logoid': number,
-	'url': string
+	name: string,
+	url: string,
+	officialSite: string
 }
 
 type Platforms = {
-	'name': string,
-	'category': number,
-	'platform_logo': number,
-	'url': string
+	name: string,
+	category: number,
+	url: string,
+	id: number,
+	platform_family: number,
 }
 
 type Videos = {
-	'name': string,
-	'ytlink': string
+	name: string,
+	ytlink: string
 }
 
 type Languages = {
-	'language': string | number,
-	'language_support_type': string,
-	'marked': boolean,
-	'locale': string,
-	'native': string
+	language: string | number,
+	language_support_type: string,
+	marked: boolean,
+	locale: string,
+	native: string
 }
 
 type Covers = {
-	'name': string,
-	'cover': string | number
+	name: string,
+	cover: string | number
 }
-
 
 
 
@@ -410,8 +410,7 @@ const populateSimilarGames = (gameArr: any[]) => {
 				category: indPlatform.category,
 				url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
 				id: indPlatform.id,
-				platform_family: indPlatform.platform_family,
-
+				platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
 			})),
 			rating: gameArr[i].total_rating,
 			ratingCount: gameArr[i].total_rating_count,

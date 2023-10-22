@@ -17,310 +17,310 @@ app.use(express.json())
 app.use(requestLogger)
 app.use(cors(corsOptions))
 
-app.post('/api/overview', async (request: Request, response: Response) => {
-	const body = request.body
-	let searchResults: any
-	let responseObj: OverviewObj = {
-		id: null,
-		age_ratings: '',
-		cover: null,
-		external_games: [],
-		game_modes: '',
-		genres: '',
-		hypes: null,
-		involved_companies: '',
-		keywords: '' ,
-		platforms: '',
-		player_perspectives: '',
-		tags: '',
-		themes: '',
-		websites: '',
-		game_localizations: '',
-		rating: null,
-		ratingCount: null,
-		releaseDate: null,
-		likes: null,
-		title: '',
-		story: '',
-		summary: '',
-		url: ''
-	}
-	let errSearch = false
-	let searchConfig: SearchConfig
-	const searchterm = body.searchterm
-	if (searchterm === '' || !searchterm) {
-		return response.status(400).json({
-			error: 'No search term specified'
-		})
-	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings,category,cover,first_release_date,external_games,follows,game_modes,genres,hypes,involved_companies,keywords,name,platforms,player_perspectives,total_rating,total_rating_count,slug,storyline,summary,tags,themes,url,websites,game_localizations', '', '', true, searchterm, 1, '')
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data[0]
-			responseObj = {
-				id: searchResults.id,
-				age_ratings: searchResults.age_ratings.join(','),
-				cover: searchResults.cover,
-				external_games: searchResults.external_games,
-				game_modes: searchResults.game_modes.join(','),
-				genres: searchResults.genres.join(','),
-				hypes: searchResults.hypes,
-				involved_companies: searchResults.involved_companies.join(','),
-				keywords: searchResults.keywords.join(','),
-				platforms: searchResults.platforms.join(','),
-				player_perspectives: searchResults.player_perspectives.join(','),
-				tags: searchResults.tags.join(','),
-				themes: searchResults.themes.join(','),
-				websites: searchResults.websites.join(','),
-				game_localizations: searchResults.game_localizations.join(','),
-				rating: searchResults.total_rating,
-				ratingCount: searchResults.total_rating_count,
-				releaseDate: new Date(searchResults.first_release_date*1000),
-				likes: searchResults.follows,
-				title: searchResults.name,
-				story: searchResults.storyline,
-				summary: searchResults.summary,
-				url: searchResults.url
-			}
-		})
-		.catch((err) => {
-			console.log(err)
-		})
-	if (errSearch) {
-		return response.status(404).json({
-			Message: 'Search yielded no results'
-		})
-	}
+// app.post('/api/overview', async (request: Request, response: Response) => {
+// 	const body = request.body
+// 	let searchResults: any
+// 	let responseObj: OverviewObj = {
+// 		id: null,
+// 		age_ratings: '',
+// 		cover: null,
+// 		external_games: [],
+// 		game_modes: '',
+// 		genres: '',
+// 		hypes: null,
+// 		involved_companies: '',
+// 		keywords: '' ,
+// 		platforms: '',
+// 		player_perspectives: '',
+// 		tags: '',
+// 		themes: '',
+// 		websites: '',
+// 		game_localizations: '',
+// 		rating: null,
+// 		ratingCount: null,
+// 		releaseDate: null,
+// 		likes: null,
+// 		title: '',
+// 		story: '',
+// 		summary: '',
+// 		url: ''
+// 	}
+// 	let errSearch = false
+// 	let searchConfig: SearchConfig
+// 	const searchterm = body.searchterm
+// 	if (searchterm === '' || !searchterm) {
+// 		return response.status(400).json({
+// 			error: 'No search term specified'
+// 		})
+// 	}
+// 	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings,category,cover,first_release_date,external_games,follows,game_modes,genres,hypes,involved_companies,keywords,name,platforms,player_perspectives,total_rating,total_rating_count,slug,storyline,summary,tags,themes,url,websites,game_localizations', '', '', true, searchterm, 1, '')
+// 	await axios(searchConfig)
+// 		.then((response) => {
+// 			searchResults = response.data[0]
+// 			responseObj = {
+// 				id: searchResults.id,
+// 				age_ratings: searchResults.age_ratings.join(','),
+// 				cover: searchResults.cover,
+// 				external_games: searchResults.external_games,
+// 				game_modes: searchResults.game_modes.join(','),
+// 				genres: searchResults.genres.join(','),
+// 				hypes: searchResults.hypes,
+// 				involved_companies: searchResults.involved_companies.join(','),
+// 				keywords: searchResults.keywords.join(','),
+// 				platforms: searchResults.platforms.join(','),
+// 				player_perspectives: searchResults.player_perspectives.join(','),
+// 				tags: searchResults.tags.join(','),
+// 				themes: searchResults.themes.join(','),
+// 				websites: searchResults.websites.join(','),
+// 				game_localizations: searchResults.game_localizations.join(','),
+// 				rating: searchResults.total_rating,
+// 				ratingCount: searchResults.total_rating_count,
+// 				releaseDate: new Date(searchResults.first_release_date*1000),
+// 				likes: searchResults.follows,
+// 				title: searchResults.name,
+// 				story: searchResults.storyline,
+// 				summary: searchResults.summary,
+// 				url: searchResults.url
+// 			}
+// 		})
+// 		.catch((err) => {
+// 			console.log(err)
+// 		})
+// 	if (errSearch) {
+// 		return response.status(404).json({
+// 			Message: 'Search yielded no results'
+// 		})
+// 	}
 
-	//Catch and alter any fields (external_games, language_supports) to be split into multiple string arrays of 10 as IGDB limits each id=*string of ids* into a maximum of 10 ids searched at one time
-	responseObj.external_games = splitIGDBSearch(responseObj.external_games)
+// 	//Catch and alter any fields (external_games, language_supports) to be split into multiple string arrays of 10 as IGDB limits each id=*string of ids* into a maximum of 10 ids searched at one time
+// 	responseObj.external_games = splitIGDBSearch(responseObj.external_games)
 
-	searchConfig = updateIGDBSearchConfig('age_ratings', 'category,rating', responseObj!.age_ratings, 'category=(1,2)', false, '', 0, '')
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			let age_ratingsobj: AgeRatings = {
-				'ESRB': response.data[0].rating,
-				'PEGI': response.data[1].rating
-			}
-			responseObj.age_ratings = age_ratingsobj
-		})
-		.catch((err) => {
-			console.log(err)
-		})
+// 	searchConfig = updateIGDBSearchConfig('age_ratings', 'category,rating', responseObj!.age_ratings, 'category=(1,2)', false, '', 0, '')
+// 	await axios(searchConfig)
+// 		.then((response) => {
+// 			searchResults = response.data
+// 			let age_ratingsobj: AgeRatings = {
+// 				'ESRB': response.data[0].rating,
+// 				'PEGI': response.data[1].rating
+// 			}
+// 			responseObj.age_ratings = age_ratingsobj
+// 		})
+// 		.catch((err) => {
+// 			console.log(err)
+// 		})
 
-	searchConfig = updateIGDBSearchConfig('covers', 'url', responseObj.cover, '', false, '', 0, '')
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			response.data[0].url = response.data[0].url.replace('thumb', 'cover_big')
-			responseObj.cover = `https:${response.data[0].url}`
-		})
-		.catch((err) => {
-			console.log(err)
-		})
-	responseObj.external_games = await getExternalGamesIter(responseObj.external_games)
+// 	searchConfig = updateIGDBSearchConfig('covers', 'url', responseObj.cover, '', false, '', 0, '')
+// 	await axios(searchConfig)
+// 		.then((response) => {
+// 			searchResults = response.data
+// 			response.data[0].url = response.data[0].url.replace('thumb', 'cover_big')
+// 			responseObj.cover = `https:${response.data[0].url}`
+// 		})
+// 		.catch((err) => {
+// 			console.log(err)
+// 		})
+// 	responseObj.external_games = await getExternalGamesIter(responseObj.external_games)
 
-	searchConfig = updateIGDBSearchConfig('game_modes', 'name', responseObj.game_modes, '', false, '', 0, '')
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			let arrOfGameModes: string[] = []
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfGameModes.push(searchResults[i].name)
-			}
-			responseObj.game_modes = arrOfGameModes
-		})
-		.catch((err) => {
-			console.log(err)
-		})
-
-
-	searchConfig = updateIGDBSearchConfig('genres', 'name', responseObj.genres, '', false, '', 0, '')
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			let arrOfGenres: string[] = []
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfGenres.push(searchResults[i].name)
-			}
-			responseObj.genres = arrOfGenres
-		})
-		.catch((err) => {
-			console.log(err)
-
-		})
-
-	searchConfig = updateIGDBSearchConfig('involved_companies', 'company', responseObj.involved_companies, '', false, '', 0, '')
-	let idofCompanies = ''
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				if (i === searchResults.length - 1) {
-					idofCompanies = idofCompanies.concat(searchResults[i].company)
-				}
-				else {
-					idofCompanies = idofCompanies.concat(`${searchResults[i].company},`)
-				}
-			}
-		})
-		.catch((err) => {
-			console.log(err)
-
-		})
-
-	searchConfig = updateIGDBSearchConfig('companies', 'name,logo', idofCompanies, '', false, '', 0, '')
-	let arrOfCompanies: Companies[] = []
-	let logoids = ''
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfCompanies.push({
-					name: searchResults[i].name,
-					logoid: searchResults[i].logo,
-					url: ''
-				})
-				if (i === searchResults.length - 1) {
-					logoids = logoids.concat(searchResults[i].logo)
-				}
-				else {
-					logoids = logoids.concat(`${searchResults[i].logo},`)
-				}
-			}
-		})
-
-	searchConfig = updateIGDBSearchConfig('company_logos', 'url', logoids, '', false, '', 0, '')
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				let objIndex = arrOfCompanies.findIndex((obj => obj.logoid === searchResults[i].id))
-				let oldValAtIndex = arrOfCompanies[objIndex]
-				arrOfCompanies[objIndex] = {
-					...oldValAtIndex,
-					url: `https:${searchResults[i].url}`
-				}
-			}
-			responseObj.involved_companies = arrOfCompanies
-		})
+// 	searchConfig = updateIGDBSearchConfig('game_modes', 'name', responseObj.game_modes, '', false, '', 0, '')
+// 	await axios(searchConfig)
+// 		.then((response) => {
+// 			searchResults = response.data
+// 			let arrOfGameModes: string[] = []
+// 			for (let i = 0; i < searchResults.length; i++) {
+// 				arrOfGameModes.push(searchResults[i].name)
+// 			}
+// 			responseObj.game_modes = arrOfGameModes
+// 		})
+// 		.catch((err) => {
+// 			console.log(err)
+// 		})
 
 
-	searchConfig = updateIGDBSearchConfig('keywords', 'name', responseObj.keywords, '', false, '', 0, '')
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			let arrOfKeywords: string[] = []
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfKeywords.push(searchResults[i].name)
-			}
-			responseObj.keywords = arrOfKeywords
-		})
-		.catch((err) => {
-			console.log(err)
+// 	searchConfig = updateIGDBSearchConfig('genres', 'name', responseObj.genres, '', false, '', 0, '')
+// 	await axios(searchConfig)
+// 		.then((response) => {
+// 			searchResults = response.data
+// 			let arrOfGenres: string[] = []
+// 			for (let i = 0; i < searchResults.length; i++) {
+// 				arrOfGenres.push(searchResults[i].name)
+// 			}
+// 			responseObj.genres = arrOfGenres
+// 		})
+// 		.catch((err) => {
+// 			console.log(err)
 
-		})
+// 		})
 
-	let arrOfPlatforms: Platforms[] = []
-	let platformlogoids = ''
+// 	searchConfig = updateIGDBSearchConfig('involved_companies', 'company', responseObj.involved_companies, '', false, '', 0, '')
+// 	let idofCompanies = ''
+// 	await axios(searchConfig)
+// 		.then((response) => {
+// 			searchResults = response.data
+// 			for (let i = 0; i < searchResults.length; i++) {
+// 				if (i === searchResults.length - 1) {
+// 					idofCompanies = idofCompanies.concat(searchResults[i].company)
+// 				}
+// 				else {
+// 					idofCompanies = idofCompanies.concat(`${searchResults[i].company},`)
+// 				}
+// 			}
+// 		})
+// 		.catch((err) => {
+// 			console.log(err)
 
-	searchConfig = updateIGDBSearchConfig('platforms', 'name,category,platform_logo', responseObj.platforms, '', false, '', 0, '')
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfPlatforms.push({
-					name: searchResults[i].name,
-					category: searchResults[i].category,
-					platform_logo: searchResults[i].platform_logo,
-					url: ''
-				})
-				if (i === searchResults.length - 1) {
-					platformlogoids = platformlogoids.concat(searchResults[i].platform_logo)
-				}
-				else {
-					platformlogoids = platformlogoids.concat(`${searchResults[i].platform_logo},`)
-				}
-			}
-		})
-		.catch((err) => {
-			console.log(err)
+// 		})
 
-		})
+// 	searchConfig = updateIGDBSearchConfig('companies', 'name,logo', idofCompanies, '', false, '', 0, '')
+// 	let arrOfCompanies: Companies[] = []
+// 	let logoids = ''
+// 	await axios(searchConfig)
+// 		.then((response) => {
+// 			searchResults = response.data
+// 			for (let i = 0; i < searchResults.length; i++) {
+// 				arrOfCompanies.push({
+// 					name: searchResults[i].name,
+// 					logoid: searchResults[i].logo,
+// 					url: ''
+// 				})
+// 				if (i === searchResults.length - 1) {
+// 					logoids = logoids.concat(searchResults[i].logo)
+// 				}
+// 				else {
+// 					logoids = logoids.concat(`${searchResults[i].logo},`)
+// 				}
+// 			}
+// 		})
 
-	searchConfig = updateIGDBSearchConfig('platform_logos', 'url', platformlogoids, '', false, '', 0, '')
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			for (let i = 0; i < searchResults.length; i++) {
-				let objIndex = arrOfPlatforms.findIndex((obj => obj.platform_logo === searchResults[i].id))
-				let oldValAtIndex = arrOfPlatforms[objIndex]
-				arrOfPlatforms[objIndex] = {
-					...oldValAtIndex,
-					url: `https:${searchResults[i].url}`
-				}
-			}
-			responseObj.platforms = arrOfPlatforms
-		})
+// 	searchConfig = updateIGDBSearchConfig('company_logos', 'url', logoids, '', false, '', 0, '')
+// 	await axios(searchConfig)
+// 		.then((response) => {
+// 			searchResults = response.data
+// 			for (let i = 0; i < searchResults.length; i++) {
+// 				let objIndex = arrOfCompanies.findIndex((obj => obj.logoid === searchResults[i].id))
+// 				let oldValAtIndex = arrOfCompanies[objIndex]
+// 				arrOfCompanies[objIndex] = {
+// 					...oldValAtIndex,
+// 					url: `https:${searchResults[i].url}`
+// 				}
+// 			}
+// 			responseObj.involved_companies = arrOfCompanies
+// 		})
 
-	searchConfig = updateIGDBSearchConfig('player_perspectives', 'name', responseObj.player_perspectives, '', false, '', 0, '')
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			let arrOfPerspectives: string[] = []
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfPerspectives.push(searchResults[i].name)
-			}
-			responseObj.player_perspectives = arrOfPerspectives
-		})
-		.catch((err) => {
-			console.log(err)
 
-		})
+// 	searchConfig = updateIGDBSearchConfig('keywords', 'name', responseObj.keywords, '', false, '', 0, '')
+// 	await axios(searchConfig)
+// 		.then((response) => {
+// 			searchResults = response.data
+// 			let arrOfKeywords: string[] = []
+// 			for (let i = 0; i < searchResults.length; i++) {
+// 				arrOfKeywords.push(searchResults[i].name)
+// 			}
+// 			responseObj.keywords = arrOfKeywords
+// 		})
+// 		.catch((err) => {
+// 			console.log(err)
 
-	searchConfig = updateIGDBSearchConfig('themes', 'name', responseObj.themes, '', false, '', 0, '')
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			let arrOfThemes: string[] = []
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfThemes.push(searchResults[i].name)
-			}
-			responseObj.themes = arrOfThemes
-		})
+// 		})
 
-	searchConfig = updateIGDBSearchConfig('websites', 'category,url', responseObj.websites, '', false, '', 0, '')
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data
-			let arrOfSites: Categories[] = []
-			for (let i = 0; i < searchResults.length; i++) {
-				arrOfSites.push({
-					category: searchResults[i].category,
-					url: searchResults[i].url
-				})
-			}
-			responseObj.websites = arrOfSites
-		})
-		.catch((err) => {
-			console.log(err)
+// 	let arrOfPlatforms: Platforms[] = []
+// 	let platformlogoids = ''
 
-		})
+// 	searchConfig = updateIGDBSearchConfig('platforms', 'name,category,platform_logo', responseObj.platforms, '', false, '', 0, '')
+// 	await axios(searchConfig)
+// 		.then((response) => {
+// 			searchResults = response.data
+// 			for (let i = 0; i < searchResults.length; i++) {
+// 				arrOfPlatforms.push({
+// 					name: searchResults[i].name,
+// 					category: searchResults[i].category,
+// 					platform_logo: searchResults[i].platform_logo,
+// 					url: ''
+// 				})
+// 				if (i === searchResults.length - 1) {
+// 					platformlogoids = platformlogoids.concat(searchResults[i].platform_logo)
+// 				}
+// 				else {
+// 					platformlogoids = platformlogoids.concat(`${searchResults[i].platform_logo},`)
+// 				}
+// 			}
+// 		})
+// 		.catch((err) => {
+// 			console.log(err)
 
-	searchConfig = updateIGDBSearchConfig('game_localizations', 'name', responseObj.game_localizations, '', false, '', 0, '')
-	await axios(searchConfig)
-		.then((response) => {
-			searchResults = response.data[0]
-			responseObj.game_localizations = searchResults.name
-		})
-		.catch((err) => {
-			console.log(err)
+// 		})
 
-		})
+// 	searchConfig = updateIGDBSearchConfig('platform_logos', 'url', platformlogoids, '', false, '', 0, '')
+// 	await axios(searchConfig)
+// 		.then((response) => {
+// 			searchResults = response.data
+// 			for (let i = 0; i < searchResults.length; i++) {
+// 				let objIndex = arrOfPlatforms.findIndex((obj => obj.platform_logo === searchResults[i].id))
+// 				let oldValAtIndex = arrOfPlatforms[objIndex]
+// 				arrOfPlatforms[objIndex] = {
+// 					...oldValAtIndex,
+// 					url: `https:${searchResults[i].url}`
+// 				}
+// 			}
+// 			responseObj.platforms = arrOfPlatforms
+// 		})
 
-	return response.status(200).json(responseObj)
-})
+// 	searchConfig = updateIGDBSearchConfig('player_perspectives', 'name', responseObj.player_perspectives, '', false, '', 0, '')
+// 	await axios(searchConfig)
+// 		.then((response) => {
+// 			searchResults = response.data
+// 			let arrOfPerspectives: string[] = []
+// 			for (let i = 0; i < searchResults.length; i++) {
+// 				arrOfPerspectives.push(searchResults[i].name)
+// 			}
+// 			responseObj.player_perspectives = arrOfPerspectives
+// 		})
+// 		.catch((err) => {
+// 			console.log(err)
+
+// 		})
+
+// 	searchConfig = updateIGDBSearchConfig('themes', 'name', responseObj.themes, '', false, '', 0, '')
+// 	await axios(searchConfig)
+// 		.then((response) => {
+// 			searchResults = response.data
+// 			let arrOfThemes: string[] = []
+// 			for (let i = 0; i < searchResults.length; i++) {
+// 				arrOfThemes.push(searchResults[i].name)
+// 			}
+// 			responseObj.themes = arrOfThemes
+// 		})
+
+// 	searchConfig = updateIGDBSearchConfig('websites', 'category,url', responseObj.websites, '', false, '', 0, '')
+// 	await axios(searchConfig)
+// 		.then((response) => {
+// 			searchResults = response.data
+// 			let arrOfSites: Categories[] = []
+// 			for (let i = 0; i < searchResults.length; i++) {
+// 				arrOfSites.push({
+// 					category: searchResults[i].category,
+// 					url: searchResults[i].url
+// 				})
+// 			}
+// 			responseObj.websites = arrOfSites
+// 		})
+// 		.catch((err) => {
+// 			console.log(err)
+
+// 		})
+
+// 	searchConfig = updateIGDBSearchConfig('game_localizations', 'name', responseObj.game_localizations, '', false, '', 0, '')
+// 	await axios(searchConfig)
+// 		.then((response) => {
+// 			searchResults = response.data[0]
+// 			responseObj.game_localizations = searchResults.name
+// 		})
+// 		.catch((err) => {
+// 			console.log(err)
+
+// 		})
+
+// 	return response.status(200).json(responseObj)
+// })
 
 app.post('/api/artwork', async (request: Request, response: Response) => {
 	const body = request.body
@@ -826,8 +826,7 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 						category: indPlatform.category,
 						url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
 						id: indPlatform.id,
-						platform_family: indPlatform.platform_family,
-
+						platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
 					})),
 					rating: searchResults[i].total_rating,
 					ratingCount: searchResults[i].total_rating_count,
@@ -909,22 +908,25 @@ app.post('/api/altoverview', async (request: Request, response: Response) => {
 			error: 'No search term specified'
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings.category,age_ratings.rating,artworks.url,category,cover.url,first_release_date,external_games.category,external_games.url,follows,game_modes.name,genres.name,hypes,involved_companies,keywords.name,name,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,player_perspectives.name,total_rating,total_rating_count,screenshots.url,similar_games.name,similar_games.id,similar_games.age_ratings.category,similar_games.age_ratings.rating,similar_games.cover.url,similar_games.platforms.name,similar_games.platforms.category,similar_games.platforms.platform_logo.url,similar_games.platforms.platform_family,similar_games.first_release_date,similar_games.follows,similar_games.name,similar_games.total_rating,similar_games.total_rating_count, similar_games.genres.name, similar_games.involved_companies.company.name, similar_games.involved_companies.company.logo.url, similar_games.involved_companies.developer, similar_games.involved_companies.company.websites.url, similar_games.involved_companies.company.websites.category,slug,storyline,summary,tags,themes.name,url,videos.name,videos.video_id,websites.game,websites.category,websites.url,language_supports.language.name,language_supports.language.locale,language_supports.language.native_name,language_supports.language_support_type.name,game_localizations.name,game_localizations.region.name,involved_companies.company.name, involved_companies.company.websites.url', '', '', true, searchterm, 1, '')
+	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings.category,age_ratings.rating,artworks.url,category,cover.url,first_release_date,external_games.category,external_games.url,follows,game_modes.name,genres.name,hypes,involved_companies,keywords.name,name,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,player_perspectives.name,total_rating,total_rating_count,screenshots.url,similar_games.name,similar_games.id,similar_games.age_ratings.category,similar_games.age_ratings.rating,similar_games.cover.url,similar_games.platforms.name,similar_games.platforms.category,similar_games.platforms.platform_logo.url,similar_games.platforms.platform_family,similar_games.first_release_date,similar_games.follows,similar_games.name,similar_games.total_rating,similar_games.total_rating_count, similar_games.genres.name, similar_games.involved_companies.company.name, similar_games.involved_companies.company.logo.url, similar_games.involved_companies.developer, similar_games.involved_companies.company.websites.url, similar_games.involved_companies.company.websites.category,slug,storyline,summary,tags,themes.name,url,videos.name,videos.video_id,websites.game,websites.category,websites.url,language_supports.language.name,language_supports.language.locale,language_supports.language.native_name,language_supports.language_support_type.name,game_localizations.name,game_localizations.region.name,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category', '', '', true, searchterm, 1, '')
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data[0]
 			responseObj = {
 				id: searchResults.id,
 				age_ratings: searchResults.age_ratings !== undefined ? searchResults.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
-				artworks: searchResults.artworks.map((indImage: any) => ({
-					url: `https:${indImage.url.replace('thumb', '1080p')}`
-				})),
+				artworks: searchResults.artworks.map((indImage: any) => (
+					`https:${indImage.url.replace('thumb', '1080p')}`
+				)),
 				category: searchResults.category,
 				cover: `https:${searchResults.cover.url.replace('thumb', '1080p')}`,
-				external_games: searchResults.external_games.filter((indExternal: any) => indExternal.url && indExternal.url !== ''),
-				releaseDate: new Date(searchResults.first_release_date*1000),
+				external_games: searchResults.external_games.filter((indExternal: any) => indExternal.url && indExternal.url !== '').map((indCategory: any) => ({
+					category: indCategory.category,
+					url: indCategory.url,
+				})),
+				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A',
 				likes: searchResults.follows,
-				game_modes: searchResults.game_modes,
+				game_modes: searchResults.game_modes.map((indMode: any) => indMode.name),
 				genres: searchResults.genres,
 				hypes: searchResults.hypes,
 				involved_companies: searchResults.involved_companies.map((indCompany: any) => ({
@@ -932,19 +934,19 @@ app.post('/api/altoverview', async (request: Request, response: Response) => {
 					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
 				})),
-				keywords: searchResults.keywords,
+				keywords: searchResults.keywords.map((indKeyword: any) => indKeyword.name),
 				title: searchResults.name,
 				platforms: searchResults.platforms.map((indPlatform: any) => ({
 					name: indPlatform.name,
 					category: indPlatform.category,
 					url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
 					id: indPlatform.id,
-					platform_family: indPlatform.platform_family,
+					platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
 				})),
-				player_perspectives: searchResults.player_perspectives,
-				screenshots: searchResults.screenshots.map((indImage: any) => ({
-					url: `https:${indImage.url.replace('thumb', '1080p')}`
-				})),
+				player_perspectives: searchResults.player_perspectives.map((indPersp: any) => indPersp.name),
+				screenshots: searchResults.screenshots.map((indImage: any) => (
+					`https:${indImage.url.replace('thumb', '1080p')}`
+				)),
 				similar_games: populateSimilarGames(searchResults.similar_games),
 				slug: searchResults.slug,
 				story: searchResults.story,
@@ -954,8 +956,14 @@ app.post('/api/altoverview', async (request: Request, response: Response) => {
 				rating: searchResults.total_rating,
 				ratingCount: searchResults.total_rating_count,
 				url: searchResults.url,
-				videos: searchResults.videos,
-				websites: searchResults.websites,
+				videos: searchResults.videos.map((indVideo: any) => ({
+					name: indVideo.name,
+					ytlink: indVideo.video_id
+				})),
+				websites: searchResults.websites.filter((indWeb: any) => indWeb.url && indWeb.url !== '').map((indCategory: any) => ({
+					category: indCategory.category,
+					url: indCategory.url,
+				})),
 				languages: searchResults.language_supports.map((indLanguage: any) => ({
 					language: indLanguage.language.name,
 					language_support_type: indLanguage.language_support_type.name,
@@ -968,6 +976,11 @@ app.post('/api/altoverview', async (request: Request, response: Response) => {
 					region: indLocalization.region.name
 				})),
 			}
+			const ageRatingsobj: AgeRatings = {
+				'ESRB': responseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1).length !== 0 ? responseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1)[0].rating : 0,
+				'PEGI': responseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2).length !== 0 ? responseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2)[0].rating : 0
+			}
+			responseObj.age_ratings = ageRatingsobj
 		})
 		.catch((err) => {
 			console.log(err)

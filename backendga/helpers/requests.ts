@@ -4,6 +4,7 @@
 import axios from 'axios'
 import { Request, Response, NextFunction } from 'express'
 import { sortMap, platformMap, genreMap } from '../helpers/enums'
+import { ExternalCategories, WebsiteCategories } from '../../frontendga/assets/ratingsvglinks'
 require('dotenv').config()
 
 type SearchConfig = {
@@ -433,4 +434,8 @@ const populateSimilarGames = (gameArr: any[]) => {
 	return gameObjArr
 }
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, Covers, OverviewObj, ArtworkObj, LanguageObj, VideoObj, ScreenshotsObj, WebsiteObj, SimilarObj, ExploreObj, platformFamilyQuerified, parseBody, parseNullable, populateSimilarGames }
+const categoriesCheck = (category: string, src: number) => {
+	return category === 'External' ? ExternalCategories.map((indExternal: any) => indExternal.source).includes(src) : WebsiteCategories.map((indWeb: any) => indWeb.source).includes(src)
+}
+
+export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, Covers, OverviewObj, ArtworkObj, LanguageObj, VideoObj, ScreenshotsObj, WebsiteObj, SimilarObj, ExploreObj, platformFamilyQuerified, parseBody, parseNullable, populateSimilarGames, categoriesCheck }

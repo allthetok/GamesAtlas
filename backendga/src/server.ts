@@ -3,7 +3,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, ExploreObj, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, Covers, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, ExploreObj, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck } from '../helpers/requests'
+import { ExternalCategories, WebsiteCategories } from '../../frontendga/assets/ratingsvglinks'
 require('dotenv').config()
 import express, { Request, Response } from 'express'
 import axios from 'axios'
@@ -902,6 +903,8 @@ app.post('/api/altoverview', async (request: Request, response: Response) => {
 	let responseObj: any
 	let errSearch = false
 	let searchConfig: SearchConfig
+	const externalGamesSrc: number[] = ExternalCategories.map((indExternal) => indExternal.source)
+	const websiteSrc: number[] = WebsiteCategories.map((indExternal) => indExternal.source)
 	const searchterm = body.searchterm
 	if (searchterm === '' || !searchterm) {
 		return response.status(400).json({
@@ -920,7 +923,7 @@ app.post('/api/altoverview', async (request: Request, response: Response) => {
 				)),
 				category: searchResults.category,
 				cover: `https:${searchResults.cover.url.replace('thumb', '1080p')}`,
-				external_games: searchResults.external_games.filter((indExternal: any) => indExternal.url && indExternal.url !== '').map((indCategory: any) => ({
+				external_games: searchResults.external_games.filter((indExternal: any) => indExternal.url && indExternal.url !== '').filter((indCategory: any) => externalGamesSrc.includes(indCategory.category)).map((indCategory: any) => ({
 					category: indCategory.category,
 					url: indCategory.url,
 				})),
@@ -960,7 +963,7 @@ app.post('/api/altoverview', async (request: Request, response: Response) => {
 					name: indVideo.name,
 					ytlink: indVideo.video_id
 				})),
-				websites: searchResults.websites.filter((indWeb: any) => indWeb.url && indWeb.url !== '').map((indCategory: any) => ({
+				websites: searchResults.websites.filter((indWeb: any) => indWeb.url && indWeb.url !== '').filter((indCategory: any) => websiteSrc.includes(indCategory.category)).map((indCategory: any) => ({
 					category: indCategory.category,
 					url: indCategory.url,
 				})),

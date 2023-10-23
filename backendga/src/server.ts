@@ -952,7 +952,7 @@ app.post('/api/altoverview', async (request: Request, response: Response) => {
 				)),
 				similar_games: populateSimilarGames(searchResults.similar_games),
 				slug: searchResults.slug,
-				story: searchResults.story,
+				story: searchResults.storyline,
 				summary: searchResults.summary,
 				tags: searchResults.tags,
 				themes: searchResults.themes,
@@ -991,6 +991,185 @@ app.post('/api/altoverview', async (request: Request, response: Response) => {
 	return response.status(200).json(responseObj)
 
 })
+
+app.post('/api/altartwork', async (request: Request, response: Response) => {
+	const body = request.body
+	let searchResults: any
+	let responseObj: ArtworkObj = {
+		artworks: []
+	}
+	let searchConfig: SearchConfig
+	const gameid: number = body.gameid
+	if (gameid === null || !gameid) {
+		return response.status(400).json({
+			error: `No game id specified: ${gameid}`
+		})
+	}
+	searchConfig = updateIGDBSearchConfig('games', 'id,artworks.url', gameid, '', false, '', 0, '')
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data[0]
+			responseObj = {
+				artworks: searchResults.artworks.map((indImage: any) => (`https:${indImage.url.replace('thumb', '1080p')}`))
+			}
+		})
+		.catch((err) => {
+			console.log(err)
+		})
+	return response.status(200).json(responseObj)
+})
+
+app.post('/api/altlanguage', async (request: Request, response: Response) => {
+	const body = request.body
+	let searchResults: any
+	let responseObj: LanguageObj = {
+		language_supports: []
+	}
+	let searchConfig: SearchConfig
+	const gameid = body.gameid
+	if (gameid === null || gameid === '' || !gameid) {
+		return response.status(400).json({
+			error: `No game id specified: ${gameid}`
+		})
+	}
+	searchConfig = updateIGDBSearchConfig('games', 'language_supports.language.name,language_supports.language.locale,language_supports.language.native_name,language_supports.language_support_type.name', gameid, '', false, '', 0, '')
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data[0]
+			responseObj = {
+				language_supports: searchResults.language_supports.map((indLanguage: any) => ({
+					language: indLanguage.language.name,
+					language_support_type: indLanguage.language_support_type.name,
+					locale: indLanguage.language.locale,
+					native: indLanguage.language.native_name,
+					marked: false
+				})),
+			}
+		})
+		.catch((err) => {
+			console.log(err)
+		})
+	return response.status(200).json(responseObj)
+})
+
+app.post('/api/altscreenshots', async (request: Request, response: Response) => {
+	const body = request.body
+	let searchResults: any
+	let responseObj: ScreenshotsObj = {
+		screenshots: []
+	}
+	let searchConfig: SearchConfig
+	const gameid: number = body.gameid
+	if (gameid === null || !gameid) {
+		return response.status(400).json({
+			error: `No game id specified: ${gameid}`
+		})
+	}
+	searchConfig = updateIGDBSearchConfig('games', 'id,screenshots.url', gameid, '', false, '', 0, '')
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data[0]
+			responseObj = {
+				screenshots: searchResults.screenshots.map((indImage: any) => (`https:${indImage.url.replace('thumb', '1080p')}`))
+			}
+		})
+		.catch((err) => {
+			console.log(err)
+		})
+	return response.status(200).json(responseObj)
+})
+
+app.post('/api/altsimilargames', async (request: Request, response: Response) => {
+	const body = request.body
+	let searchResults: any
+	let errSearch = false
+	let searchConfig: SearchConfig
+	let responseObj: any
+	const gameid = body.gameid
+	if (gameid === null || gameid === '' || !gameid) {
+		return response.status(400).json({
+			error: `No game id specified: ${gameid}`
+		})
+	}
+	searchConfig = updateIGDBSearchConfig('games', 'id,similar_games.name,similar_games.id,similar_games.age_ratings.category,similar_games.age_ratings.rating,similar_games.cover.url,similar_games.platforms.name,similar_games.platforms.category,similar_games.platforms.platform_logo.url,similar_games.platforms.platform_family,similar_games.first_release_date,similar_games.follows,similar_games.name,similar_games.total_rating,similar_games.total_rating_count, similar_games.genres.name, similar_games.involved_companies.company.name, similar_games.involved_companies.company.logo.url, similar_games.involved_companies.developer, similar_games.involved_companies.company.websites.url, similar_games.involved_companies.company.websites.category', gameid, '', false, '', 0, '')
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data[0]
+			responseObj = {
+				similar_games: populateSimilarGames(searchResults.similar_games),
+			}
+		})
+		.catch((err) => {
+			console.log(err)
+		})
+	return response.status(200).json(responseObj)
+})
+
+app.post('/api/altvideos', async (request: Request, response: Response) => {
+	const body = request.body
+	let searchResults: any
+	let responseObj: VideoObj = {
+		videos: []
+	}
+	let errSearch = false
+	let searchConfig: SearchConfig
+	const gameid = body.gameid
+	if (gameid === null || gameid === '' || !gameid) {
+		return response.status(400).json({
+			error: `No game id specified: ${gameid}`
+		})
+	}
+	searchConfig = updateIGDBSearchConfig('games', 'id,videos.name,videos.video_id', gameid, '', false, '', 0, '')
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data[0]
+			responseObj = {
+				videos: searchResults.videos.map((indVideo: any) => ({
+					name: indVideo.name,
+					ytlink: indVideo.video_id
+				})),
+			}
+		})
+		.catch((err) => {
+			console.log(err)
+		})
+	return response.status(200).json(responseObj)
+})
+
+app.post('/api/altwebsites', async (request: Request, response: Response) => {
+	const body = request.body
+	let searchResults: any
+	let responseObj: WebsiteObj = {
+		websites: []
+	}
+	const websiteSrc: number[] = WebsiteCategories.map((indExternal) => indExternal.source)
+	let errSearch = false
+	let searchConfig: SearchConfig
+	const gameid = body.gameid
+	if (gameid === null || gameid === '' || !gameid) {
+		return response.status(400).json({
+			error: `No game id specified: ${gameid}`
+		})
+	}
+	searchConfig= updateIGDBSearchConfig('games', 'id,websites.game,websites.category,websites.url', gameid, '', false, '', 0, '')
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data[0]
+			responseObj = {
+				websites: searchResults.websites.filter((indWeb: any) => indWeb.url && indWeb.url !== '').filter((indCategory: any) => websiteSrc.includes(indCategory.category)).map((indCategory: any) => ({
+					category: indCategory.category,
+					url: indCategory.url,
+				})),
+			}
+		})
+		.catch((err) => {
+			console.log(err)
+		})
+	return response.status(200).json(responseObj)
+
+})
+
+
 
 const PORT = process.env.API_PORT || 3001
 

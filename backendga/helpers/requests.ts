@@ -1,155 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
 import axios from 'axios'
 import { Request, Response, NextFunction } from 'express'
+import { AgeRatings, ArtworkObj, Categories, Companies, Covers, ExploreObj, GameDetailObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SimilarObj, VideoObj, Videos, WebsiteObj } from './betypes'
 import { sortMap, platformMap, genreMap } from '../helpers/enums'
 import { ExternalCategories, WebsiteCategories } from '../../frontendga/assets/ratingsvglinks'
 require('dotenv').config()
-
-type SearchConfig = {
-	method: string,
-	url: string,
-	headers: object,
-	data: string
-}
-
-type GameDetailObj = {
-	id: number | null,
-	age_ratings: string | AgeRatings,
-	artworks: string | string[],
-	cover: number | string | null,
-	external_games: string[] | Categories[],
-	game_modes: string | string[],
-	genres: string | string[],
-	hypes: number | null,
-	involved_companies: string | Companies[],
-	keywords: string | string[],
-	platforms: string | Platforms[],
-	player_perspectives: string | string[],
-	screenshots: string | string[],
-	similar_games: string | string[] | Covers[],
-	tags: string,
-	themes: string | string[],
-	videos: string | Videos[],
-	websites: string | Categories[],
-	language_supports: string[] | Languages[],
-	game_localizations: string,
-	rating: number | null,
-	ratingCount: number | null,
-	releaseDate: Date | null,
-	likes: number | null,
-	title: string,
-	story: string,
-	summary: string,
-	url: string
-}
-
-type OverviewObj = {
-	id: number | null,
-	age_ratings: string | AgeRatings,
-	cover: number | string | null,
-	external_games: string[] | Categories[],
-	game_modes: string | string[],
-	genres: string | string[],
-	hypes: number | null,
-	involved_companies: string | Companies[],
-	keywords: string | string[],
-	platforms: string | Platforms[],
-	player_perspectives: string | string[],
-	tags: string,
-	themes: string | string[],
-	websites: string | Categories[],
-	game_localizations: string,
-	rating: number | null,
-	ratingCount: number | null,
-	releaseDate: Date | null,
-	likes: number | null,
-	title: string,
-	story: string,
-	summary: string,
-	url: string
-}
-
-type ArtworkObj = {
-	artworks: string | string[]
-}
-
-type LanguageObj = {
-	language_supports: string[] | Languages[]
-}
-
-type ScreenshotsObj = {
-	screenshots: string[],
-}
-
-type SimilarObj = {
-	similar_games: string | string[] | Covers[]
-}
-
-type VideoObj = {
-	videos: string | Videos[]
-}
-
-type WebsiteObj = {
-	websites: string | Categories[]
-}
-
-type ExploreObj = {
-	id: number | null,
-	age_ratings: string | AgeRatings,
-	cover: number | string | null,
-	platforms: string | Platforms[],
-	rating: number | null,
-	ratingCount: number | null,
-	releaseDate: Date | null,
-	likes: number | null,
-	title: string
-}
-
-type AgeRatings = {
-	ESRB: number,
-	PEGI: number
-}
-
-type Categories = {
-	category: number,
-	url: string
-}
-
-type Companies = {
-	name: string,
-	url: string,
-	officialSite: string
-}
-
-type Platforms = {
-	name: string,
-	category: number,
-	url: string,
-	id: number,
-	platform_family: number,
-}
-
-type Videos = {
-	name: string,
-	ytlink: string
-}
-
-type Languages = {
-	language: string | number,
-	language_support_type: string,
-	marked: boolean,
-	locale: string,
-	native: string
-}
-
-type Covers = {
-	name: string,
-	cover: string | number
-}
-
-
 
 const requestLogger = (request: Request, response: Response, next: NextFunction): void => {
 	console.log('Method:', request.method)
@@ -438,4 +296,4 @@ const categoriesCheck = (category: string, src: number) => {
 	return category === 'External' ? ExternalCategories.map((indExternal: any) => indExternal.source).includes(src) : WebsiteCategories.map((indWeb: any) => indWeb.source).includes(src)
 }
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, SearchConfig, GameDetailObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, Covers, OverviewObj, ArtworkObj, LanguageObj, VideoObj, ScreenshotsObj, WebsiteObj, SimilarObj, ExploreObj, platformFamilyQuerified, parseBody, parseNullable, populateSimilarGames, categoriesCheck }
+export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseNullable, populateSimilarGames, categoriesCheck }

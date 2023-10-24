@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
 import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck } from '../helpers/requests'
-import { AgeRatings, ArtworkObj, Categories, Companies, Covers, ExploreObj, GameDetailObj, GameObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
+import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
 import { ExternalCategories, WebsiteCategories } from '../../frontendga/assets/ratingsvglinks'
 require('dotenv').config()
 import express, { Request, Response } from 'express'
@@ -241,7 +241,7 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 					// platform_logo: searchResults[i].platform_logo,
 					url: '',
 					id: searchResults[i].id,
-					platform_family: 0,
+					platform_family: 0
 				})
 				if (i === searchResults.length - 1) {
 					platformlogoids = platformlogoids.concat(searchResults[i].platform_logo)
@@ -649,8 +649,8 @@ app.post('/api/deprecated/explore', async (request: Request, response: Response)
 	let searchResults: any
 	let errSearch = false
 	let searchConfig: SearchConfig
-	let responseObj: ExploreObj[] = []
-	let indResponseObj: ExploreObj
+	let responseObj: Explore[] = []
+	let indResponseObj: Explore
 	const sortBy = body.sortBy
 	const externalFilter = body.externalFilter
 	const limit = body.limit
@@ -779,24 +779,17 @@ app.post('/api/deprecated/explore', async (request: Request, response: Response)
 	return response.status(200).json(responseObj)
 })
 
-app.post('/api/explore', async (request: Request, response: Response) => {
+app.post('/api/deprecated/exploreplatformlogos', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
 	let errSearch = false
 	let searchConfig: SearchConfig
-	let responseObj: ExploreObj[] = []
-	let indResponseObj: ExploreObj
-	/*const sortBy = sortMap.get(body.sortBy)
-	const sortDirection = body.sortDirection
-	const externalFilter = body.externalFilter
-	const platformFamily = body.platformFamily !== '' ? platformFamilyQuerified(body.platformFamily) : ''
-	const limit = body.limit
 	let logoSet: Set<number> = new Set<number>()
 	let allPlatforms: any
 	let arrOfPlatforms: Platforms[] = []
 	let arrayofUniqueLogos: string[] = []
-	let responseObj: ExploreObj[] = []
-	let indResponseObj: ExploreObj*/
+	let responseObj: Explore[] = []
+	let indResponseObj: Explore
 
 
 
@@ -829,7 +822,7 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 		.then(async (response) => {
 			searchResults = response.data[0].result
 			for (let i = 0; i < searchResults.length; i++) {
-				// let platformlogoids = ''
+				let platformlogoids = ''
 				indResponseObj = {
 					id: searchResults[i].id,
 					age_ratings: searchResults[i].age_ratings !== undefined ? searchResults[i].age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
@@ -853,12 +846,12 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 						officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : '' }))
 				}
 
-				// allPlatforms = indResponseObj.platforms.map((platform: any) => platform.platform_logo)
-				// for (let k = 0; k < allPlatforms.length; k++) {
-				// 	if (allPlatforms[k] > 0) {
-				// 		logoSet.add(allPlatforms[k])
-				// 	}
-				// }
+				allPlatforms = indResponseObj.platforms.map((platform: any) => platform.platform_logo)
+				for (let k = 0; k < allPlatforms.length; k++) {
+					if (allPlatforms[k] > 0) {
+						logoSet.add(allPlatforms[k])
+					}
+				}
 
 				const ageRatingsobj: AgeRatings = {
 					'ESRB': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1)[0].rating : 0,
@@ -866,17 +859,27 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 				}
 				indResponseObj.age_ratings = ageRatingsobj
 
-				// for (let j = 0; j < indResponseObj.platforms.length; j++) {
-				// 	if (indResponseObj.platforms[j].platform_logo > 0 ) {
-				// 		arrOfPlatforms.push({
-				// 			name: indResponseObj.platforms[j].name,
-				// 			category: indResponseObj.platforms[j].category,
-				// 			platform_logo: indResponseObj.platforms[j].platform_logo,
-				// 			url: ''
-				// 		})
-				// 	}
-				// }
-				// platformlogoids = arrOfPlatforms.map((platform: any) => platform.platform_logo).join(',')
+				for (let j = 0; j < indResponseObj.platforms.length; j++) {
+					// if (indResponseObj.platforms[j].platform_logo > 0 ) {
+					// 	arrOfPlatforms.push({
+					// 		name: indResponseObj.platforms[j].name,
+					// 		category: indResponseObj.platforms[j].category,
+					// 		platform_logo: indResponseObj.platforms[j].platform_logo,
+					// 		url: ''
+					// 	})
+					// }
+					if (indResponseObj.platforms[j].id > 0) {
+						arrOfPlatforms.push({
+							name: indResponseObj.platforms[j].name,
+							category: indResponseObj.platforms[j].category,
+							// platform_logo: '',
+							id: indResponseObj.platforms[j].id,
+							platform_family: 0,
+							url: ''
+						})
+					}
+				}
+				platformlogoids = arrOfPlatforms.map((platform: any) => platform.platform_logo).join(',')
 				responseObj.push(indResponseObj)
 			}
 		})
@@ -886,33 +889,114 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 		})
 	if (errSearch) {
 		return response.status(404).json({
-			Message: 'Search yielded no results'
+			Message: `Unable to retrieve filtered set of games when sorting on: ${body.sortBy} with direction ${body.sortDirection}, external filter ${body.externalFilter}, with limit ${body.limit} `
 		})
 	}
 
 
-	// if (logoSet.size >= 10) {
-	// 	arrayofUniqueLogos = splitIGDBSearch([...logoSet])
-	// }
-	// else {
-	// 	arrayofUniqueLogos.push([...logoSet].join(','))
-	// }
-	// let arrOfPlatformLogos: any[] = await getPlatformLogosIter(arrayofUniqueLogos)
-	// for (let i = 0; i < responseObj.length; i++) {
-	// 	let editResponseObj = responseObj[i]
-	// 	let arrofPlatformsInd = editResponseObj.platforms
-	// 	for (let j = 0; j < arrofPlatformsInd.length; j++) {
-	// 		let originalPlatformVal = arrofPlatformsInd[j]
-	// 		let platformurl: string = arrOfPlatformLogos.filter((platform: any) => platform.id === originalPlatformVal.platform_logo).length !== 0 ? arrOfPlatformLogos.filter((platform: any) => platform.id === originalPlatformVal.platform_logo)[0].url : ''
-	// 		arrofPlatformsInd[j] = {
-	// 			...originalPlatformVal,
-	// 			url: platformurl
-	// 		}
-	// 	}
-	// 	responseObj[i].platforms = arrofPlatformsInd
-	// }
-	return response.status(200).json(responseObj)
+	if (logoSet.size >= 10) {
+		arrayofUniqueLogos = splitIGDBSearch([...logoSet])
+	}
+	else {
+		arrayofUniqueLogos.push([...logoSet].join(','))
+	}
+	let arrOfPlatformLogos: any[] = await getPlatformLogosIter(arrayofUniqueLogos)
+	for (let i = 0; i < responseObj.length; i++) {
+		let editResponseObj = responseObj[i]
+		let arrofPlatformsInd = editResponseObj.platforms
+		for (let j = 0; j < arrofPlatformsInd.length; j++) {
+			let originalPlatformVal = arrofPlatformsInd[j]
+			// let platformurl: string = arrOfPlatformLogos.filter((platform: any) => platform.id === originalPlatformVal.platform_logo).length !== 0 ? arrOfPlatformLogos.filter((platform: any) => platform.id === originalPlatformVal.platform_logo)[0].url : ''
+			let platformurl: string = arrOfPlatformLogos.filter((platform: any) => platform.id === originalPlatformVal.platform_family).length !== 0 ? arrOfPlatformLogos.filter((platform: any) => platform.id === originalPlatformVal.platform_family)[0].url : ''
 
+			arrofPlatformsInd[j] = {
+				...originalPlatformVal,
+				url: platformurl
+			}
+		}
+		responseObj[i].platforms = arrofPlatformsInd
+	}
+	return response.status(200).json(responseObj)
+})
+
+app.post('/api/explore', async (request: Request, response: Response) => {
+	const body = request.body
+	let searchResults: any
+	let errSearch = false
+	let searchConfig: SearchConfig
+	let responseObj: Explore[] = []
+	let indResponseObj: Explore
+
+	if (body.sortBy === null || body.sortBy === '' || !body.sortBy) {
+		return response.status(400).json({
+			error: `No direction and sort specified: ${body.sortBy}`
+		})
+	}
+	else if (body.externalFilter === null || body.externalFilter === '' || !body.externalFilter) {
+		return response.status(400).json({
+			error: `No filter specified: ${body.sortBy}`
+		})
+	}
+	else if (body.limit === null || body.limit === 0 || !body.limit) {
+		return response.status(400).json({
+			error: `No limit specified or limit equal to: ${body.limit}`
+		})
+	}
+	else if (body.sortDirection === null || body.sortDirection === '' || !body.sortDirection) {
+		return response.status(400).json({
+			error: `No limit specified or limit equal to: ${body.limit}`
+		})
+	}
+
+	const { externalFilter, platformFamily, limit, sortBy } = parseBody(body)
+
+	searchConfig = updateIGDBSearchConfigMulti('multiquery','id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count, genres.name, involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category', externalFilter, platformFamily, limit, sortBy)
+	console.log(searchConfig)
+	await axios(searchConfig)
+		.then(async (response) => {
+			searchResults = response.data[0].result
+			for (let i = 0; i < searchResults.length; i++) {
+				indResponseObj = {
+					id: searchResults[i].id,
+					age_ratings: searchResults[i].age_ratings !== undefined ? searchResults[i].age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
+					cover: `https:${searchResults[i].cover.url.replace('thumb', '1080p')}`,
+					platforms: searchResults[i].platforms.map((indPlatform: any) => ({
+						name: indPlatform.name,
+						category: indPlatform.category,
+						url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
+						id: indPlatform.id,
+						platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
+					})),
+					rating: searchResults[i].total_rating,
+					ratingCount: searchResults[i].total_rating_count,
+					releaseDate: searchResults[i].first_release_date ? new Date(searchResults[i].first_release_date*1000) : 'N/A',
+					likes: searchResults[i].follows,
+					title: searchResults[i].name,
+					genres: searchResults[i].genres,
+					involved_companies: searchResults[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({
+						name: indCompany.company.name,
+						url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
+						officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : '' }))
+				}
+
+				const ageRatingsobj: AgeRatings = {
+					'ESRB': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1)[0].rating : 0,
+					'PEGI': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2)[0].rating : 0
+				}
+				indResponseObj.age_ratings = ageRatingsobj
+				responseObj.push(indResponseObj)
+			}
+		})
+		.catch((err) => {
+			errSearch = true
+			console.log(err)
+		})
+	if (errSearch) {
+		return response.status(404).json({
+			Message: `Unable to retrieve filtered set of games when sorting on: ${body.sortBy} with direction ${body.sortDirection}, external filter ${body.externalFilter}, with limit ${body.limit} `
+		})
+	}
+	return response.status(200).json(responseObj)
 })
 
 app.post('/api/overview', async (request: Request, response: Response) => {
@@ -921,8 +1005,6 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 	let responseObj: GameObj
 	let errSearch = false
 	let searchConfig: SearchConfig
-	const externalGamesSrc: number[] = ExternalCategories.map((indExternal) => indExternal.source)
-	const websiteSrc: number[] = WebsiteCategories.map((indExternal) => indExternal.source)
 	const searchterm = body.searchterm
 
 	if (searchterm === '' || !searchterm) {
@@ -942,7 +1024,7 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 				)),
 				category: searchResults.category,
 				cover: `https:${searchResults.cover.url.replace('thumb', '1080p')}`,
-				external_games: searchResults.external_games.filter((indExternal: any) => indExternal.url && indExternal.url !== '').filter((indCategory: any) => externalGamesSrc.includes(indCategory.category)).map((indCategory: any) => ({
+				external_games: searchResults.external_games.filter((indExternal: any) => indExternal.url && indExternal.url !== '').filter((indCategory: any) => ExternalCategories.map((indExternal) => indExternal.source).includes(indCategory.category)).map((indCategory: any) => ({
 					category: indCategory.category,
 					url: indCategory.url,
 				})),
@@ -982,7 +1064,7 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 					name: indVideo.name,
 					ytlink: indVideo.video_id
 				})),
-				websites: searchResults.websites.filter((indWeb: any) => indWeb.url && indWeb.url !== '').filter((indCategory: any) => websiteSrc.includes(indCategory.category)).map((indCategory: any) => ({
+				websites: searchResults.websites.filter((indWeb: any) => indWeb.url && indWeb.url !== '').filter((indCategory: any) => WebsiteCategories.map((indExternal) => indExternal.source).includes(indCategory.category)).map((indCategory: any) => ({
 					category: indCategory.category,
 					url: indCategory.url,
 				})),
@@ -1090,6 +1172,7 @@ app.post('/api/language', async (request: Request, response: Response) => {
 	let errSearch = false
 	let searchConfig: SearchConfig
 	const gameid = body.gameid
+
 	if (gameid === null || gameid === '' || !gameid) {
 		return response.status(400).json({
 			error: `No game id specified: ${gameid}`
@@ -1118,18 +1201,17 @@ app.post('/api/language', async (request: Request, response: Response) => {
 			Message: `Unable to retrieve language supports for game id: ${gameid}`
 		})
 	}
-	return response.status(200).json(responseObj)
+	return response.status(200).json(responseObj!)
 })
 
-
-
-app.post('/api/altsimilargames', async (request: Request, response: Response) => {
+app.post('/api/similargames', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
+	let responseObj: SimilarGamesObj
 	let errSearch = false
 	let searchConfig: SearchConfig
-	let responseObj: any
 	const gameid = body.gameid
+
 	if (gameid === null || gameid === '' || !gameid) {
 		return response.status(400).json({
 			error: `No game id specified: ${gameid}`
@@ -1144,20 +1226,25 @@ app.post('/api/altsimilargames', async (request: Request, response: Response) =>
 			}
 		})
 		.catch((err) => {
+			errSearch = true
 			console.log(err)
 		})
-	return response.status(200).json(responseObj)
+	if (errSearch) {
+		return response.status(404).json({
+			Message: `Unable to retrieve similar games for game id: ${gameid}`
+		})
+	}
+	return response.status(200).json(responseObj!)
 })
 
-app.post('/api/altvideos', async (request: Request, response: Response) => {
+app.post('/api/videos', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
-	let responseObj: VideoObj = {
-		videos: []
-	}
+	let responseObj: VideoObj
 	let errSearch = false
 	let searchConfig: SearchConfig
 	const gameid = body.gameid
+
 	if (gameid === null || gameid === '' || !gameid) {
 		return response.status(400).json({
 			error: `No game id specified: ${gameid}`
@@ -1175,21 +1262,25 @@ app.post('/api/altvideos', async (request: Request, response: Response) => {
 			}
 		})
 		.catch((err) => {
+			errSearch = true
 			console.log(err)
 		})
-	return response.status(200).json(responseObj)
+	if (errSearch) {
+		return response.status(404).json({
+			Message: `Unable to retrieve videos for game id: ${gameid}`
+		})
+	}
+	return response.status(200).json(responseObj!)
 })
 
-app.post('/api/altwebsites', async (request: Request, response: Response) => {
+app.post('/api/websites', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
-	let responseObj: WebsiteObj = {
-		websites: []
-	}
-	const websiteSrc: number[] = WebsiteCategories.map((indExternal) => indExternal.source)
+	let responseObj: WebsiteObj
 	let errSearch = false
 	let searchConfig: SearchConfig
 	const gameid = body.gameid
+
 	if (gameid === null || gameid === '' || !gameid) {
 		return response.status(400).json({
 			error: `No game id specified: ${gameid}`
@@ -1200,18 +1291,23 @@ app.post('/api/altwebsites', async (request: Request, response: Response) => {
 		.then((response) => {
 			searchResults = response.data[0]
 			responseObj = {
-				websites: searchResults.websites.filter((indWeb: any) => indWeb.url && indWeb.url !== '').filter((indCategory: any) => websiteSrc.includes(indCategory.category)).map((indCategory: any) => ({
+				websites: searchResults.websites.filter((indWeb: any) => indWeb.url && indWeb.url !== '').filter((indCategory: any) => WebsiteCategories.map((indExternal) => indExternal.source).includes(indCategory.category)).map((indCategory: any) => ({
 					category: indCategory.category,
 					url: indCategory.url,
 				})),
 			}
 		})
 		.catch((err) => {
+			errSearch = true
 			console.log(err)
 		})
-	return response.status(200).json(responseObj)
+	if (errSearch) {
+		return response.status(404).json({
+			Message: `Unable to retrieve websites for game id: ${gameid}`
+		})
+	}
+	return response.status(200).json(responseObj!)
 })
-
 
 
 const PORT = process.env.API_PORT || 3001

@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import axios from 'axios'
 import { Request, Response, NextFunction } from 'express'
-import { AgeRatings, ArtworkObj, Categories, Companies, Covers, ExploreObj, GameDetailObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SimilarObj, VideoObj, Videos, WebsiteObj } from './betypes'
+import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SimilarObj, VideoObj, Videos, WebsiteObj } from './betypes'
 import { sortMap, platformMap, genreMap } from '../helpers/enums'
 import { ExternalCategories, WebsiteCategories } from '../../frontendga/assets/ratingsvglinks'
 require('dotenv').config()
@@ -257,10 +257,10 @@ const parseGenres = (genres: string) => {
 	return formattedString
 }
 
-const populateSimilarGames = (gameArr: any[]) => {
-	let gameObjArr: any[] = []
+const populateSimilarGames = (gameArr: any[]): Explore[] => {
+	let gameObjArr: Explore[] = []
 	for (let i = 0; i < gameArr.length; i++) {
-		const indGameObj = {
+		const indGameObj: Explore = {
 			id: gameArr[i].id,
 			age_ratings: gameArr[i].age_ratings !== undefined ? gameArr[i].age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
 			cover: `https:${gameArr[i].cover.url.replace('thumb', '1080p')}`,
@@ -287,9 +287,9 @@ const populateSimilarGames = (gameArr: any[]) => {
 			'PEGI': indGameObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2).length !== 0 ? indGameObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2)[0].rating : 0
 		}
 		indGameObj.age_ratings = ageRatingsobj
-		gameObjArr.push(indGameObj)
+		gameObjArr!.push(indGameObj)
 	}
-	return gameObjArr
+	return gameObjArr!
 }
 
 const categoriesCheck = (category: string, src: number) => {

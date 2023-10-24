@@ -87,7 +87,11 @@ type WebsiteObj = {
 	websites: string | Categories[]
 }
 
-type ExploreObj = {
+type SimilarGamesObj = {
+	similar_games: Explore[]
+}
+
+type Explore = {
 	id: number | null,
 	age_ratings: any | AgeRatingsInter[] | AgeRatings
 	cover: string | null,
@@ -172,7 +176,7 @@ type GameObj = {
 	platforms: Platforms[],
 	player_perspectives: string[],
 	screenshots: string[],
-	similar_games: ExploreObj[],
+	similar_games: Explore[],
 	slug: string,
 	story: string,
 	summary: string,
@@ -191,4 +195,4 @@ type GameObj = {
 
 }
 
-export { SearchConfig, GameDetailObj, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, ExploreObj, AgeRatings, Categories, Companies, Platforms, Videos, Languages, Covers, GameObj }
+export { SearchConfig, GameDetailObj, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, Explore, AgeRatings, Categories, Companies, Platforms, Videos, Languages, Covers, GameObj, SimilarGamesObj }

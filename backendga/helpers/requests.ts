@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import axios from 'axios'
 import { Request, Response, NextFunction } from 'express'
-import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SimilarObj, VideoObj, Videos, WebsiteObj } from './betypes'
+import { AgeRatings, MultiSearchObj, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SimilarObj, VideoObj, Videos, WebsiteObj } from './betypes'
 import { sortMap, platformMap, genreMap } from '../helpers/enums'
 import { ExternalCategories, WebsiteCategories } from '../../frontendga/assets/ratingsvglinks'
 require('dotenv').config()
@@ -218,19 +218,18 @@ const platformFamilyQuerified = (platform: string) => {
 	return platformStr
 }
 
-const parseBody = (requestBody: any) => {
+const parseBody = (requestBody: any): MultiSearchObj => {
 	const { sortBy, sortDirection, externalFilter, nullable, platformFamily, limit, genres } = requestBody
 	const sortJoined = `${sortMap.get(sortBy)} ${sortDirection}`
 	const platformFamilyMapped = platformFamily !== '' ? platformFamilyQuerified(platformFamily) : ''
-
 	const externalFilterJoined = externalFilter.concat(parseNullable(nullable), genres !== '' ? ` ${parseGenres(genres)}` : '')
-	const SearchConfigObject = {
+
+	return {
 		sortBy: sortJoined,
 		externalFilter: externalFilterJoined,
 		platformFamily : platformFamilyMapped,
 		limit: limit
 	}
-	return SearchConfigObject
 }
 
 const parseNullable = (nullableStr: string) => {

@@ -6,6 +6,13 @@ type SearchConfig = {
 	data: string
 }
 
+type MultiSearchObj = {
+	sortBy: string,
+	externalFilter: string,
+	platformFamily: string,
+	limit: number
+}
+
 type GameDetailObj = {
 	id: number | null,
 	age_ratings: string | AgeRatings,
@@ -195,4 +202,4 @@ type GameObj = {
 
 }
 
-export { SearchConfig, GameDetailObj, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, Explore, AgeRatings, Categories, Companies, Platforms, Videos, Languages, Covers, GameObj, SimilarGamesObj }
+export { SearchConfig, MultiSearchObj, GameDetailObj, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, Explore, AgeRatings, Categories, Companies, Platforms, Videos, Languages, Covers, GameObj, SimilarGamesObj }

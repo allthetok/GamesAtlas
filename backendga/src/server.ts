@@ -815,7 +815,6 @@ app.post('/api/deprecated/exploreplatformlogos', async (request: Request, respon
 	}
 
 	const { externalFilter, platformFamily, limit, sortBy } = parseBody(body)
-
 	searchConfig = updateIGDBSearchConfigMulti('multiquery','id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count, genres.name, involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category', externalFilter, platformFamily, limit, sortBy)
 	console.log(searchConfig)
 	await axios(searchConfig)

@@ -3,11 +3,11 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware } from '../helpers/requests'
 import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
 import { ExternalCategories, WebsiteCategories } from '../../frontendga/assets/ratingsvglinks'
 require('dotenv').config()
-import express, { Request, Response } from 'express'
+import express, { NextFunction, Request, Response } from 'express'
 import axios from 'axios'
 import cors from 'cors'
 import pg, { QueryResult } from 'pg'
@@ -918,39 +918,25 @@ app.post('/api/deprecated/exploreplatformlogos', async (request: Request, respon
 	return response.status(200).json(responseObj)
 })
 
-app.post('/api/explore', async (request: Request, response: Response) => {
+app.use('/api/explore', (request: Request, response: Response, next: NextFunction) => {
+	const body = request.body
+	// console.log(request.baseUrl.replace('/api/',''))
+
+	errorHandleMiddleware(request.baseUrl, body, response)
+	next()
+})
+
+app.use('/api/explore', async (request: Request, response: Response, next: NextFunction) => {
 	const body = request.body
 	let searchResults: any
 	let errSearch = false
 	let searchConfig: SearchConfig
 	let responseObj: Explore[] = []
 	let indResponseObj: Explore
-
-	if (body.sortBy === null || body.sortBy === '' || !body.sortBy) {
-		return response.status(400).json({
-			error: `No direction and sort specified: ${body.sortBy}`
-		})
-	}
-	else if (body.externalFilter === null || body.externalFilter === '' || !body.externalFilter) {
-		return response.status(400).json({
-			error: `No filter specified: ${body.sortBy}`
-		})
-	}
-	else if (body.limit === null || body.limit === 0 || !body.limit) {
-		return response.status(400).json({
-			error: `No limit specified or limit equal to: ${body.limit}`
-		})
-	}
-	else if (body.sortDirection === null || body.sortDirection === '' || !body.sortDirection) {
-		return response.status(400).json({
-			error: `No limit specified or limit equal to: ${body.limit}`
-		})
-	}
-
 	const { externalFilter, platformFamily, limit, sortBy } = parseBody(body)
 
 	searchConfig = updateIGDBSearchConfigMulti('multiquery','id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count, genres.name, involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category', externalFilter, platformFamily, limit, sortBy)
-	console.log(searchConfig)
+	// console.log(searchConfig)
 	await axios(searchConfig)
 		.then(async (response) => {
 			searchResults = response.data[0].result
@@ -995,8 +981,93 @@ app.post('/api/explore', async (request: Request, response: Response) => {
 			Message: `Unable to retrieve filtered set of games when sorting on: ${body.sortBy} with direction ${body.sortDirection}, external filter ${body.externalFilter}, with limit ${body.limit} `
 		})
 	}
-	return response.status(200).json(responseObj)
+	response.json(responseObj)
+	next()
 })
+
+
+app.post('/api/explore', async (request: Request, response: Response, next: NextFunction) => {
+	// const body = request.body
+	// let searchResults: any
+	// let errSearch = false
+	// let searchConfig: SearchConfig
+	// let responseObj: Explore[] = []
+	// let indResponseObj: Explore
+
+	// if (body.sortBy === null || body.sortBy === '' || !body.sortBy) {
+	// 	return response.status(400).json({
+	// 		error: `No direction and sort specified: ${body.sortBy}`
+	// 	})
+	// }
+	// else if (body.externalFilter === null || body.externalFilter === '' || !body.externalFilter) {
+	// 	return response.status(400).json({
+	// 		error: `No filter specified: ${body.sortBy}`
+	// 	})
+	// }
+	// else if (body.limit === null || body.limit === 0 || !body.limit) {
+	// 	return response.status(400).json({
+	// 		error: `No limit specified or limit equal to: ${body.limit}`
+	// 	})
+	// }
+	// else if (body.sortDirection === null || body.sortDirection === '' || !body.sortDirection) {
+	// 	return response.status(400).json({
+	// 		error: `No limit specified or limit equal to: ${body.limit}`
+	// 	})
+	// }
+
+	// const { externalFilter, platformFamily, limit, sortBy } = parseBody(body)
+
+	// searchConfig = updateIGDBSearchConfigMulti('multiquery','id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count, genres.name, involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category', externalFilter, platformFamily, limit, sortBy)
+	// //console.log(searchConfig)
+	// await axios(searchConfig)
+	// 	.then(async (response) => {
+	// 		searchResults = response.data[0].result
+	// 		for (let i = 0; i < searchResults.length; i++) {
+	// 			indResponseObj = {
+	// 				id: searchResults[i].id,
+	// 				age_ratings: searchResults[i].age_ratings !== undefined ? searchResults[i].age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
+	// 				cover: `https:${searchResults[i].cover.url.replace('thumb', '1080p')}`,
+	// 				platforms: searchResults[i].platforms.map((indPlatform: any) => ({
+	// 					name: indPlatform.name,
+	// 					category: indPlatform.category,
+	// 					url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
+	// 					id: indPlatform.id,
+	// 					platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
+	// 				})),
+	// 				rating: searchResults[i].total_rating,
+	// 				ratingCount: searchResults[i].total_rating_count,
+	// 				releaseDate: searchResults[i].first_release_date ? new Date(searchResults[i].first_release_date*1000) : 'N/A',
+	// 				likes: searchResults[i].follows,
+	// 				title: searchResults[i].name,
+	// 				genres: searchResults[i].genres,
+	// 				involved_companies: searchResults[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({
+	// 					name: indCompany.company.name,
+	// 					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
+	// 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : '' }))
+	// 			}
+
+	// 			const ageRatingsobj: AgeRatings = {
+	// 				'ESRB': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1)[0].rating : 0,
+	// 				'PEGI': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2)[0].rating : 0
+	// 			}
+	// 			indResponseObj.age_ratings = ageRatingsobj
+	// 			responseObj.push(indResponseObj)
+	// 		}
+	// 	})
+	// 	.catch((err) => {
+	// 		errSearch = true
+	// 		console.log(err)
+	// 	})
+	// if (errSearch) {
+	// 	return response.status(404).json({
+	// 		Message: `Unable to retrieve filtered set of games when sorting on: ${body.sortBy} with direction ${body.sortDirection}, external filter ${body.externalFilter}, with limit ${body.limit} `
+	// 	})
+	// }
+	// return response.status(200).json(responseObj)
+	return response.status(200)
+})
+
+
 
 app.post('/api/overview', async (request: Request, response: Response) => {
 	const body = request.body
@@ -1015,6 +1086,7 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data[0]
+			console.log(searchResults)
 			responseObj = {
 				id: searchResults.id,
 				age_ratings: searchResults.age_ratings !== undefined ? searchResults.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
@@ -1052,7 +1124,7 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 				)),
 				similar_games: populateSimilarGames(searchResults.similar_games),
 				slug: searchResults.slug,
-				story: searchResults.storyline,
+				story: searchResults.storyline ? searchResults.storyline : 'there is no official storyline published for this game.',
 				summary: searchResults.summary,
 				tags: searchResults.tags,
 				themes: searchResults.themes,

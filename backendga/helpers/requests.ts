@@ -272,7 +272,7 @@ const populateSimilarGames = (gameArr: any[]): Explore[] => {
 			})),
 			rating: gameArr[i].total_rating,
 			ratingCount: gameArr[i].total_rating_count,
-			releaseDate: new Date(gameArr[i].first_release_date*1000),
+			releaseDate: gameArr[i].first_release_date ? new Date(gameArr[i].first_release_date*1000) : 'N/A',
 			likes: gameArr[i].follows,
 			title: gameArr[i].name,
 			genres: gameArr[i].genres,
@@ -295,4 +295,46 @@ const categoriesCheck = (category: string, src: number) => {
 	return category === 'External' ? ExternalCategories.map((indExternal: any) => indExternal.source).includes(src) : WebsiteCategories.map((indWeb: any) => indWeb.source).includes(src)
 }
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseNullable, populateSimilarGames, categoriesCheck }
+const errorHandleMiddleware = (requestBaseUrl: string, body: any, response: Response) => {
+	const requestRoute = requestBaseUrl.replace('/api/','')
+
+	switch (requestRoute) {
+	case 'explore':
+		if (body.sortBy === null || body.sortBy === '' || !body.sortBy) {
+			response.status(400).json({
+				error: `No direction and sort specified: ${body.sortBy}`
+			})
+		}
+		else if (body.externalFilter === null || body.externalFilter === '' || !body.externalFilter) {
+			response.status(400).json({
+				error: `No filter specified: ${body.sortBy}`
+			})
+		}
+		else if (body.limit === null || body.limit === 0 || !body.limit) {
+			response.status(400).json({
+				error: `No limit specified or limit equal to: ${body.limit}`
+			})
+		}
+		else if (body.sortDirection === null || body.sortDirection === '' || !body.sortDirection) {
+			response.status(400).json({
+				error: `No limit specified or limit equal to: ${body.limit}`
+			})
+		}
+		break
+	case 'overview':
+		if (body.searchterm === '' || !body.searchterm) {
+			response.status(400).json({
+				error: 'No search term specified'
+			})
+		}
+		break
+	default:
+		if (body.gameid === null || !body.gameid) {
+			response.status(400).json({
+				error: `No game id specified: ${body.gameid}`
+			})
+		}
+	}
+}
+
+export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware }

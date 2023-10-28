@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
 import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware } from '../helpers/requests'
-import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
+import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, GlobalAuxiliaryObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
 import { ExternalCategories, WebsiteCategories } from '../../frontendga/assets/ratingsvglinks'
 require('dotenv').config()
 import express, { NextFunction, Request, Response } from 'express'
@@ -1075,7 +1075,9 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 	let responseObj: GameObj
 	let errSearch = false
 	let searchConfig: SearchConfig
-	const searchterm = body.searchterm
+	let searchterm = body.searchterm.replace('+', ' ')
+	// searchterm = searchterm.replace('%', ':')
+	// console.log(searchterm)
 
 	if (searchterm === '' || !searchterm) {
 		return response.status(400).json({
@@ -1173,7 +1175,7 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 app.post('/api/artwork', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
-	let responseObj: ArtworkObj
+	let responseObj: ArtworkObj & GlobalAuxiliaryObj
 	let errSearch = false
 	let searchConfig: SearchConfig
 	const gameid: number = body.gameid
@@ -1183,12 +1185,21 @@ app.post('/api/artwork', async (request: Request, response: Response) => {
 			error: `No game id specified: ${gameid}`
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,artworks.url', gameid, '', false, '', 0, '')
+	searchConfig = updateIGDBSearchConfig('games', 'id,artworks.url,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,storyline,first_release_date', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data[0]
 			responseObj = {
-				artworks: searchResults.artworks.map((indImage: any) => (`https:${indImage.url.replace('thumb', '1080p')}`))
+				artworks: searchResults.artworks.map((indImage: any) => (`https:${indImage.url.replace('thumb', '1080p')}`)),
+				title: searchResults.name,
+				involved_companies: searchResults.involved_companies.map((indCompany: any) => ({
+					name: indCompany.company.name,
+					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
+					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
+				})),
+				summary: searchResults.summary,
+				story: searchResults.storyline,
+				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
 		})
 		.catch((err) => {
@@ -1206,7 +1217,7 @@ app.post('/api/artwork', async (request: Request, response: Response) => {
 app.post('/api/screenshots', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
-	let responseObj: ScreenshotsObj
+	let responseObj: ScreenshotsObj & GlobalAuxiliaryObj
 	let errSearch = false
 	let searchConfig: SearchConfig
 	const gameid: number = body.gameid
@@ -1216,12 +1227,21 @@ app.post('/api/screenshots', async (request: Request, response: Response) => {
 			error: `No game id specified: ${gameid}`
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,screenshots.url', gameid, '', false, '', 0, '')
+	searchConfig = updateIGDBSearchConfig('games', 'id,screenshots.url,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,storyline,first_release_date', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data[0]
 			responseObj = {
-				screenshots: searchResults.screenshots.map((indImage: any) => (`https:${indImage.url.replace('thumb', '1080p')}`))
+				screenshots: searchResults.screenshots.map((indImage: any) => (`https:${indImage.url.replace('thumb', '1080p')}`)),
+				title: searchResults.name,
+				involved_companies: searchResults.involved_companies.map((indCompany: any) => ({
+					name: indCompany.company.name,
+					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
+					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
+				})),
+				summary: searchResults.summary,
+				story: searchResults.storyline,
+				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
 		})
 		.catch((err) => {
@@ -1239,7 +1259,7 @@ app.post('/api/screenshots', async (request: Request, response: Response) => {
 app.post('/api/language', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
-	let responseObj: LanguageObj
+	let responseObj: LanguageObj & GlobalAuxiliaryObj
 	let errSearch = false
 	let searchConfig: SearchConfig
 	const gameid = body.gameid
@@ -1249,7 +1269,7 @@ app.post('/api/language', async (request: Request, response: Response) => {
 			error: `No game id specified: ${gameid}`
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'language_supports.language.name,language_supports.language.locale,language_supports.language.native_name,language_supports.language_support_type.name', gameid, '', false, '', 0, '')
+	searchConfig = updateIGDBSearchConfig('games', 'language_supports.language.name,language_supports.language.locale,language_supports.language.native_name,language_supports.language_support_type.name,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,storyline,first_release_date', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data[0]
@@ -1261,6 +1281,15 @@ app.post('/api/language', async (request: Request, response: Response) => {
 					native: indLanguage.language.native_name,
 					marked: false
 				})),
+				title: searchResults.name,
+				involved_companies: searchResults.involved_companies.map((indCompany: any) => ({
+					name: indCompany.company.name,
+					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
+					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
+				})),
+				summary: searchResults.summary,
+				story: searchResults.storyline,
+				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
 		})
 		.catch((err) => {
@@ -1278,7 +1307,7 @@ app.post('/api/language', async (request: Request, response: Response) => {
 app.post('/api/similargames', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
-	let responseObj: SimilarGamesObj
+	let responseObj: SimilarGamesObj & GlobalAuxiliaryObj
 	let errSearch = false
 	let searchConfig: SearchConfig
 	const gameid = body.gameid
@@ -1288,12 +1317,21 @@ app.post('/api/similargames', async (request: Request, response: Response) => {
 			error: `No game id specified: ${gameid}`
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,similar_games.name,similar_games.id,similar_games.age_ratings.category,similar_games.age_ratings.rating,similar_games.cover.url,similar_games.platforms.name,similar_games.platforms.category,similar_games.platforms.platform_logo.url,similar_games.platforms.platform_family,similar_games.first_release_date,similar_games.follows,similar_games.name,similar_games.total_rating,similar_games.total_rating_count, similar_games.genres.name, similar_games.involved_companies.company.name, similar_games.involved_companies.company.logo.url, similar_games.involved_companies.developer, similar_games.involved_companies.company.websites.url, similar_games.involved_companies.company.websites.category', gameid, '', false, '', 0, '')
+	searchConfig = updateIGDBSearchConfig('games', 'id,similar_games.name,similar_games.id,similar_games.age_ratings.category,similar_games.age_ratings.rating,similar_games.cover.url,similar_games.platforms.name,similar_games.platforms.category,similar_games.platforms.platform_logo.url,similar_games.platforms.platform_family,similar_games.first_release_date,similar_games.follows,similar_games.name,similar_games.total_rating,similar_games.total_rating_count, similar_games.genres.name, similar_games.involved_companies.company.name, similar_games.involved_companies.company.logo.url, similar_games.involved_companies.developer, similar_games.involved_companies.company.websites.url, similar_games.involved_companies.company.websites.category,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,storyline,first_release_date', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data[0]
 			responseObj = {
 				similar_games: populateSimilarGames(searchResults.similar_games),
+				title: searchResults.name,
+				involved_companies: searchResults.involved_companies.map((indCompany: any) => ({
+					name: indCompany.company.name,
+					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
+					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
+				})),
+				summary: searchResults.summary,
+				story: searchResults.storyline,
+				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
 		})
 		.catch((err) => {
@@ -1311,7 +1349,7 @@ app.post('/api/similargames', async (request: Request, response: Response) => {
 app.post('/api/videos', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
-	let responseObj: VideoObj
+	let responseObj: VideoObj & GlobalAuxiliaryObj
 	let errSearch = false
 	let searchConfig: SearchConfig
 	const gameid = body.gameid
@@ -1321,7 +1359,7 @@ app.post('/api/videos', async (request: Request, response: Response) => {
 			error: `No game id specified: ${gameid}`
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,videos.name,videos.video_id', gameid, '', false, '', 0, '')
+	searchConfig = updateIGDBSearchConfig('games', 'id,videos.name,videos.video_id,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,storyline,first_release_date', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data[0]
@@ -1330,6 +1368,15 @@ app.post('/api/videos', async (request: Request, response: Response) => {
 					name: indVideo.name,
 					ytlink: indVideo.video_id
 				})),
+				title: searchResults.name,
+				involved_companies: searchResults.involved_companies.map((indCompany: any) => ({
+					name: indCompany.company.name,
+					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
+					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
+				})),
+				summary: searchResults.summary,
+				story: searchResults.storyline,
+				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
 		})
 		.catch((err) => {
@@ -1347,7 +1394,7 @@ app.post('/api/videos', async (request: Request, response: Response) => {
 app.post('/api/websites', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
-	let responseObj: WebsiteObj
+	let responseObj: WebsiteObj & GlobalAuxiliaryObj
 	let errSearch = false
 	let searchConfig: SearchConfig
 	const gameid = body.gameid
@@ -1357,7 +1404,7 @@ app.post('/api/websites', async (request: Request, response: Response) => {
 			error: `No game id specified: ${gameid}`
 		})
 	}
-	searchConfig= updateIGDBSearchConfig('games', 'id,websites.game,websites.category,websites.url', gameid, '', false, '', 0, '')
+	searchConfig= updateIGDBSearchConfig('games', 'id,websites.game,websites.category,websites.url,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,storyline,first_release_date', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data[0]
@@ -1366,6 +1413,15 @@ app.post('/api/websites', async (request: Request, response: Response) => {
 					category: indCategory.category,
 					url: indCategory.url,
 				})),
+				title: searchResults.name,
+				involved_companies: searchResults.involved_companies.map((indCompany: any) => ({
+					name: indCompany.company.name,
+					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
+					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
+				})),
+				summary: searchResults.summary,
+				story: searchResults.storyline,
+				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
 		})
 		.catch((err) => {

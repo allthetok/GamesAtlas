@@ -98,6 +98,14 @@ type SimilarGamesObj = {
 	similar_games: Explore[]
 }
 
+type GlobalAuxiliaryObj = {
+	title: string,
+	involved_companies: Companies[],
+	summary: string,
+	story: string,
+	releaseDate: Date | string
+}
+
 type Explore = {
 	id: number | null,
 	age_ratings: any | AgeRatingsInter[] | AgeRatings
@@ -202,4 +210,4 @@ type GameObj = {
 
 }
 
-export { SearchConfig, MultiSearchObj, GameDetailObj, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, Explore, AgeRatings, Categories, Companies, Platforms, Videos, Languages, Covers, GameObj, SimilarGamesObj }
+export { SearchConfig, MultiSearchObj, GameDetailObj, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, Explore, AgeRatings, Categories, Companies, Platforms, Videos, Languages, Covers, GameObj, SimilarGamesObj, GlobalAuxiliaryObj }

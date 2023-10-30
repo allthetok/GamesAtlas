@@ -210,4 +210,20 @@ type GameObj = {
 
 }
 
-export { SearchConfig, MultiSearchObj, GameDetailObj, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, Explore, AgeRatings, Categories, Companies, Platforms, Videos, Languages, Covers, GameObj, SimilarGamesObj, GlobalAuxiliaryObj }
+interface ArtworksObj {
+	artworks: string[]
+}
+
+interface ScreenshotObj {
+	screenshots: string[]
+}
+
+interface VideosObj {
+	videos: Videos[]
+}
+
+interface WebsitesObj {
+	websites: Categories[]
+}
+
+export { SearchConfig, MultiSearchObj, GameDetailObj, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, Explore, AgeRatings, Categories, Companies, Platforms, Videos, Languages, Covers, GameObj, SimilarGamesObj, GlobalAuxiliaryObj, ArtworksObj, ScreenshotObj, VideosObj, WebsitesObj }

@@ -1083,17 +1083,22 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 			error: 'No search term specified'
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings.category,age_ratings.rating,artworks.url,category,cover.url,first_release_date,external_games.category,external_games.url,follows,game_modes.name,genres.name,hypes,involved_companies,keywords.name,name,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,player_perspectives.name,total_rating,total_rating_count,screenshots.url,similar_games.name,similar_games.id,similar_games.age_ratings.category,similar_games.age_ratings.rating,similar_games.cover.url,similar_games.platforms.name,similar_games.platforms.category,similar_games.platforms.platform_logo.url,similar_games.platforms.platform_family,similar_games.first_release_date,similar_games.follows,similar_games.name,similar_games.total_rating,similar_games.total_rating_count, similar_games.genres.name, similar_games.involved_companies.company.name, similar_games.involved_companies.company.logo.url, similar_games.involved_companies.developer, similar_games.involved_companies.company.websites.url, similar_games.involved_companies.company.websites.category,slug,storyline,summary,tags,themes.name,url,videos.name,videos.video_id,websites.game,websites.category,websites.url,language_supports.language.name,language_supports.language.locale,language_supports.language.native_name,language_supports.language_support_type.name,game_localizations.name,game_localizations.region.name,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category', '', '', true, searchterm, 1, '')
+	//Original without category filter
+	// searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings.category,age_ratings.rating,artworks.url,category,cover.url,first_release_date,external_games.category,external_games.url,follows,game_modes.name,genres.name,hypes,involved_companies,keywords.name,name,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,player_perspectives.name,total_rating,total_rating_count,screenshots.url,similar_games.name,similar_games.id,similar_games.age_ratings.category,similar_games.age_ratings.rating,similar_games.cover.url,similar_games.platforms.name,similar_games.platforms.category,similar_games.platforms.platform_logo.url,similar_games.platforms.platform_family,similar_games.first_release_date,similar_games.follows,similar_games.name,similar_games.total_rating,similar_games.total_rating_count, similar_games.genres.name, similar_games.involved_companies.company.name, similar_games.involved_companies.company.logo.url, similar_games.involved_companies.developer, similar_games.involved_companies.company.websites.url, similar_games.involved_companies.company.websites.category,slug,storyline,summary,tags,themes.name,url,videos.name,videos.video_id,websites.game,websites.category,websites.url,language_supports.language.name,language_supports.language.locale,language_supports.language.native_name,language_supports.language_support_type.name,game_localizations.name,game_localizations.region.name,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category', '', '', true, searchterm, 1, '')
+	//check that category = 0: Main Game not a DLC
+	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings.category,age_ratings.rating,artworks.url,category,cover.url,first_release_date,external_games.category,external_games.url,follows,game_modes.name,genres.name,hypes,involved_companies,keywords.name,name,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,player_perspectives.name,total_rating,total_rating_count,screenshots.url,similar_games.name,similar_games.id,similar_games.age_ratings.category,similar_games.age_ratings.rating,similar_games.cover.url,similar_games.platforms.name,similar_games.platforms.category,similar_games.platforms.platform_logo.url,similar_games.platforms.platform_family,similar_games.first_release_date,similar_games.follows,similar_games.name,similar_games.total_rating,similar_games.total_rating_count, similar_games.genres.name, similar_games.involved_companies.company.name, similar_games.involved_companies.company.logo.url, similar_games.involved_companies.developer, similar_games.involved_companies.company.websites.url, similar_games.involved_companies.company.websites.category,slug,storyline,summary,tags,themes.name,url,videos.name,videos.video_id,websites.game,websites.category,websites.url,language_supports.language.name,language_supports.language.locale,language_supports.language.native_name,language_supports.language_support_type.name,game_localizations.name,game_localizations.region.name,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category', '', 'category=(0,1,2,4,5,8,9)', true, searchterm, 1, '')
+
+	console.log(searchConfig)
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data[0]
-			console.log(searchResults)
+			// console.log(searchResults)
 			responseObj = {
 				id: searchResults.id,
 				age_ratings: searchResults.age_ratings !== undefined ? searchResults.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
-				artworks: searchResults.artworks.map((indImage: any) => (
+				artworks: searchResults.artworks ? searchResults.artworks?.map((indImage: any) => (
 					`https:${indImage.url.replace('thumb', '1080p')}`
-				)),
+				)) : ['https://fastly.picsum.photos/id/866/536/354.jpg?hmac=tGofDTV7tl2rprappPzKFiZ9vDh5MKj39oa2D--gqhA'],
 				category: searchResults.category,
 				cover: `https:${searchResults.cover.url.replace('thumb', '1080p')}`,
 				external_games: searchResults.external_games.filter((indExternal: any) => indExternal.url && indExternal.url !== '').filter((indCategory: any) => ExternalCategories.map((indExternal) => indExternal.source).includes(indCategory.category)).map((indCategory: any) => ({
@@ -1102,7 +1107,7 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 				})),
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A',
 				likes: searchResults.follows,
-				game_modes: searchResults.game_modes.map((indMode: any) => indMode.name),
+				game_modes: searchResults.game_modes ? searchResults.game_modes.map((indMode: any) => indMode.name) : ['Not provided'],
 				genres: searchResults.genres,
 				hypes: searchResults.hypes,
 				involved_companies: searchResults.involved_companies.map((indCompany: any) => ({
@@ -1110,7 +1115,7 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
 				})),
-				keywords: searchResults.keywords.map((indKeyword: any) => indKeyword.name),
+				keywords: searchResults.keywords ? searchResults.keywords.map((indKeyword: any) => indKeyword.name) : ['Not provided'],
 				title: searchResults.name,
 				platforms: searchResults.platforms.map((indPlatform: any) => ({
 					name: indPlatform.name,
@@ -1119,7 +1124,7 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 					id: indPlatform.id,
 					platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
 				})),
-				player_perspectives: searchResults.player_perspectives.map((indPersp: any) => indPersp.name),
+				player_perspectives: searchResults.player_perspectives ? searchResults.player_perspectives.map((indPersp: any) => indPersp.name) : ['Not provided'],
 				screenshots: searchResults.screenshots.map((indImage: any) => (
 					`https:${indImage.url.replace('thumb', '1080p')}`
 				)),
@@ -1132,10 +1137,13 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 				rating: searchResults.total_rating,
 				ratingCount: searchResults.total_rating_count,
 				url: searchResults.url,
-				videos: searchResults.videos.map((indVideo: any) => ({
+				videos: searchResults.videos ? searchResults.videos.map((indVideo: any) => ({
 					name: indVideo.name,
 					ytlink: indVideo.video_id
-				})),
+				})) : [{
+					name: 'Generic Youtube Video',
+					ytlink: 'WfV-0Yv5vNY'
+				}],
 				websites: searchResults.websites.filter((indWeb: any) => indWeb.url && indWeb.url !== '').filter((indCategory: any) => WebsiteCategories.map((indExternal) => indExternal.source).includes(indCategory.category)).map((indCategory: any) => ({
 					category: indCategory.category,
 					url: indCategory.url,
@@ -1197,7 +1205,7 @@ app.post('/api/artwork', async (request: Request, response: Response) => {
 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
 				})),
 				summary: searchResults.summary,
-				story: searchResults.storyline,
+				story: searchResults.storyline ? searchResults.storyline : 'there is no official storyline published for this game.',
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
 		})
@@ -1239,7 +1247,7 @@ app.post('/api/screenshots', async (request: Request, response: Response) => {
 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
 				})),
 				summary: searchResults.summary,
-				story: searchResults.storyline,
+				story: searchResults.storyline ? searchResults.storyline : 'there is no official storyline published for this game.',
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
 		})
@@ -1287,7 +1295,7 @@ app.post('/api/language', async (request: Request, response: Response) => {
 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
 				})),
 				summary: searchResults.summary,
-				story: searchResults.storyline,
+				story: searchResults.storyline ? searchResults.storyline : 'there is no official storyline published for this game.',
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
 		})
@@ -1329,7 +1337,7 @@ app.post('/api/similargames', async (request: Request, response: Response) => {
 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
 				})),
 				summary: searchResults.summary,
-				story: searchResults.storyline,
+				story: searchResults.storyline ? searchResults.storyline : 'there is no official storyline published for this game.',
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
 		})
@@ -1374,7 +1382,7 @@ app.post('/api/videos', async (request: Request, response: Response) => {
 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
 				})),
 				summary: searchResults.summary,
-				story: searchResults.storyline,
+				story: searchResults.storyline ? searchResults.storyline : 'there is no official storyline published for this game.',
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
 		})
@@ -1419,7 +1427,7 @@ app.post('/api/websites', async (request: Request, response: Response) => {
 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
 				})),
 				summary: searchResults.summary,
-				story: searchResults.storyline,
+				story: searchResults.storyline ? searchResults.storyline : 'there is no official storyline published for this game.',
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
 		})
@@ -1433,6 +1441,66 @@ app.post('/api/websites', async (request: Request, response: Response) => {
 		})
 	}
 	return response.status(200).json(responseObj!)
+})
+
+app.post('/api/search', async (request: Request, response: Response) => {
+	const body = request.body
+	let searchResults: any
+	let responseObj: any[] = [] //change to real type
+	let errSearch = false
+	let searchConfig: SearchConfig
+	let searchterm = body.searchterm.replace('+', ' ')
+
+	if (searchterm === '' || !searchterm) {
+		return response.status(400).json({
+			error: 'No search term specified'
+		})
+	}
+	//Original without category filter
+	// searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings.category,age_ratings.rating,artworks.url,category,cover.url,first_release_date,external_games.category,external_games.url,follows,game_modes.name,genres.name,hypes,involved_companies,keywords.name,name,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,player_perspectives.name,total_rating,total_rating_count,screenshots.url,similar_games.name,similar_games.id,similar_games.age_ratings.category,similar_games.age_ratings.rating,similar_games.cover.url,similar_games.platforms.name,similar_games.platforms.category,similar_games.platforms.platform_logo.url,similar_games.platforms.platform_family,similar_games.first_release_date,similar_games.follows,similar_games.name,similar_games.total_rating,similar_games.total_rating_count, similar_games.genres.name, similar_games.involved_companies.company.name, similar_games.involved_companies.company.logo.url, similar_games.involved_companies.developer, similar_games.involved_companies.company.websites.url, similar_games.involved_companies.company.websites.category,slug,storyline,summary,tags,themes.name,url,videos.name,videos.video_id,websites.game,websites.category,websites.url,language_supports.language.name,language_supports.language.locale,language_supports.language.native_name,language_supports.language_support_type.name,game_localizations.name,game_localizations.region.name,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category', '', '', true, searchterm, 1, '')
+	//check that category = 0: Main Game not a DLC
+	searchConfig = updateIGDBSearchConfig('games', 'id,category,cover.url,first_release_date,follows,name,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,total_rating,total_rating_count,involved_companies.company.name, involved_companies.company.websites.url,involved_companies.company.logo.url', '', 'category=(0,1,2,4,5,8,9) & involved_companies!=n', true, searchterm, 10, '')
+
+	console.log(searchConfig)
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data
+			console.log(searchResults)
+			for (let i = 0; i < searchResults.length; i++) {
+				const indResponseObj = {
+					id: searchResults[i].id,
+					category: searchResults[i].category,
+					cover: `https:${searchResults[i].cover.url.replace('thumb', '1080p')}`,
+					releaseDate: searchResults[i].first_release_date ? new Date(searchResults[i].first_release_date*1000) : 'N/A',
+					likes: searchResults[i].follows,
+					involved_companies: searchResults[i].involved_companies.map((indCompany: any) => ({
+						name: indCompany.company.name,
+						url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
+						officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
+					})),
+					title: searchResults[i].name,
+					platforms: searchResults[i].platforms.map((indPlatform: any) => ({
+						name: indPlatform.name,
+						category: indPlatform.category,
+						url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
+						id: indPlatform.id,
+						platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
+					})),
+					rating: searchResults[i].total_rating
+				}
+				responseObj.push(indResponseObj)
+			}
+		})
+		.catch((err) => {
+			errSearch = true
+			console.log(err)
+		})
+	if (errSearch) {
+		return response.status(404).json({
+			Message: 'Search yielded no results'
+		})
+	}
+	return response.status(200).json(responseObj)
 })
 
 

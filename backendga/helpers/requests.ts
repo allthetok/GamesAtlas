@@ -36,7 +36,7 @@ const updateIGDBSearchConfig = (endpoint: string, datafields: string, stringofid
 		data: ''
 	}
 	if (search) {
-		searchConfig.data = `search "${searchterm}"; fields ${datafields}; ${limit !== 0 ? ` limit ${limit};` : ''}`
+		searchConfig.data = `search "${searchterm}"; fields ${datafields}; ${limit !== 0 ? ` limit ${limit};` : ''} ${additionalfilter !== '' ? `where ${additionalfilter};` : ''}`
 	}
 	else if (!search && sortby !== '') {
 		searchConfig.data = `fields ${datafields}; sort ${sortby}; where ${additionalfilter}; limit ${limit};`

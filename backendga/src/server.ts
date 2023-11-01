@@ -1114,9 +1114,9 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 					name: indCompany.company.name,
 					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
-				})) : [{ name: 'None', url: '', officialSite: '' }],
+				})) : [{ name: 'No Developer/Publisher', url: '', officialSite: '' }],
 				keywords: searchResults.keywords ? searchResults.keywords.map((indKeyword: any) => indKeyword.name) : ['Not provided'],
-				title: searchResults.name,
+				title: searchResults.name ? searchResults.name : 'Unknown Title',
 				platforms: searchResults.platforms ? searchResults.platforms.map((indPlatform: any) => ({
 					name: indPlatform.name,
 					category: indPlatform.category,
@@ -1140,10 +1140,7 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 				videos: searchResults.videos ? searchResults.videos.map((indVideo: any) => ({
 					name: indVideo.name,
 					ytlink: indVideo.video_id
-				})) : [{
-					name: 'Generic Youtube Video',
-					ytlink: 'ByGJQzlzxQg'
-				}],
+				})) : [{ name: 'Generic Youtube Video', ytlink: 'ByGJQzlzxQg' }],
 				websites: searchResults.websites ? searchResults.websites.filter((indWeb: any) => indWeb.url && indWeb.url !== '').filter((indCategory: any) => WebsiteCategories.map((indExternal) => indExternal.source).includes(indCategory.category)).map((indCategory: any) => ({
 					category: indCategory.category,
 					url: indCategory.url,
@@ -1197,14 +1194,14 @@ app.post('/api/artwork', async (request: Request, response: Response) => {
 		.then((response) => {
 			searchResults = response.data[0]
 			responseObj = {
-				artworks: searchResults.artworks.map((indImage: any) => (`https:${indImage.url.replace('thumb', '1080p')}`)),
-				title: searchResults.name,
-				involved_companies: searchResults.involved_companies.map((indCompany: any) => ({
+				artworks: searchResults.artworks ? searchResults.artworks.map((indImage: any) => (`https:${indImage.url.replace('thumb', '1080p')}`)) : [placeholderImages.NoArtworkScreenshotImage] ,
+				title: searchResults.name ? searchResults.name : 'Unknown Title',
+				involved_companies: searchResults.involved_companies ? searchResults.involved_companies.map((indCompany: any) => ({
 					name: indCompany.company.name,
 					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
-				})),
-				summary: searchResults.summary,
+				})) : [{ name: 'No Developer/Publisher', url: '', officialSite: '' }],
+				summary: searchResults.summary ? searchResults.summary : 'there is no official summary published for this game.',
 				story: searchResults.storyline ? searchResults.storyline : 'there is no official storyline published for this game.',
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
@@ -1239,14 +1236,14 @@ app.post('/api/screenshots', async (request: Request, response: Response) => {
 		.then((response) => {
 			searchResults = response.data[0]
 			responseObj = {
-				screenshots: searchResults.screenshots.map((indImage: any) => (`https:${indImage.url.replace('thumb', '1080p')}`)),
-				title: searchResults.name,
-				involved_companies: searchResults.involved_companies.map((indCompany: any) => ({
+				screenshots: searchResults.screenshots ? searchResults.screenshots.map((indImage: any) => (`https:${indImage.url.replace('thumb', '1080p')}`)) : [placeholderImages.NoArtworkScreenshotImage] ,
+				title: searchResults.name ? searchResults.name : 'Unknown Title',
+				involved_companies: searchResults.involved_companies ? searchResults.involved_companies.map((indCompany: any) => ({
 					name: indCompany.company.name,
 					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
-				})),
-				summary: searchResults.summary,
+				})) : [{ name: 'No Developer/Publisher', url: '', officialSite: '' }],
+				summary: searchResults.summary ? searchResults.summary : 'there is no official summary published for this game.',
 				story: searchResults.storyline ? searchResults.storyline : 'there is no official storyline published for this game.',
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
@@ -1281,20 +1278,20 @@ app.post('/api/language', async (request: Request, response: Response) => {
 		.then((response) => {
 			searchResults = response.data[0]
 			responseObj = {
-				language_supports: searchResults.language_supports.map((indLanguage: any) => ({
+				language_supports: searchResults.language_supports ? searchResults.language_supports.map((indLanguage: any) => ({
 					language: indLanguage.language.name,
 					language_support_type: indLanguage.language_support_type.name,
 					locale: indLanguage.language.locale,
 					native: indLanguage.language.native_name,
 					marked: false
-				})),
-				title: searchResults.name,
-				involved_companies: searchResults.involved_companies.map((indCompany: any) => ({
+				})) : [{ language: 'None', language_support_type: 'Not specified', locale: 'N', native: 'None', marked: false }],
+				title: searchResults.name ? searchResults.name : 'Unknown Title',
+				involved_companies: searchResults.involved_companies ? searchResults.involved_companies.map((indCompany: any) => ({
 					name: indCompany.company.name,
 					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
-				})),
-				summary: searchResults.summary,
+				})) : [{ name: 'No Developer/Publisher', url: '', officialSite: '' }],
+				summary: searchResults.summary ? searchResults.summary : 'there is no official summary published for this game.',
 				story: searchResults.storyline ? searchResults.storyline : 'there is no official storyline published for this game.',
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
@@ -1330,13 +1327,13 @@ app.post('/api/similargames', async (request: Request, response: Response) => {
 			searchResults = response.data[0]
 			responseObj = {
 				similar_games: populateSimilarGames(searchResults.similar_games),
-				title: searchResults.name,
-				involved_companies: searchResults.involved_companies.map((indCompany: any) => ({
+				title: searchResults.name ? searchResults.name : 'Unknown Title',
+				involved_companies: searchResults.involved_companies ? searchResults.involved_companies.map((indCompany: any) => ({
 					name: indCompany.company.name,
 					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
-				})),
-				summary: searchResults.summary,
+				})) : [{ name: 'No Developer/Publisher', url: '', officialSite: '' }],
+				summary: searchResults.summary ? searchResults.summary : 'there is no official summary published for this game.',
 				story: searchResults.storyline ? searchResults.storyline : 'there is no official storyline published for this game.',
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
@@ -1371,17 +1368,17 @@ app.post('/api/videos', async (request: Request, response: Response) => {
 		.then((response) => {
 			searchResults = response.data[0]
 			responseObj = {
-				videos: searchResults.videos.map((indVideo: any) => ({
+				videos: searchResults.videos ? searchResults.videos.map((indVideo: any) => ({
 					name: indVideo.name,
 					ytlink: indVideo.video_id
-				})),
-				title: searchResults.name,
-				involved_companies: searchResults.involved_companies.map((indCompany: any) => ({
+				})) : [{ name: 'Generic Youtube Video', ytlink: 'ByGJQzlzxQg' }],
+				title: searchResults.name ? searchResults.name : 'Unknown Title',
+				involved_companies: searchResults.involved_companies ? searchResults.involved_companies.map((indCompany: any) => ({
 					name: indCompany.company.name,
 					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
-				})),
-				summary: searchResults.summary,
+				})) : [{ name: 'No Developer/Publisher', url: '', officialSite: '' }],
+				summary: searchResults.summary ? searchResults.summary : 'there is no official summary published for this game.',
 				story: searchResults.storyline ? searchResults.storyline : 'there is no official storyline published for this game.',
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
@@ -1416,17 +1413,17 @@ app.post('/api/websites', async (request: Request, response: Response) => {
 		.then((response) => {
 			searchResults = response.data[0]
 			responseObj = {
-				websites: searchResults.websites.filter((indWeb: any) => indWeb.url && indWeb.url !== '').filter((indCategory: any) => WebsiteCategories.map((indExternal) => indExternal.source).includes(indCategory.category)).map((indCategory: any) => ({
+				websites: searchResults.websites ? searchResults.websites.filter((indWeb: any) => indWeb.url && indWeb.url !== '').filter((indCategory: any) => WebsiteCategories.map((indExternal) => indExternal.source).includes(indCategory.category)).map((indCategory: any) => ({
 					category: indCategory.category,
 					url: indCategory.url,
-				})),
-				title: searchResults.name,
-				involved_companies: searchResults.involved_companies.map((indCompany: any) => ({
+				})) : [{ category: 0, url: '' }],
+				title: searchResults.name ? searchResults.name : 'Unknown Title',
+				involved_companies: searchResults.involved_companies ? searchResults.involved_companies.map((indCompany: any) => ({
 					name: indCompany.company.name,
 					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
-				})),
-				summary: searchResults.summary,
+				})) : [{ name: 'No Developer/Publisher', url: '', officialSite: '' }],
+				summary: searchResults.summary ? searchResults.summary : 'there is no official summary published for this game.',
 				story: searchResults.storyline ? searchResults.storyline : 'there is no official storyline published for this game.',
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
@@ -1469,23 +1466,23 @@ app.post('/api/search', async (request: Request, response: Response) => {
 			for (let i = 0; i < searchResults.length; i++) {
 				const indResponseObj = {
 					id: searchResults[i].id,
-					category: categoryMap.get(searchResults[i].category),
-					cover: `https:${searchResults[i].cover.url.replace('thumb', '1080p')}`,
+					category: searchResults[i].category ? categoryMap.get(searchResults[i]?.category) : 'Unknown Category',
+					cover: searchResults[i].cover ? `https:${searchResults[i].cover.url.replace('thumb', '1080p')}` : placeholderImages.NoArtworkScreenshotImage,
 					releaseDate: searchResults[i].first_release_date ? new Date(searchResults[i].first_release_date*1000) : 'N/A',
-					likes: searchResults[i].follows,
-					involved_companies: searchResults[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({
+					likes: searchResults[i].follows ? searchResults[i].follows : 0,
+					involved_companies: searchResults[i].involved_companies ? searchResults[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({
 						name: indCompany.company.name,
 						url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
 						officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
-					})),
-					title: searchResults[i].name,
-					platforms: searchResults[i].platforms.map((indPlatform: any) => ({
+					})) : [{ name: 'No Developer/Publisher', url: '', officialSite: '' }],
+					title: searchResults[i].name ? searchResults[i].name : 'Unknown Title',
+					platforms: searchResults[i].platforms ? searchResults[i].platforms.map((indPlatform: any) => ({
 						name: indPlatform.name,
 						category: indPlatform.category,
 						url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
 						id: indPlatform.id,
 						platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
-					})),
+					})): [{ name: 'None', category: 0, url: '', id: 0, platform_family: 0 }],
 					rating: searchResults[i].total_rating
 				}
 				responseObj.push(indResponseObj)

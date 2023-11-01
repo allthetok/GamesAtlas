@@ -6,7 +6,7 @@ import axios from 'axios'
 import { Request, Response, NextFunction } from 'express'
 import { AgeRatings, MultiSearchObj, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SimilarObj, VideoObj, Videos, WebsiteObj } from './betypes'
 import { sortMap, platformMap, genreMap } from '../helpers/enums'
-import { ExternalCategories, WebsiteCategories } from '../../frontendga/assets/ratingsvglinks'
+import { ExternalCategories, WebsiteCategories, placeholderImages } from '../../frontendga/assets/ratingsvglinks'
 require('dotenv').config()
 
 const requestLogger = (request: Request, response: Response, next: NextFunction): void => {
@@ -257,6 +257,9 @@ const parseGenres = (genres: string) => {
 }
 
 const populateSimilarGames = (gameArr: any[]): Explore[] => {
+	if (!gameArr) {
+		return [{ id: 0, age_ratings: [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }], cover: placeholderImages.NoArtworkScreenshotImage, platforms:  [{ name: 'None', category: 0, url: '', id: 0, platform_family: 0 }], rating: 0, ratingCount: 0, releaseDate: 'N/A', likes: 0, title: 'None', genres: [{ id: 0, name: 'Not provided' }], involved_companies: [{ name: 'None', url: '', officialSite: '' }] }]
+	}
 	let gameObjArr: Explore[] = []
 	for (let i = 0; i < gameArr.length; i++) {
 		const indGameObj: Explore = {

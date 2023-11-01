@@ -5,7 +5,7 @@
 /* eslint-disable prefer-const */
 import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware } from '../helpers/requests'
 import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, GlobalAuxiliaryObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
-import { ExternalCategories, WebsiteCategories } from '../../frontendga/assets/ratingsvglinks'
+import { ExternalCategories, WebsiteCategories, placeholderImages } from '../../frontendga/assets/ratingsvglinks'
 require('dotenv').config()
 import express, { NextFunction, Request, Response } from 'express'
 import axios from 'axios'
@@ -1098,67 +1098,67 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 				age_ratings: searchResults.age_ratings !== undefined ? searchResults.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
 				artworks: searchResults.artworks ? searchResults.artworks?.map((indImage: any) => (
 					`https:${indImage.url.replace('thumb', '1080p')}`
-				)) : ['https://fastly.picsum.photos/id/866/536/354.jpg?hmac=tGofDTV7tl2rprappPzKFiZ9vDh5MKj39oa2D--gqhA'],
-				category: searchResults.category,
-				cover: `https:${searchResults.cover.url.replace('thumb', '1080p')}`,
-				external_games: searchResults.external_games.filter((indExternal: any) => indExternal.url && indExternal.url !== '').filter((indCategory: any) => ExternalCategories.map((indExternal) => indExternal.source).includes(indCategory.category)).map((indCategory: any) => ({
+				)) : [placeholderImages.NoArtworkScreenshotImage],
+				category: searchResults.category ? categoryMap.get(searchResults?.category) : 'Unknown Category',
+				cover: searchResults.cover ? `https:${searchResults.cover.url.replace('thumb', '1080p')}` : placeholderImages.NoArtworkScreenshotImage,
+				external_games: searchResults.external_games ? searchResults.external_games.filter((indExternal: any) => indExternal.url && indExternal.url !== '').filter((indCategory: any) => ExternalCategories.map((indExternal) => indExternal.source).includes(indCategory.category)).map((indCategory: any) => ({
 					category: indCategory.category,
 					url: indCategory.url,
-				})),
+				})) : ([{ category: 0, url: '' }]),
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A',
-				likes: searchResults.follows,
+				likes: searchResults.follows ? searchResults.follows : 0,
 				game_modes: searchResults.game_modes ? searchResults.game_modes.map((indMode: any) => indMode.name) : ['Not provided'],
-				genres: searchResults.genres,
-				hypes: searchResults.hypes,
-				involved_companies: searchResults.involved_companies.map((indCompany: any) => ({
+				genres: searchResults.genres ? searchResults.genres : [{ id: 0, name: 'Not provided' }],
+				hypes: searchResults.hypes ? searchResults.hypes : 0,
+				involved_companies: searchResults.involved_companies ? searchResults.involved_companies.map((indCompany: any) => ({
 					name: indCompany.company.name,
 					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
-				})),
+				})) : [{ name: 'None', url: '', officialSite: '' }],
 				keywords: searchResults.keywords ? searchResults.keywords.map((indKeyword: any) => indKeyword.name) : ['Not provided'],
 				title: searchResults.name,
-				platforms: searchResults.platforms.map((indPlatform: any) => ({
+				platforms: searchResults.platforms ? searchResults.platforms.map((indPlatform: any) => ({
 					name: indPlatform.name,
 					category: indPlatform.category,
 					url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
 					id: indPlatform.id,
 					platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
-				})),
+				})) : [{ name: 'None', category: 0, url: '', id: 0, platform_family: 0 }],
 				player_perspectives: searchResults.player_perspectives ? searchResults.player_perspectives.map((indPersp: any) => indPersp.name) : ['Not provided'],
-				screenshots: searchResults.screenshots.map((indImage: any) => (
+				screenshots: searchResults.screenshots ? searchResults.screenshots.map((indImage: any) => (
 					`https:${indImage.url.replace('thumb', '1080p')}`
-				)),
+				)) : [placeholderImages.NoArtworkScreenshotImage],
 				similar_games: populateSimilarGames(searchResults.similar_games),
-				slug: searchResults.slug,
+				slug: searchResults.slug ? searchResults.slug : 'none',
 				story: searchResults.storyline ? searchResults.storyline : 'there is no official storyline published for this game.',
-				summary: searchResults.summary,
-				tags: searchResults.tags,
-				themes: searchResults.themes,
-				rating: searchResults.total_rating,
-				ratingCount: searchResults.total_rating_count,
-				url: searchResults.url,
+				summary: searchResults.summary ? searchResults.summary : 'there is no official summary published for this game.',
+				tags: searchResults.tags ? searchResults.tags : 'None',
+				themes: searchResults.themes ? searchResults.themes : [{ id: 0, name: 'None' }],
+				rating: searchResults.total_rating ? searchResults.total_rating : 0,
+				ratingCount: searchResults.total_rating_count ? searchResults.total_rating_count : 0,
+				url: searchResults.url ? searchResults.url : 'https://igdb.com',
 				videos: searchResults.videos ? searchResults.videos.map((indVideo: any) => ({
 					name: indVideo.name,
 					ytlink: indVideo.video_id
 				})) : [{
 					name: 'Generic Youtube Video',
-					ytlink: 'WfV-0Yv5vNY'
+					ytlink: 'ByGJQzlzxQg'
 				}],
-				websites: searchResults.websites.filter((indWeb: any) => indWeb.url && indWeb.url !== '').filter((indCategory: any) => WebsiteCategories.map((indExternal) => indExternal.source).includes(indCategory.category)).map((indCategory: any) => ({
+				websites: searchResults.websites ? searchResults.websites.filter((indWeb: any) => indWeb.url && indWeb.url !== '').filter((indCategory: any) => WebsiteCategories.map((indExternal) => indExternal.source).includes(indCategory.category)).map((indCategory: any) => ({
 					category: indCategory.category,
 					url: indCategory.url,
-				})),
-				languages: searchResults.language_supports.map((indLanguage: any) => ({
+				})) : [{ category: 0, url: '' }],
+				languages: searchResults.language_supports ? searchResults.language_supports.map((indLanguage: any) => ({
 					language: indLanguage.language.name,
 					language_support_type: indLanguage.language_support_type.name,
 					locale: indLanguage.language.locale,
 					native: indLanguage.language.native_name,
 					marked: false
-				})),
-				game_localizations: searchResults.game_localizations.map((indLocalization: any) => ({
+				})) : [{ language: 'None', language_support_type: 'Not specified', locale: 'N', native: 'None', marked: false }],
+				game_localizations: searchResults.game_localizations ? searchResults.game_localizations.map((indLocalization: any) => ({
 					name: indLocalization.name,
 					region: indLocalization.region.name
-				})),
+				})) : [{ name: '', region: '' }],
 			}
 			const ageRatingsobj: AgeRatings = {
 				'ESRB': responseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1).length !== 0 ? responseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1)[0].rating : 0,

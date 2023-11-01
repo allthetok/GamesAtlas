@@ -177,7 +177,7 @@ type GameObj = {
 	id: number,
 	age_ratings: any | AgeRatingsInter[] | AgeRatings,
 	artworks: string[],
-	category: number,
+	category: string | undefined,
 	cover: string,
 	external_games: Categories[],
 	releaseDate: Date | string,

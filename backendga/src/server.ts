@@ -12,7 +12,7 @@ import axios from 'axios'
 import cors from 'cors'
 import pg, { QueryResult } from 'pg'
 import bcrypt from 'bcrypt'
-import { sortMap, platformMap, genreMap } from '../helpers/enums'
+import { sortMap, platformMap, genreMap, categoryMap } from '../helpers/enums'
 const app = express()
 
 app.use(express.json())
@@ -1459,7 +1459,7 @@ app.post('/api/search', async (request: Request, response: Response) => {
 	//Original without category filter
 	// searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings.category,age_ratings.rating,artworks.url,category,cover.url,first_release_date,external_games.category,external_games.url,follows,game_modes.name,genres.name,hypes,involved_companies,keywords.name,name,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,player_perspectives.name,total_rating,total_rating_count,screenshots.url,similar_games.name,similar_games.id,similar_games.age_ratings.category,similar_games.age_ratings.rating,similar_games.cover.url,similar_games.platforms.name,similar_games.platforms.category,similar_games.platforms.platform_logo.url,similar_games.platforms.platform_family,similar_games.first_release_date,similar_games.follows,similar_games.name,similar_games.total_rating,similar_games.total_rating_count, similar_games.genres.name, similar_games.involved_companies.company.name, similar_games.involved_companies.company.logo.url, similar_games.involved_companies.developer, similar_games.involved_companies.company.websites.url, similar_games.involved_companies.company.websites.category,slug,storyline,summary,tags,themes.name,url,videos.name,videos.video_id,websites.game,websites.category,websites.url,language_supports.language.name,language_supports.language.locale,language_supports.language.native_name,language_supports.language_support_type.name,game_localizations.name,game_localizations.region.name,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category', '', '', true, searchterm, 1, '')
 	//check that category = 0: Main Game not a DLC
-	searchConfig = updateIGDBSearchConfig('games', 'id,category,cover.url,first_release_date,follows,name,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,total_rating,total_rating_count,involved_companies.company.name, involved_companies.company.websites.url,involved_companies.company.logo.url', '', 'category=(0,1,2,4,5,8,9) & involved_companies!=n', true, searchterm, 10, '')
+	searchConfig = updateIGDBSearchConfig('games', 'id,category,cover.url,first_release_date,follows,name,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,total_rating,total_rating_count,involved_companies.company.name, involved_companies.company.websites.url,involved_companies.company.logo.url,involved_companies.developer', '', 'category=(0,1,2,4,5,8,9) & involved_companies!=n', true, searchterm, 10, '')
 
 	console.log(searchConfig)
 	await axios(searchConfig)
@@ -1469,11 +1469,11 @@ app.post('/api/search', async (request: Request, response: Response) => {
 			for (let i = 0; i < searchResults.length; i++) {
 				const indResponseObj = {
 					id: searchResults[i].id,
-					category: searchResults[i].category,
+					category: categoryMap.get(searchResults[i].category),
 					cover: `https:${searchResults[i].cover.url.replace('thumb', '1080p')}`,
 					releaseDate: searchResults[i].first_release_date ? new Date(searchResults[i].first_release_date*1000) : 'N/A',
 					likes: searchResults[i].follows,
-					involved_companies: searchResults[i].involved_companies.map((indCompany: any) => ({
+					involved_companies: searchResults[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({
 						name: indCompany.company.name,
 						url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
 						officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''

@@ -47,5 +47,24 @@ const genreMap = new Map<string, number>([
 	['MOBA', 36],
 ])
 
+const categoryMap = new Map<number, string>([
+	[0, 'Main Game'],
+	[1, 'DLC'],
+	[2, 'Expansion'],
+	[3, 'Bundle'],
+	[4, 'Expansion'],
+	[5, 'Mod'],
+	[6, 'Episode'],
+	[7, 'Season'],
+	[8, 'Remake'],
+	[9, 'Remaster'],
+	[10, 'Expanded Game'],
+	[11, 'Port'],
+	[12, 'Fork'],
+	[13, 'Pack'],
+	[14, 'Update'],
 
-export { Language_support_types, sortMap, platformMap, genreMap }
+])
+
+
+export { Language_support_types, sortMap, platformMap, genreMap, categoryMap }

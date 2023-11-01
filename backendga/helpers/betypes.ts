@@ -207,7 +207,18 @@ type GameObj = {
 		name: string,
 		region: string
 	}[],
+}
 
+type SearchObj = {
+	id: number,
+	category: string | undefined,
+	cover: string,
+	releaseDate: Date | string,
+	likes: number,
+	involved_companies: Companies[],
+	title: string,
+	platforms: Platforms[],
+	rating: number
 }
 
 interface ArtworksObj {
@@ -226,4 +237,4 @@ interface WebsitesObj {
 	websites: Categories[]
 }
 
-export { SearchConfig, MultiSearchObj, GameDetailObj, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, Explore, AgeRatings, Categories, Companies, Platforms, Videos, Languages, Covers, GameObj, SimilarGamesObj, GlobalAuxiliaryObj, ArtworksObj, ScreenshotObj, VideosObj, WebsitesObj }
+export { SearchConfig, MultiSearchObj, GameDetailObj, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, Explore, AgeRatings, Categories, Companies, Platforms, Videos, Languages, Covers, GameObj, SimilarGamesObj, GlobalAuxiliaryObj, ArtworksObj, ScreenshotObj, VideosObj, WebsitesObj, SearchObj }

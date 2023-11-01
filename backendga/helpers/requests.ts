@@ -4,8 +4,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import axios from 'axios'
 import { Request, Response, NextFunction } from 'express'
-import { AgeRatings, MultiSearchObj, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SimilarObj, VideoObj, Videos, WebsiteObj } from './betypes'
-import { sortMap, platformMap, genreMap } from '../helpers/enums'
+import { AgeRatings, MultiSearchObj, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SimilarObj, VideoObj, Videos, WebsiteObj, SearchObj } from './betypes'
+import { sortMap, platformMap, genreMap, categoryMap } from '../helpers/enums'
 import { ExternalCategories, WebsiteCategories, placeholderImages } from '../../frontendga/assets/ratingsvglinks'
 require('dotenv').config()
 
@@ -294,6 +294,35 @@ const populateSimilarGames = (gameArr: any[]): Explore[] => {
 	return gameObjArr!
 }
 
+const populateSearchItems = (searchArr: any[]): SearchObj[] => {
+	let searchObjArr: SearchObj[] = []
+	for (let i = 0; i < searchArr.length; i++) {
+		const indSearchObj: SearchObj = {
+			id: searchArr[i].id,
+			category: categoryMap.get(searchArr[i].category),
+			cover: searchArr[i].cover ? `https:${searchArr[i].cover.url.replace('thumb', '1080p')}` : placeholderImages.NoArtworkScreenshotImage,
+			releaseDate: searchArr[i].first_release_date ? new Date(searchArr[i].first_release_date*1000) : 'N/A',
+			likes: searchArr[i].follows ? searchArr[i].follows : 0,
+			involved_companies: searchArr[i].involved_companies ? searchArr[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({
+				name: indCompany.company.name,
+				url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
+				officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
+			})) : [{ name: 'No Developer/Publisher', url: '', officialSite: '' }],
+			title: searchArr[i].name ? searchArr[i].name : 'Unknown Title',
+			platforms: searchArr[i].platforms ? searchArr[i].platforms.map((indPlatform: any) => ({
+				name: indPlatform.name,
+				category: indPlatform.category,
+				url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
+				id: indPlatform.id,
+				platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
+			})): [{ name: 'None', category: 0, url: '', id: 0, platform_family: 0 }],
+			rating: searchArr[i].total_rating ? searchArr[i].total_rating : 0
+		}
+		searchObjArr!.push(indSearchObj)
+	}
+	return searchObjArr!
+}
+
 const categoriesCheck = (category: string, src: number) => {
 	return category === 'External' ? ExternalCategories.map((indExternal: any) => indExternal.source).includes(src) : WebsiteCategories.map((indWeb: any) => indWeb.source).includes(src)
 }
@@ -340,4 +369,4 @@ const errorHandleMiddleware = (requestBaseUrl: string, body: any, response: Resp
 	}
 }
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware }
+export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems }

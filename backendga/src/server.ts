@@ -3,8 +3,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware } from '../helpers/requests'
-import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, GlobalAuxiliaryObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems } from '../helpers/requests'
+import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, GlobalAuxiliaryObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SearchObj, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
 import { ExternalCategories, WebsiteCategories, placeholderImages } from '../../frontendga/assets/ratingsvglinks'
 require('dotenv').config()
 import express, { NextFunction, Request, Response } from 'express'
@@ -1099,7 +1099,7 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 				artworks: searchResults.artworks ? searchResults.artworks?.map((indImage: any) => (
 					`https:${indImage.url.replace('thumb', '1080p')}`
 				)) : [placeholderImages.NoArtworkScreenshotImage],
-				category: searchResults.category ? categoryMap.get(searchResults?.category) : 'Unknown Category',
+				category: categoryMap.get(searchResults.category),
 				cover: searchResults.cover ? `https:${searchResults.cover.url.replace('thumb', '1080p')}` : placeholderImages.NoArtworkScreenshotImage,
 				external_games: searchResults.external_games ? searchResults.external_games.filter((indExternal: any) => indExternal.url && indExternal.url !== '').filter((indCategory: any) => ExternalCategories.map((indExternal) => indExternal.source).includes(indCategory.category)).map((indCategory: any) => ({
 					category: indCategory.category,
@@ -1443,7 +1443,7 @@ app.post('/api/websites', async (request: Request, response: Response) => {
 app.post('/api/search', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
-	let responseObj: any[] = [] //change to real type
+	let responseObj: SearchObj[]
 	let errSearch = false
 	let searchConfig: SearchConfig
 	let searchterm = body.searchterm.replace('+', ' ')
@@ -1462,31 +1462,7 @@ app.post('/api/search', async (request: Request, response: Response) => {
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data
-			console.log(searchResults)
-			for (let i = 0; i < searchResults.length; i++) {
-				const indResponseObj = {
-					id: searchResults[i].id,
-					category: searchResults[i].category ? categoryMap.get(searchResults[i]?.category) : 'Unknown Category',
-					cover: searchResults[i].cover ? `https:${searchResults[i].cover.url.replace('thumb', '1080p')}` : placeholderImages.NoArtworkScreenshotImage,
-					releaseDate: searchResults[i].first_release_date ? new Date(searchResults[i].first_release_date*1000) : 'N/A',
-					likes: searchResults[i].follows ? searchResults[i].follows : 0,
-					involved_companies: searchResults[i].involved_companies ? searchResults[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({
-						name: indCompany.company.name,
-						url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
-						officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
-					})) : [{ name: 'No Developer/Publisher', url: '', officialSite: '' }],
-					title: searchResults[i].name ? searchResults[i].name : 'Unknown Title',
-					platforms: searchResults[i].platforms ? searchResults[i].platforms.map((indPlatform: any) => ({
-						name: indPlatform.name,
-						category: indPlatform.category,
-						url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
-						id: indPlatform.id,
-						platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
-					})): [{ name: 'None', category: 0, url: '', id: 0, platform_family: 0 }],
-					rating: searchResults[i].total_rating
-				}
-				responseObj.push(indResponseObj)
-			}
+			responseObj = populateSearchItems(searchResults)
 		})
 		.catch((err) => {
 			errSearch = true
@@ -1497,7 +1473,7 @@ app.post('/api/search', async (request: Request, response: Response) => {
 			Message: 'Search yielded no results'
 		})
 	}
-	return response.status(200).json(responseObj)
+	return response.status(200).json(responseObj!)
 })
 
 

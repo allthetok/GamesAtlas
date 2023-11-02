@@ -265,24 +265,24 @@ const populateSimilarGames = (gameArr: any[]): Explore[] => {
 		const indGameObj: Explore = {
 			id: gameArr[i].id,
 			age_ratings: gameArr[i].age_ratings !== undefined ? gameArr[i].age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
-			cover: `https:${gameArr[i].cover.url.replace('thumb', '1080p')}`,
-			platforms: gameArr[i].platforms.map((indPlatform: any) => ({
+			cover: gameArr[i].cover ? `https:${gameArr[i].cover.url.replace('thumb', '1080p')}` : placeholderImages.NoArtworkScreenshotImage,
+			platforms: gameArr[i].platforms ? gameArr[i].platforms.map((indPlatform: any) => ({
 				name: indPlatform.name,
 				category: indPlatform.category,
 				url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
 				id: indPlatform.id,
 				platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
-			})),
-			rating: gameArr[i].total_rating,
-			ratingCount: gameArr[i].total_rating_count,
+			})) : [{ name: 'None', category: 0, url: '', id: 0, platform_family: 0 }],
+			rating: gameArr[i].total_rating ? gameArr[i].total_rating : 0,
+			ratingCount: gameArr[i].total_rating_count ? gameArr[i].total_rating_count : 0,
 			releaseDate: gameArr[i].first_release_date ? new Date(gameArr[i].first_release_date*1000) : 'N/A',
-			likes: gameArr[i].follows,
-			title: gameArr[i].name,
-			genres: gameArr[i].genres,
-			involved_companies: gameArr[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({
+			likes: gameArr[i].follows ? gameArr[i].follows : 0,
+			title: gameArr[i].name ? gameArr[i].name : 'None',
+			genres: gameArr[i].genres ? gameArr[i].genres : [{ id: 0, name: 'Not provided' }],
+			involved_companies: gameArr[i].involved_companies ? gameArr[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({
 				name: indCompany.company.name,
 				url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
-				officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : '' }))
+				officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : '' })) : [{ name: 'No Developer/Publisher', url: '', officialSite: '' }]
 		}
 		const ageRatingsobj: AgeRatings = {
 			'ESRB': indGameObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1).length !== 0 ? indGameObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1)[0].rating : 0,

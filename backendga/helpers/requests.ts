@@ -66,6 +66,22 @@ const updateIGDBSearchConfigMulti = (endpoint: string, datafields: string, addit
 	return searchConfig
 }
 
+const updateIGDBSearchConfigSpec = (endpoint: string, datafields: string, nullable: string, searchfield: string, searchterm: string, sortby: string): SearchConfig => {
+	const searchConfig: SearchConfig = {
+		method: 'post',
+		url: `${process.env.API_ROOT_URL}${endpoint}`,
+		headers: {
+			'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
+			'Client-ID': process.env.CLIENT_ID,
+			'Content-Type': 'text/plain',
+			'Cookie': '__cf_bm=Utg5TKlZGdxCgCn2UeuGW.LLOCZm6oHCCazU5AOMZjM-1692063194-0-AUdu+e0vn6rY+xWhK86IVLzsp03BXN3Wgq3P2CkRrTl56PwoVdQdbQaa1ysHtYnuWmX/WNREfgqIMVkEQEc9AEs='
+		},
+		data: ''
+	}
+	searchConfig.data = `fields ${datafields}; sort ${sortby}; where ${searchfield !== '' ? `${searchfield} ~ "${searchterm}"*` : ''} ${nullable !== '' ? `${parseNullable(nullable)}` : ''};`
+	return searchConfig
+}
+
 const iterateResponse = (data: any[], type: string | undefined, toPush: string[]): string[] => {
 	let arr: any[] = []
 	if (toPush[0] === 'url' && toPush.length === 1) {
@@ -323,6 +339,19 @@ const populateSearchItems = (searchArr: any[]): SearchObj[] => {
 	return searchObjArr!
 }
 
+const populateCompanySearch = (searchArr: any[]): Companies[] => {
+	let companyObjArr: Companies[] = []
+	for (let i = 0; i < searchArr.length; i++) {
+		const indCompanySearchObj: Companies = {
+			name: searchArr[i].name,
+			url: searchArr[i].logo ? `https:${searchArr[i].logo.url}` : '',
+			officialSite: searchArr[i].websites ? searchArr[i].websites.filter((web: any) => web.category === 1)[0].url : ''
+		}
+		companyObjArr!.push(indCompanySearchObj)
+	}
+	return companyObjArr!
+}
+
 const categoriesCheck = (category: string, src: number) => {
 	return category === 'External' ? ExternalCategories.map((indExternal: any) => indExternal.source).includes(src) : WebsiteCategories.map((indWeb: any) => indWeb.source).includes(src)
 }
@@ -369,4 +398,4 @@ const errorHandleMiddleware = (requestBaseUrl: string, body: any, response: Resp
 	}
 }
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems }
+export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, updateIGDBSearchConfigSpec, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, populateCompanySearch }

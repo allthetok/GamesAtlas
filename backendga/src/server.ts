@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch } from '../helpers/requests'
 import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, GlobalAuxiliaryObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SearchObj, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
 import { ExternalCategories, WebsiteCategories, placeholderImages } from '../../frontendga/assets/ratingsvglinks'
 require('dotenv').config()
@@ -1476,6 +1476,42 @@ app.post('/api/search', async (request: Request, response: Response) => {
 	return response.status(200).json(responseObj!)
 })
 
+app.post('/api/companysearch', async (request: Request, response: Response) => {
+	const body = request.body
+	let searchResults: any
+	let responseObj: Companies[]
+	let errSearch = false
+	let searchConfig: SearchConfig
+	const searchterm = body.searchterm
+	const nullable = body.nullable
+
+	if (searchterm === '' || !searchterm) {
+		return response.status(400).json({
+			error: 'No search term specified'
+		})
+	}
+
+	searchConfig = updateIGDBSearchConfigSpec('companies', 'name,logo.url,websites.url,websites.category', nullable, 'name', searchterm, 'start_date asc')
+	console.log(searchConfig)
+	await axios(searchConfig)
+		.then((response) => {
+			searchResults = response.data
+			console.log(searchResults)
+			responseObj = populateCompanySearch(searchResults)
+		})
+		.catch((err) => {
+			errSearch = true
+			console.log(err)
+		})
+	if (errSearch) {
+		return response.status(404).json({
+			Message: 'Search yielded no results'
+		})
+	}
+	return response.status(200).json(responseObj!)
+
+})
+
 
 const PORT = process.env.API_PORT || 3001
 
@@ -1486,3 +1522,5 @@ app.listen(PORT, () => {
 function err(reason: any): PromiseLike<never> {
 	throw new Error('Function not implemented.')
 }
+
+

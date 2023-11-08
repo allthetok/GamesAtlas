@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch, retrieveFormattedMapID } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch, retrieveFormattedMapID, parseNullable } from '../helpers/requests'
 import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, GlobalAuxiliaryObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SearchObj, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
 import { ExternalCategories, WebsiteCategories, placeholderImages } from '../../frontendga/assets/ratingsvglinks'
 require('dotenv').config()
@@ -1522,7 +1522,7 @@ app.post('/api/advsearch', async (request: Request, response: Response) => {
 
 	const sortBy = body.sortBy
 	const sortDirection = body.sortDirection
-	const externalFilter = body.externalFilter
+	// const externalFilter = body.externalFilter
 	const nullable = body.nullable
 	const platforms = body.platforms
 	const limit = body.limit
@@ -1534,6 +1534,9 @@ app.post('/api/advsearch', async (request: Request, response: Response) => {
 	const category = body.category
 	const companies = body.companies
 
+	console.log(gameModes)
+	console.log(themes)
+
 
 	// const { externalFilter, platformFamily, limit, sortBy } = parseBody(body)
 
@@ -1542,11 +1545,11 @@ app.post('/api/advsearch', async (request: Request, response: Response) => {
 			error: `No direction and sort specified: ${body.sortBy}`
 		})
 	}
-	else if (body.externalFilter === null || body.externalFilter === '' || !body.externalFilter) {
-		response.status(400).json({
-			error: `No filter specified: ${body.sortBy}`
-		})
-	}
+	// else if (body.externalFilter === null || body.externalFilter === '' || !body.externalFilter) {
+	// 	response.status(400).json({
+	// 		error: `No filter specified: ${body.sortBy}`
+	// 	})
+	// }
 	else if (body.limit === null || body.limit === 0 || !body.limit) {
 		response.status(400).json({
 			error: `No limit specified or limit equal to: ${body.limit}`
@@ -1570,13 +1573,18 @@ app.post('/api/advsearch', async (request: Request, response: Response) => {
 		data: ''
 	}
 
-	searchConfig.data = `fields id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family, first_release_date,follows,name,total_rating,total_rating_count, 
-	genres.name, involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category, themes.name, game_modes, category
-	where age_ratings != n & follows!= n & involved_companies != n & game_modes != n & category != n`
-	const resultArray: string[] = [retrieveFormattedMapID('Platforms', platforms), retrieveFormattedMapID('Genres', genres), retrieveFormattedMapID('Themes', themes), retrieveFormattedMapID('Game Modes', gameModes), retrieveFormattedMapID('Category', category)].filter((res: string) => res.length !== 0)
-	searchConfig.data = resultArray.length !== 0 ? searchConfig.data.concat(' & ', resultArray.join(' & ')) : searchConfig.data.concat(';')
-	searchConfig.data = searchConfig.data.concat(`limit ${limit}; sort ${sortBy} ${sortDirection}`)
+	searchConfig.data = 'fields id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count,genres.name,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer,involved_companies.company.websites.url,involved_companies.company.websites.category,game_modes,category; where '
+	// where age_ratings != n & follows!= n & involved_companies != n & game_modes != n & category != n`
+	// const resultArray: string[] = [retrieveFormattedMapID('Platforms', platforms), retrieveFormattedMapID('Genres', genres), retrieveFormattedMapID('Themes', themes), retrieveFormattedMapID('Game Modes', gameModes), retrieveFormattedMapID('Category', category)].filter((res: string) => res.length !== 0)
+	// searchConfig.data = resultArray.length !== 0 ? searchConfig.data.concat(' & ', resultArray.join(' & ')) : searchConfig.data.concat(';')
+	// searchConfig.data = searchConfig.data.concat(`limit ${limit}; sort ${sortMap.get(sortBy)} ${sortDirection}`)
 
+	let resultArray: string[] = [retrieveFormattedMapID('platforms', platforms), retrieveFormattedMapID('genres', genres), retrieveFormattedMapID('themes', themes), retrieveFormattedMapID('game_modes', gameModes), retrieveFormattedMapID('category', category)].filter((res: string) => res.length > 0)
+	searchConfig.data = resultArray.length !== 0 ? searchConfig.data.concat(resultArray.join(' & '), parseNullable(nullable), ';') : searchConfig.data.concat(parseNullable(nullable).slice(2), ';')
+	searchConfig.data = searchConfig.data.concat(`limit ${limit}; sort ${sortMap.get(sortBy)} ${sortDirection};`)
+	// searchConfig.data = searchConfig.data.concat(parseNullable(nullable))
+
+	console.log(searchConfig)
 	await axios(searchConfig)
 		.then(async (response) => {
 			searchResults = response.data[0].result

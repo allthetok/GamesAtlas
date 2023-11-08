@@ -257,6 +257,22 @@ const parseNullable = (nullableStr: string) => {
 	return formattedString
 }
 
+// const parseNullableAlt = (nullableStr: string, nofilter: boolean) => {
+// 	const nullableArr: string[] = nullableStr.split(', ')
+// 	let formattedString = ''
+// 	if (nullableArr.length === 1) {
+// 		formattedString = formattedString.concat(' & ', nullableArr[0], '!=n')
+// 	}
+// 	else {
+// 		for (let i = 0; i < nullableArr.length; i++) {
+// 			formattedString = i === nullableArr.length - 1 ?
+// 			formattedID = i === input.length - 1 ? formattedID = formattedID.concat(`${platformSpecificMap.get(input[i])})`) : formattedID.concat(`${platformSpecificMap.get(input[i])},`)
+// 			formattedString = formattedString.concat(' & ', nullableArr[i], '!=n')
+// 		}
+// 	}
+// 	return formattedString
+// }
+
 const parseGenres = (genres: string) => {
 	let formattedString = '& genres=['
 	if (!genres.includes(', ')) {
@@ -399,9 +415,13 @@ const errorHandleMiddleware = (requestBaseUrl: string, body: any, response: Resp
 }
 
 const retrieveFormattedMapID = (specified: string, input: string[]) => {
-	let formattedID: string = '('
+	let formattedID: string = `${specified}=(`
+
+	if (input.length === 1 && input[0] === '') {
+		return ''
+	}
 	switch (specified) {
-	case 'Platforms':
+	case 'platforms':
 		if (input.length === 0) {
 			formattedID = ''
 		}
@@ -414,7 +434,7 @@ const retrieveFormattedMapID = (specified: string, input: string[]) => {
 			}
 		}
 		break
-	case 'Genres':
+	case 'genres':
 		if (input.length === 0) {
 			formattedID = ''
 		}
@@ -427,7 +447,7 @@ const retrieveFormattedMapID = (specified: string, input: string[]) => {
 			}
 		}
 		break
-	case 'Themes':
+	case 'themes':
 		if (input.length === 0) {
 			formattedID = ''
 		}
@@ -440,7 +460,7 @@ const retrieveFormattedMapID = (specified: string, input: string[]) => {
 			}
 		}
 		break
-	case 'Game Modes':
+	case 'game_modes':
 		if (input.length === 0) {
 			formattedID = ''
 		}
@@ -453,7 +473,7 @@ const retrieveFormattedMapID = (specified: string, input: string[]) => {
 			}
 		}
 		break
-	case 'Category':
+	case 'category':
 		if (input.length === 0) {
 			formattedID = ''
 		}

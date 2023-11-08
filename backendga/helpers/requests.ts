@@ -1,3 +1,4 @@
+/* eslint-disable no-case-declarations */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -488,10 +489,21 @@ const retrieveFormattedMapID = (specified: string, input: string[]) => {
 	return formattedID
 }
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, updateIGDBSearchConfigSpec, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, populateCompanySearch, retrieveFormattedMapID }
+const retrieveRatingDateFormatted = (specified: string, input: number[]) => {
+	let formatted: string = ''
+	switch (specified) {
+	case 'total_rating':
+		formatted = formatted.concat(`${specified} >= ${input[0]} & ${specified} <= ${input[1]}`)
+		break
+	case 'first_release_date':
+		const stringStartYearDate = `${input[0]}.01.01`
+		const stringEndYearDate = `${input[1]}.12.31`
+		formatted = formatted.concat(`${specified} >= ${Math.floor(new Date(stringStartYearDate).getTime() / 1000)} & ${specified} <= ${Math.ceil(new Date(stringEndYearDate).getTime() / 1000)}`)
+		break
+	default:
+		return ''
+	}
+	return formatted
+}
 
-
-// fields id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family, first_release_date,follows,name,total_rating,total_rating_count, genres.name, involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category, themes.name, game_modes, category;
-// where age_ratings != n & follows!= n & involved_companies != n & game_modes != n & category != n & platforms=(14,6) & genres=(4,8) & themes=(17, 21) & game_modes=(2) & category=(0,9) & involved_companies.company.name = "Activision" | involved_companies.company.name = "Sony" & total_rating >= 0 & total_rating <= 54;
-// limit 5;
-// sort total_rating desc;
+export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, updateIGDBSearchConfigSpec, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, populateCompanySearch, retrieveFormattedMapID, retrieveRatingDateFormatted }

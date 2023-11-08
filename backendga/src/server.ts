@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch, retrieveFormattedMapID, parseNullable } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch, retrieveFormattedMapID, parseNullable, retrieveRatingDateFormatted } from '../helpers/requests'
 import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, GlobalAuxiliaryObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SearchObj, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
 import { ExternalCategories, WebsiteCategories, placeholderImages } from '../../frontendga/assets/ratingsvglinks'
 require('dotenv').config()
@@ -1576,46 +1576,17 @@ app.post('/api/advsearch', async (request: Request, response: Response) => {
 	// searchConfig.data = resultArray.length !== 0 ? searchConfig.data.concat(' & ', resultArray.join(' & ')) : searchConfig.data.concat(';')
 	// searchConfig.data = searchConfig.data.concat(`limit ${limit}; sort ${sortMap.get(sortBy)} ${sortDirection}`)
 
-	let resultArray: string[] = [retrieveFormattedMapID('platforms', platforms), retrieveFormattedMapID('genres', genres), retrieveFormattedMapID('themes', themes), retrieveFormattedMapID('game_modes', gameModes), retrieveFormattedMapID('category', category)].filter((res: string) => res.length > 0)
+	let resultArray: string[] = [retrieveFormattedMapID('platforms', platforms), retrieveFormattedMapID('genres', genres), retrieveFormattedMapID('themes', themes), retrieveFormattedMapID('game_modes', gameModes), retrieveFormattedMapID('category', category), retrieveRatingDateFormatted('total_rating', rating), retrieveRatingDateFormatted('first_release_date', releaseDate)].filter((res: string) => res.length > 0)
 	searchConfig.data = resultArray.length !== 0 ? searchConfig.data.concat(resultArray.join(' & '), parseNullable(nullable), ';') : searchConfig.data.concat(parseNullable(nullable).slice(2), ';')
 	searchConfig.data = searchConfig.data.concat(`limit ${limit}; sort ${sortMap.get(sortBy)} ${sortDirection};`)
 	// searchConfig.data = searchConfig.data.concat(parseNullable(nullable))
+
+	console.log(searchConfig.data)
 
 	await axios(searchConfig)
 		.then(async (response) => {
 			searchResults = response.data
 			responseObj = populateSimilarGames(searchResults)
-			// for (let i = 0; i < searchResults.length; i++) {
-			// 	indResponseObj = {
-			// 		id: searchResults[i].id,
-			// 		age_ratings: searchResults[i].age_ratings !== undefined ? searchResults[i].age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
-			// 		cover: `https:${searchResults[i].cover.url.replace('thumb', '1080p')}`,
-			// 		platforms: searchResults[i].platforms.map((indPlatform: any) => ({
-			// 			name: indPlatform.name,
-			// 			category: indPlatform.category,
-			// 			url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
-			// 			id: indPlatform.id,
-			// 			platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
-			// 		})),
-			// 		rating: searchResults[i].total_rating,
-			// 		ratingCount: searchResults[i].total_rating_count,
-			// 		releaseDate: searchResults[i].first_release_date ? new Date(searchResults[i].first_release_date*1000) : 'N/A',
-			// 		likes: searchResults[i].follows,
-			// 		title: searchResults[i].name,
-			// 		genres: searchResults[i].genres,
-			// 		involved_companies: searchResults[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({
-			// 			name: indCompany.company.name,
-			// 			url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
-			// 			officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : '' }))
-			// 	}
-
-			// 	const ageRatingsobj: AgeRatings = {
-			// 		'ESRB': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1)[0].rating : 0,
-			// 		'PEGI': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2)[0].rating : 0
-			// 	}
-			// 	indResponseObj.age_ratings = ageRatingsobj
-			// 	responseObj.push(indResponseObj)
-			// }
 		})
 		.catch((err) => {
 			errSearch = true

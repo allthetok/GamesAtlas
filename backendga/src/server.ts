@@ -1534,9 +1534,6 @@ app.post('/api/advsearch', async (request: Request, response: Response) => {
 	const category = body.category
 	const companies = body.companies
 
-	console.log(gameModes)
-	console.log(themes)
-
 
 	// const { externalFilter, platformFamily, limit, sortBy } = parseBody(body)
 
@@ -1584,41 +1581,41 @@ app.post('/api/advsearch', async (request: Request, response: Response) => {
 	searchConfig.data = searchConfig.data.concat(`limit ${limit}; sort ${sortMap.get(sortBy)} ${sortDirection};`)
 	// searchConfig.data = searchConfig.data.concat(parseNullable(nullable))
 
-	console.log(searchConfig)
 	await axios(searchConfig)
 		.then(async (response) => {
-			searchResults = response.data[0].result
-			for (let i = 0; i < searchResults.length; i++) {
-				indResponseObj = {
-					id: searchResults[i].id,
-					age_ratings: searchResults[i].age_ratings !== undefined ? searchResults[i].age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
-					cover: `https:${searchResults[i].cover.url.replace('thumb', '1080p')}`,
-					platforms: searchResults[i].platforms.map((indPlatform: any) => ({
-						name: indPlatform.name,
-						category: indPlatform.category,
-						url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
-						id: indPlatform.id,
-						platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
-					})),
-					rating: searchResults[i].total_rating,
-					ratingCount: searchResults[i].total_rating_count,
-					releaseDate: searchResults[i].first_release_date ? new Date(searchResults[i].first_release_date*1000) : 'N/A',
-					likes: searchResults[i].follows,
-					title: searchResults[i].name,
-					genres: searchResults[i].genres,
-					involved_companies: searchResults[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({
-						name: indCompany.company.name,
-						url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
-						officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : '' }))
-				}
+			searchResults = response.data
+			responseObj = populateSimilarGames(searchResults)
+			// for (let i = 0; i < searchResults.length; i++) {
+			// 	indResponseObj = {
+			// 		id: searchResults[i].id,
+			// 		age_ratings: searchResults[i].age_ratings !== undefined ? searchResults[i].age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
+			// 		cover: `https:${searchResults[i].cover.url.replace('thumb', '1080p')}`,
+			// 		platforms: searchResults[i].platforms.map((indPlatform: any) => ({
+			// 			name: indPlatform.name,
+			// 			category: indPlatform.category,
+			// 			url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
+			// 			id: indPlatform.id,
+			// 			platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
+			// 		})),
+			// 		rating: searchResults[i].total_rating,
+			// 		ratingCount: searchResults[i].total_rating_count,
+			// 		releaseDate: searchResults[i].first_release_date ? new Date(searchResults[i].first_release_date*1000) : 'N/A',
+			// 		likes: searchResults[i].follows,
+			// 		title: searchResults[i].name,
+			// 		genres: searchResults[i].genres,
+			// 		involved_companies: searchResults[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({
+			// 			name: indCompany.company.name,
+			// 			url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
+			// 			officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : '' }))
+			// 	}
 
-				const ageRatingsobj: AgeRatings = {
-					'ESRB': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1)[0].rating : 0,
-					'PEGI': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2)[0].rating : 0
-				}
-				indResponseObj.age_ratings = ageRatingsobj
-				responseObj.push(indResponseObj)
-			}
+			// 	const ageRatingsobj: AgeRatings = {
+			// 		'ESRB': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1)[0].rating : 0,
+			// 		'PEGI': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2)[0].rating : 0
+			// 	}
+			// 	indResponseObj.age_ratings = ageRatingsobj
+			// 	responseObj.push(indResponseObj)
+			// }
 		})
 		.catch((err) => {
 			errSearch = true
@@ -1630,9 +1627,6 @@ app.post('/api/advsearch', async (request: Request, response: Response) => {
 		})
 	}
 	return response.status(200).json(responseObj!)
-
-
-	// ${platforms.length !== 0 || genres.length !== 0 || themes.length !== 0 || gameModes.length !== 0 || category.length !== 0 || companies.length !== 0 || rating.length !== 0 ? '&' : ''} where ${platforms.length !== 0 ? `platforms=${retrieveFormattedMapID('Platforms', platforms)} &` : ''} ${genres.length !== 0 ? `genres=${retrieveFormattedMapID('Genres', genres)}` : ''};`
 })
 
 

@@ -5,7 +5,7 @@
 import axios from 'axios'
 import { Request, Response, NextFunction } from 'express'
 import { AgeRatings, MultiSearchObj, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SimilarObj, VideoObj, Videos, WebsiteObj, SearchObj } from './betypes'
-import { sortMap, platformMap, genreMap, categoryMap, platformSpecificMap } from '../helpers/enums'
+import { sortMap, platformMap, genreMap, categoryMap, platformSpecificMap, themeMap, gameModeMap, categorySpecificMap } from '../helpers/enums'
 import { ExternalCategories, WebsiteCategories, placeholderImages } from '../../frontendga/assets/ratingsvglinks'
 require('dotenv').config()
 
@@ -402,23 +402,74 @@ const retrieveFormattedMapID = (specified: string, input: string[]) => {
 	let formattedID: string = '('
 	switch (specified) {
 	case 'Platforms':
-		if (input.length === 1) {
+		if (input.length === 0) {
+			formattedID = ''
+		}
+		else if (input.length === 1) {
 			formattedID = formattedID.concat(`${platformSpecificMap.get(input[0])})`)
 		}
 		else {
 			for (let i = 0; i < input.length; i++) {
-				if (i === input.length - 1) {
-					formattedID = formattedID.concat(`${platformSpecificMap.get(input[i])})`)
-				}
-				else {
-					formattedID = formattedID.concat(`${platformSpecificMap.get(input[i])},`)
-				}
+				formattedID = i === input.length - 1 ? formattedID = formattedID.concat(`${platformSpecificMap.get(input[i])})`) : formattedID.concat(`${platformSpecificMap.get(input[i])},`)
 			}
 		}
-		return formattedID
+		break
+	case 'Genres':
+		if (input.length === 0) {
+			formattedID = ''
+		}
+		else if (input.length === 1) {
+			formattedID = formattedID.concat(`${genreMap.get(input[0])})`)
+		}
+		else {
+			for (let i = 0; i < input.length; i++) {
+				formattedID = i === input.length - 1 ? formattedID = formattedID.concat(`${genreMap.get(input[i])})`) : formattedID.concat(`${genreMap.get(input[i])},`)
+			}
+		}
+		break
+	case 'Themes':
+		if (input.length === 0) {
+			formattedID = ''
+		}
+		else if (input.length === 1) {
+			formattedID = formattedID.concat(`${themeMap.get(input[0])})`)
+		}
+		else {
+			for (let i = 0; i < input.length; i++) {
+				formattedID = i === input.length - 1 ? formattedID = formattedID.concat(`${themeMap.get(input[i])})`) : formattedID.concat(`${themeMap.get(input[i])},`)
+			}
+		}
+		break
+	case 'Game Modes':
+		if (input.length === 0) {
+			formattedID = ''
+		}
+		else if (input.length === 1) {
+			formattedID = formattedID.concat(`${gameModeMap.get(input[0])})`)
+		}
+		else {
+			for (let i = 0; i < input.length; i++) {
+				formattedID = i === input.length - 1 ? formattedID = formattedID.concat(`${gameModeMap.get(input[i])})`) : formattedID.concat(`${gameModeMap.get(input[i])},`)
+			}
+		}
+		break
+	case 'Category':
+		if (input.length === 0) {
+			formattedID = ''
+		}
+		else if (input.length === 1) {
+			formattedID = formattedID.concat(`${categorySpecificMap.get(input[0])})`)
+		}
+		else {
+			for (let i = 0; i < input.length; i++) {
+				formattedID = i === input.length - 1 ? formattedID = formattedID.concat(`${categorySpecificMap.get(input[i])})`) : formattedID.concat(`${categorySpecificMap.get(input[i])},`)
+			}
+		}
+		break
+	default:
+		return ''
 	}
-
-
+	return formattedID
 }
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, updateIGDBSearchConfigSpec, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, populateCompanySearch }
+export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, updateIGDBSearchConfigSpec, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, populateCompanySearch, retrieveFormattedMapID }

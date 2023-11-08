@@ -5,7 +5,7 @@
 import axios from 'axios'
 import { Request, Response, NextFunction } from 'express'
 import { AgeRatings, MultiSearchObj, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SimilarObj, VideoObj, Videos, WebsiteObj, SearchObj } from './betypes'
-import { sortMap, platformMap, genreMap, categoryMap } from '../helpers/enums'
+import { sortMap, platformMap, genreMap, categoryMap, platformSpecificMap } from '../helpers/enums'
 import { ExternalCategories, WebsiteCategories, placeholderImages } from '../../frontendga/assets/ratingsvglinks'
 require('dotenv').config()
 
@@ -396,6 +396,29 @@ const errorHandleMiddleware = (requestBaseUrl: string, body: any, response: Resp
 			})
 		}
 	}
+}
+
+const retrieveFormattedMapID = (specified: string, input: string[]) => {
+	let formattedID: string = '('
+	switch (specified) {
+	case 'Platforms':
+		if (input.length === 1) {
+			formattedID = formattedID.concat(`${platformSpecificMap.get(input[0])})`)
+		}
+		else {
+			for (let i = 0; i < input.length; i++) {
+				if (i === input.length - 1) {
+					formattedID = formattedID.concat(`${platformSpecificMap.get(input[i])})`)
+				}
+				else {
+					formattedID = formattedID.concat(`${platformSpecificMap.get(input[i])},`)
+				}
+			}
+		}
+		return formattedID
+	}
+
+
 }
 
 export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, updateIGDBSearchConfigSpec, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, populateCompanySearch }

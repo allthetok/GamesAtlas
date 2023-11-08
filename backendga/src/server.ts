@@ -1512,6 +1512,70 @@ app.post('/api/companysearch', async (request: Request, response: Response) => {
 
 })
 
+app.post('/api/advsearch', async (request: Request, response: Response) => {
+	const body = request.body
+	let searchResults: any
+	let errSearch = false
+	let searchConfig: SearchConfig
+	let responseObj: Explore[] = []
+	let indResponseObj: Explore
+
+	const sortBy = body.sortBy
+	const sortDirection = body.sortDirection
+	const externalFilter = body.externalFilter
+	const nullable = body.nullable
+	const platforms = body.platforms
+	const limit = body.limit
+	const releaseDate = body.releaseDate
+	const rating = body.rating
+	const genres = body.genres
+	const themes = body.themes
+	const gameModes = body.gameModes
+	const category = body.category
+	const companies = body.companies
+
+
+	// const { externalFilter, platformFamily, limit, sortBy } = parseBody(body)
+
+	if (body.sortBy === null || body.sortBy === '' || !body.sortBy) {
+		response.status(400).json({
+			error: `No direction and sort specified: ${body.sortBy}`
+		})
+	}
+	else if (body.externalFilter === null || body.externalFilter === '' || !body.externalFilter) {
+		response.status(400).json({
+			error: `No filter specified: ${body.sortBy}`
+		})
+	}
+	else if (body.limit === null || body.limit === 0 || !body.limit) {
+		response.status(400).json({
+			error: `No limit specified or limit equal to: ${body.limit}`
+		})
+	}
+	else if (body.sortDirection === null || body.sortDirection === '' || !body.sortDirection) {
+		response.status(400).json({
+			error: `No limit specified or limit equal to: ${body.limit}`
+		})
+	}
+
+	searchConfig = {
+		method: 'post',
+		url: `${process.env.API_ROOT_URL}games`,
+		headers: {
+			'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
+			'Client-ID': process.env.CLIENT_ID,
+			'Content-Type': 'text/plain',
+			'Cookie': '__cf_bm=Utg5TKlZGdxCgCn2UeuGW.LLOCZm6oHCCazU5AOMZjM-1692063194-0-AUdu+e0vn6rY+xWhK86IVLzsp03BXN3Wgq3P2CkRrTl56PwoVdQdbQaa1ysHtYnuWmX/WNREfgqIMVkEQEc9AEs='
+		},
+		data: ''
+	}
+
+	searchConfig.data = `fields fields id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family, first_release_date,follows,name,total_rating,total_rating_count, 
+	genres.name, involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category, themes.name, game_modes, category
+	where age_ratings != n & follows!= n & involved_companies != n & game_modes != n & category != n;
+	where ${};`
+})
+
 
 const PORT = process.env.API_PORT || 3001
 

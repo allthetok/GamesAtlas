@@ -416,10 +416,6 @@ const errorHandleMiddleware = (requestBaseUrl: string, body: any, response: Resp
 
 const retrieveFormattedMapID = (specified: string, input: string[]) => {
 	let formattedID: string = `${specified}=(`
-
-	if (input.length === 1 && input[0] === '') {
-		return ''
-	}
 	switch (specified) {
 	case 'platforms':
 		if (input.length === 0) {

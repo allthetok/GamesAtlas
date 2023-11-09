@@ -434,89 +434,79 @@ const errorHandleMiddleware = (requestBaseUrl: string, body: any, response: Resp
 }
 
 const retrieveFormattedMapID = (specified: string, input: string[]) => {
-	let formattedID: string = `${specified}=(`
-	switch (specified) {
-	case 'platforms':
-		if (input.length === 0) {
-			formattedID = ''
-		}
-		else if (input.length === 1) {
-			formattedID = formattedID.concat(`${platformSpecificMap.get(input[0])})`)
-		}
-		else {
-			for (let i = 0; i < input.length; i++) {
-				formattedID = i === input.length - 1 ? formattedID = formattedID.concat(`${platformSpecificMap.get(input[i])})`) : formattedID.concat(`${platformSpecificMap.get(input[i])},`)
+	let formattedID: string = ''
+
+	if (input.length === 0) {
+		return formattedID
+	}
+	else {
+		formattedID = `${specified}=(`
+		switch (specified) {
+		case 'platforms':
+			if (input.length === 1) {
+				formattedID = formattedID.concat(`${platformSpecificMap.get(input[0])})`)
 			}
-		}
-		break
-	case 'genres':
-		if (input.length === 0) {
-			formattedID = ''
-		}
-		else if (input.length === 1) {
-			formattedID = formattedID.concat(`${genreMap.get(input[0])})`)
-		}
-		else {
-			for (let i = 0; i < input.length; i++) {
-				formattedID = i === input.length - 1 ? formattedID = formattedID.concat(`${genreMap.get(input[i])})`) : formattedID.concat(`${genreMap.get(input[i])},`)
+			else {
+				for (let i = 0; i < input.length; i++) {
+					formattedID = i === input.length - 1 ? formattedID = formattedID.concat(`${platformSpecificMap.get(input[i])})`) : formattedID.concat(`${platformSpecificMap.get(input[i])},`)
+				}
 			}
-		}
-		break
-	case 'themes':
-		if (input.length === 0) {
-			formattedID = ''
-		}
-		else if (input.length === 1) {
-			formattedID = formattedID.concat(`${themeMap.get(input[0])})`)
-		}
-		else {
-			for (let i = 0; i < input.length; i++) {
-				formattedID = i === input.length - 1 ? formattedID = formattedID.concat(`${themeMap.get(input[i])})`) : formattedID.concat(`${themeMap.get(input[i])},`)
+			break
+		case 'genres':
+			if (input.length === 1) {
+				formattedID = formattedID.concat(`${genreMap.get(input[0])})`)
 			}
-		}
-		break
-	case 'game_modes':
-		if (input.length === 0) {
-			formattedID = ''
-		}
-		else if (input.length === 1) {
-			formattedID = formattedID.concat(`${gameModeMap.get(input[0])})`)
-		}
-		else {
-			for (let i = 0; i < input.length; i++) {
-				formattedID = i === input.length - 1 ? formattedID = formattedID.concat(`${gameModeMap.get(input[i])})`) : formattedID.concat(`${gameModeMap.get(input[i])},`)
+			else {
+				for (let i = 0; i < input.length; i++) {
+					formattedID = i === input.length - 1 ? formattedID = formattedID.concat(`${genreMap.get(input[i])})`) : formattedID.concat(`${genreMap.get(input[i])},`)
+				}
 			}
-		}
-		break
-	case 'category':
-		if (input.length === 0) {
-			formattedID = ''
-		}
-		else if (input.length === 1) {
-			formattedID = formattedID.concat(`${categorySpecificMap.get(input[0])})`)
-		}
-		else {
-			for (let i = 0; i < input.length; i++) {
-				formattedID = i === input.length - 1 ? formattedID = formattedID.concat(`${categorySpecificMap.get(input[i])})`) : formattedID.concat(`${categorySpecificMap.get(input[i])},`)
+			break
+		case 'themes':
+			if (input.length === 1) {
+				formattedID = formattedID.concat(`${themeMap.get(input[0])})`)
 			}
-		}
-		break
-	case 'involved_companies':
-		formattedID = `${specified}.company.name=`
-		if (input.length === 0) {
-			formattedID = ''
-		}
-		else if (input.length === 1) {
-			formattedID = formattedID.concat(`"${input[0]}"`)
-		}
-		else {
-			for (let i = 0; i < input.length; i++) {
-				formattedID  = i === input.length - 1 ? formattedID.concat(`${specified}.name="${input[i]}"`) : formattedID.concat(`${specified}.name="${input[i]}" | `)
+			else {
+				for (let i = 0; i < input.length; i++) {
+					formattedID = i === input.length - 1 ? formattedID = formattedID.concat(`${themeMap.get(input[i])})`) : formattedID.concat(`${themeMap.get(input[i])},`)
+				}
 			}
+			break
+		case 'game_modes':
+			if (input.length === 1) {
+				formattedID = formattedID.concat(`${gameModeMap.get(input[0])})`)
+			}
+			else {
+				for (let i = 0; i < input.length; i++) {
+					formattedID = i === input.length - 1 ? formattedID = formattedID.concat(`${gameModeMap.get(input[i])})`) : formattedID.concat(`${gameModeMap.get(input[i])},`)
+				}
+			}
+			break
+		case 'category':
+			if (input.length === 1) {
+				formattedID = formattedID.concat(`${categorySpecificMap.get(input[0])})`)
+			}
+			else {
+				for (let i = 0; i < input.length; i++) {
+					formattedID = i === input.length - 1 ? formattedID = formattedID.concat(`${categorySpecificMap.get(input[i])})`) : formattedID.concat(`${categorySpecificMap.get(input[i])},`)
+				}
+			}
+			break
+		case 'involved_companies':
+			formattedID = `${specified}.company.name=`
+			if (input.length === 1) {
+				formattedID = formattedID.concat(`"${input[0]}"`)
+			}
+			else {
+				for (let i = 0; i < input.length; i++) {
+					formattedID = i === input.length - 1 ? formattedID.concat(`${specified}.company.name="${input[i]}"`) : formattedID.concat(`${specified}.company.name="${input[i]}" | `)
+				}
+				formattedID = `(${formattedID})`
+			}
+			break
+		default:
+			return ''
 		}
-		break
-	default:
-		return ''
 	}
 	return formattedID
 }

@@ -62,10 +62,11 @@ const updateIGDBSearchConfigMulti = (endpoint: string, datafields: string, addit
 	}
 	searchConfig.data = `query games "Filtered ${limit}" {fields ${datafields}; ${additionalfilter !== '' ? `where ${additionalfilter} ${platforms !== '' ? platforms : ''};` : ''} sort ${sortby}; limit ${limit};};`
 
-	// searchConfig.data = `query games "Filtered ${limit}" {fields ${datafields}; ${additionalfilter !== '' ? `where ${additionalfilter};` : ''} sort ${sortby}; limit ${limit};};`
-	console.log(searchConfig)
 	return searchConfig
 }
+
+
+// const updateIGDBSearchConfigAdvanced = (endpoint: string, datafields: string, additionalfilter: string, )
 
 const updateIGDBSearchConfigSpec = (endpoint: string, datafields: string, nullable: string, searchfield: string, searchterm: string, sortby: string): SearchConfig => {
 	const searchConfig: SearchConfig = {
@@ -247,6 +248,23 @@ const parseBody = (requestBody: any): MultiSearchObj => {
 		platformFamily : platformFamilyMapped,
 		limit: limit
 	}
+}
+
+const parseLargeBody = (requestBody: any): MultiSearchObj => {
+	const { sortBy, sortDirection, externalFilter, nullable, limit, platforms, genres, themes, gameModes, category, rating, releaseDate, companies } = requestBody
+	const sortJoined = `${sortMap.get(sortBy)} ${sortDirection}`
+	const nullableFormatted = parseNullable(nullable)
+	const resultArray: string[] = [retrieveFormattedMapID('platforms', platforms), retrieveFormattedMapID('genres', genres), retrieveFormattedMapID('themes', themes), retrieveFormattedMapID('game_modes', gameModes), retrieveFormattedMapID('category', category), retrieveRatingDateFormatted('total_rating', rating), retrieveRatingDateFormatted('first_release_date', releaseDate)]
+	const filteredResult: string = resultArray.filter((res: string) => res.length > 0).join(' & ')
+	const externalFilterJoined = externalFilter !== '' ? externalFilter.concat(' & ', filteredResult, nullableFormatted) : filteredResult.concat(nullableFormatted)
+
+	return {
+		sortBy: sortJoined,
+		externalFilter: externalFilterJoined,
+		platformFamily: '',
+		limit: limit
+	}
+
 }
 
 const parseNullable = (nullableStr: string) => {
@@ -480,6 +498,20 @@ const retrieveFormattedMapID = (specified: string, input: string[]) => {
 		else {
 			for (let i = 0; i < input.length; i++) {
 				formattedID = i === input.length - 1 ? formattedID = formattedID.concat(`${categorySpecificMap.get(input[i])})`) : formattedID.concat(`${categorySpecificMap.get(input[i])},`)
+			}
+		}
+		break
+	case 'involved_companies':
+		formattedID = `${specified}.company.name=`
+		if (input.length === 0) {
+			formattedID = ''
+		}
+		else if (input.length === 1) {
+			formattedID = formattedID.concat(`"${input[0]}"`)
+		}
+		else {
+			for (let i = 0; i < input.length; i++) {
+				formattedID  = i === input.length - 1 ? formattedID.concat(`${specified}.name="${input[i]}"`) : formattedID.concat(`${specified}.name="${input[i]}" | `)
 			}
 		}
 		break

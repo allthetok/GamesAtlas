@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch, retrieveFormattedMapID, parseNullable, retrieveRatingDateFormatted } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch, retrieveFormattedMapID, parseNullable, retrieveRatingDateFormatted, parseLargeBody } from '../helpers/requests'
 import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, GlobalAuxiliaryObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SearchObj, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
 import { ExternalCategories, WebsiteCategories, placeholderImages } from '../../frontendga/assets/ratingsvglinks'
 require('dotenv').config()
@@ -1512,7 +1512,7 @@ app.post('/api/companysearch', async (request: Request, response: Response) => {
 
 })
 
-app.post('/api/advsearch', async (request: Request, response: Response) => {
+app.post('/api/advsearchdeprecated', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
 	let errSearch = false
@@ -1600,6 +1600,47 @@ app.post('/api/advsearch', async (request: Request, response: Response) => {
 	return response.status(200).json(responseObj!)
 })
 
+app.post('/api/advsearch', async (request: Request, response: Response) => {
+	const body = request.body
+	let searchResults: any
+	let errSearch = false
+	let searchConfig: SearchConfig
+	let responseObj: Explore[] = []
+	const { externalFilter, platformFamily, limit, sortBy } = parseLargeBody(body)
+
+	if (body.sortBy === null || body.sortBy === '' || !body.sortBy) {
+		response.status(400).json({
+			error: `No direction and sort specified: ${body.sortBy}`
+		})
+	}
+	else if (body.limit === null || body.limit === 0 || !body.limit) {
+		response.status(400).json({
+			error: `No limit specified or limit equal to: ${body.limit}`
+		})
+	}
+	else if (body.sortDirection === null || body.sortDirection === '' || !body.sortDirection) {
+		response.status(400).json({
+			error: `No limit specified or limit equal to: ${body.limit}`
+		})
+	}
+
+	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count,genres.name,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer,involved_companies.company.websites.url,involved_companies.company.websites.category,game_modes,category', '', externalFilter, false, '', limit, sortBy)
+	await axios(searchConfig)
+		.then(async (response) => {
+			searchResults = response.data
+			responseObj = populateSimilarGames(searchResults)
+		})
+		.catch((err) => {
+			errSearch = true
+			console.log(err)
+		})
+	if (errSearch) {
+		return response.status(404).json({
+			Message: 'Search yielded no results'
+		})
+	}
+	return response.status(200).json(responseObj!)
+})
 
 const PORT = process.env.API_PORT || 3001
 

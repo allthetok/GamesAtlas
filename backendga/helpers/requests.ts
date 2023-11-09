@@ -254,7 +254,7 @@ const parseLargeBody = (requestBody: any): MultiSearchObj => {
 	const { sortBy, sortDirection, externalFilter, nullable, limit, platforms, genres, themes, gameModes, category, rating, releaseDate, companies } = requestBody
 	const sortJoined = `${sortMap.get(sortBy)} ${sortDirection}`
 	const nullableFormatted = parseNullable(nullable)
-	const resultArray: string[] = [retrieveFormattedMapID('platforms', platforms), retrieveFormattedMapID('genres', genres), retrieveFormattedMapID('themes', themes), retrieveFormattedMapID('game_modes', gameModes), retrieveFormattedMapID('category', category), retrieveRatingDateFormatted('total_rating', rating), retrieveRatingDateFormatted('first_release_date', releaseDate)]
+	const resultArray: string[] = [retrieveFormattedMapID('platforms', platforms), retrieveFormattedMapID('genres', genres), retrieveFormattedMapID('themes', themes), retrieveFormattedMapID('game_modes', gameModes), retrieveFormattedMapID('category', category), retrieveRatingDateFormatted('total_rating', rating), retrieveRatingDateFormatted('first_release_date', releaseDate), retrieveFormattedMapID('involved_companies', companies)]
 	const filteredResult: string = resultArray.filter((res: string) => res.length > 0).join(' & ')
 	const externalFilterJoined = externalFilter !== '' ? externalFilter.concat(' & ', filteredResult, nullableFormatted) : filteredResult.concat(nullableFormatted)
 
@@ -493,9 +493,10 @@ const retrieveFormattedMapID = (specified: string, input: string[]) => {
 			}
 			break
 		case 'involved_companies':
-			formattedID = `${specified}.company.name=`
+			// formattedID = `${specified}.company.name=`
+			formattedID = ''
 			if (input.length === 1) {
-				formattedID = formattedID.concat(`"${input[0]}"`)
+				formattedID = `${specified}.company.name="${input[0]}"`
 			}
 			else {
 				for (let i = 0; i < input.length; i++) {
@@ -528,4 +529,4 @@ const retrieveRatingDateFormatted = (specified: string, input: number[]) => {
 	return formatted
 }
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, updateIGDBSearchConfigSpec, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, populateCompanySearch, retrieveFormattedMapID, retrieveRatingDateFormatted }
+export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, updateIGDBSearchConfigSpec, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseLargeBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, populateCompanySearch, retrieveFormattedMapID, retrieveRatingDateFormatted }

@@ -65,9 +65,6 @@ const updateIGDBSearchConfigMulti = (endpoint: string, datafields: string, addit
 	return searchConfig
 }
 
-
-// const updateIGDBSearchConfigAdvanced = (endpoint: string, datafields: string, additionalfilter: string, )
-
 const updateIGDBSearchConfigSpec = (endpoint: string, datafields: string, nullable: string, searchfield: string, searchterm: string, sortby: string): SearchConfig => {
 	const searchConfig: SearchConfig = {
 		method: 'post',
@@ -264,7 +261,6 @@ const parseLargeBody = (requestBody: any): MultiSearchObj => {
 		platformFamily: '',
 		limit: limit
 	}
-
 }
 
 const parseNullable = (nullableStr: string) => {
@@ -275,22 +271,6 @@ const parseNullable = (nullableStr: string) => {
 	}
 	return formattedString
 }
-
-// const parseNullableAlt = (nullableStr: string, nofilter: boolean) => {
-// 	const nullableArr: string[] = nullableStr.split(', ')
-// 	let formattedString = ''
-// 	if (nullableArr.length === 1) {
-// 		formattedString = formattedString.concat(' & ', nullableArr[0], '!=n')
-// 	}
-// 	else {
-// 		for (let i = 0; i < nullableArr.length; i++) {
-// 			formattedString = i === nullableArr.length - 1 ?
-// 			formattedID = i === input.length - 1 ? formattedID = formattedID.concat(`${platformSpecificMap.get(input[i])})`) : formattedID.concat(`${platformSpecificMap.get(input[i])},`)
-// 			formattedString = formattedString.concat(' & ', nullableArr[i], '!=n')
-// 		}
-// 	}
-// 	return formattedString
-// }
 
 const parseGenres = (genres: string) => {
 	let formattedString = '& genres=['
@@ -398,7 +378,12 @@ const errorHandleMiddleware = (requestBaseUrl: string, body: any, response: Resp
 	case 'explore':
 		if (body.sortBy === null || body.sortBy === '' || !body.sortBy) {
 			response.status(400).json({
-				error: `No direction and sort specified: ${body.sortBy}`
+				error: `No sort specified: ${body.sortBy}`
+			})
+		}
+		else if (body.sortDirection === null || body.sortDirection === '' || !body.sortDirection) {
+			response.status(400).json({
+				error: `No sort direction specified: ${body.sortDirection}`
 			})
 		}
 		else if (body.externalFilter === null || body.externalFilter === '' || !body.externalFilter) {
@@ -411,16 +396,43 @@ const errorHandleMiddleware = (requestBaseUrl: string, body: any, response: Resp
 				error: `No limit specified or limit equal to: ${body.limit}`
 			})
 		}
-		else if (body.sortDirection === null || body.sortDirection === '' || !body.sortDirection) {
-			response.status(400).json({
-				error: `No limit specified or limit equal to: ${body.limit}`
-			})
-		}
 		break
 	case 'overview':
 		if (body.searchterm === '' || !body.searchterm) {
 			response.status(400).json({
 				error: 'No search term specified'
+			})
+		}
+		break
+	case 'advsearch':
+		if (body.sortBy === null || body.sortBy === '' || !body.sortBy) {
+			response.status(400).json({
+				error: `No sort specified: ${body.sortBy}`
+			})
+		}
+		else if (body.sortDirection === null || body.sortDirection === '' || !body.sortDirection) {
+			response.status(400).json({
+				error: `No sort direction specified: ${body.sortDirection}`
+			})
+		}
+		else if (body.limit === null || body.limit === '' || !body.limit) {
+			response.status(400).json({
+				error: `No limit specified or limit equal to: ${body.limit}`
+			})
+		}
+		else if (body.rating === null || body.rating.length !== 2 || !body.rating) {
+			response.status(400).json({
+				error: `No rating range provided to: ${body.rating}`
+			})
+		}
+		else if (body.releaseDate === null || body.releaseDate.length !== 2 || !body.releaseDate) {
+			response.status(400).json({
+				error: `No release date range provided to: ${body.rating}`
+			})
+		}
+		else if (body.nullable === null || body.nullable === '' || !body.nullable) {
+			response.status(400).json({
+				error: `No non-null fields specified: ${body.nullable}`
 			})
 		}
 		break
@@ -493,7 +505,6 @@ const retrieveFormattedMapID = (specified: string, input: string[]) => {
 			}
 			break
 		case 'involved_companies':
-			// formattedID = `${specified}.company.name=`
 			formattedID = ''
 			if (input.length === 1) {
 				formattedID = `${specified}.company.name="${input[0]}"`

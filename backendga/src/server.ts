@@ -1496,7 +1496,6 @@ app.post('/api/companysearch', async (request: Request, response: Response) => {
 	await axios(searchConfig)
 		.then((response) => {
 			searchResults = response.data
-			console.log(searchResults)
 			responseObj = populateCompanySearch(searchResults)
 		})
 		.catch((err) => {
@@ -1600,7 +1599,46 @@ app.post('/api/advsearchdeprecated', async (request: Request, response: Response
 	return response.status(200).json(responseObj!)
 })
 
-app.post('/api/advsearch', async (request: Request, response: Response) => {
+app.use('/api/advsearch', (request: Request, response: Response, next: NextFunction) => {
+	const body = request.body
+	errorHandleMiddleware(request.baseUrl, body, response)
+	next()
+})
+
+app.use('/api/advsearch', async (request: Request, response: Response, next: NextFunction) => {
+	const body = request.body
+	let searchResults: any
+	let errSearch = false
+	let searchConfig: SearchConfig
+	let responseObj: Explore[] = []
+	const { externalFilter, platformFamily, limit, sortBy } = parseLargeBody(body)
+
+	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count,genres.name,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer,involved_companies.company.websites.url,involved_companies.company.websites.category,game_modes,category', '', externalFilter, false, '', limit, sortBy)
+	await axios(searchConfig)
+		.then(async (response) => {
+			searchResults = response.data
+			responseObj = populateSimilarGames(searchResults)
+		})
+		.catch((err) => {
+			errSearch = true
+			console.log(err)
+		})
+	if (errSearch) {
+		return response.status(404).json({
+			Message: 'Search yielded no results'
+		})
+	}
+	else {
+		response.json(responseObj)
+		next()
+	}
+})
+
+app.post('/api/advsearch', async (request: Request, response: Response, next: NextFunction) => {
+	return response.status(200)
+})
+
+app.post('/api/advsearchalt', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
 	let errSearch = false

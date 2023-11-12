@@ -248,10 +248,10 @@ const parseBody = (requestBody: any): MultiSearchObj => {
 }
 
 const parseLargeBody = (requestBody: any): MultiSearchObj => {
-	const { sortBy, sortDirection, externalFilter, nullable, limit, platforms, genres, themes, gameModes, category, rating, releaseDate, companies } = requestBody
+	const { sortBy, sortDirection, externalFilter, nullable, limit, platforms, genres, themes, gameModes, categories, rating, releaseDate, companies } = requestBody
 	const sortJoined = `${sortMap.get(sortBy)} ${sortDirection}`
 	const nullableFormatted = parseNullable(nullable)
-	const resultArray: string[] = [retrieveFormattedMapID('platforms', platforms), retrieveFormattedMapID('genres', genres), retrieveFormattedMapID('themes', themes), retrieveFormattedMapID('game_modes', gameModes), retrieveFormattedMapID('category', category), retrieveRatingDateFormatted('total_rating', rating), retrieveRatingDateFormatted('first_release_date', releaseDate), retrieveFormattedMapID('involved_companies', companies)]
+	const resultArray: string[] = [retrieveFormattedMapID('platforms', platforms), retrieveFormattedMapID('genres', genres), retrieveFormattedMapID('themes', themes), retrieveFormattedMapID('game_modes', gameModes), retrieveFormattedMapID('category', categories), retrieveRatingDateFormatted('total_rating', rating), retrieveRatingDateFormatted('first_release_date', releaseDate), retrieveFormattedMapID('involved_companies', companies)]
 	const filteredResult: string = resultArray.filter((res: string) => res.length > 0).join(' & ')
 	const externalFilterJoined = externalFilter !== '' ? externalFilter.concat(' & ', filteredResult, nullableFormatted) : filteredResult.concat(nullableFormatted)
 

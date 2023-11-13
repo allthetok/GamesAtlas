@@ -4,37 +4,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
 import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch, retrieveFormattedMapID, parseNullable, retrieveRatingDateFormatted, parseLargeBody } from '../helpers/requests'
+import { hashPassword, authPassword } from '../helpers/auth'
 import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, GlobalAuxiliaryObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SearchObj, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
 import { ExternalCategories, WebsiteCategories, placeholderImages } from '../helpers/ratingsvglinks'
 require('dotenv').config()
 import express, { NextFunction, Request, Response } from 'express'
 import { pool } from './db'
-// const pool: Pool = require('./database')
 import axios from 'axios'
 import cors from 'cors'
 import SQL from 'sql-template-strings'
 import pg, { Client, QueryResult } from 'pg'
 import bcrypt from 'bcrypt'
 import { sortMap, platformMap, genreMap, categoryMap } from '../helpers/enums'
-import { Pool } from 'pg'
 const app = express()
-// const pool = new Pool({
-// 	host: 'db',
-// 	port: 5432,
-// 	user: 'user123',
-// 	password: 'password123',
-// 	database: 'db123'
-// })
-
-// const client = new Client({
-// 	host: 'localhost',
-// 	user: 'postgres',
-// 	port: 5432,
-// 	password: 'rootUser',
-// 	database: 'postgres'
-// })
-
-// client.connect()
 
 app.use(express.json())
 app.use(requestLogger)
@@ -1724,6 +1706,7 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 	const password: string =  body.password
 	let queryResult: any
 	let userExists: boolean = false
+	let hashPass: string = ''
 
 	if (!username || username === '' || username === null) {
 		return response.status(400).json({
@@ -1753,10 +1736,11 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 			Message: `There already exists a user with username: ${username} or email:${email}`
 		})
 	}
+	hashPass = await hashPassword(10, password)
 	await pool.query(SQL`
 	INSERT INTO users
 		(username, email, password)
-		VALUES (${username}, ${email}, ${password})
+		VALUES (${username}, ${email}, ${hashPass})
 	RETURNING *
 	`)
 		.then(async(response: any) => {

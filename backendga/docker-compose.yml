@@ -7,7 +7,7 @@ services:
   db:
     image: postgres
     environment:
-      POSTGRES_PASSWORD: "1234"
+      POSTGRES_PASSWORD: "${DOCKER_DB_PASS}"
       POSTGRES_USER: "docker"
     volumes:
       - data:/var/lib/postgresql/data

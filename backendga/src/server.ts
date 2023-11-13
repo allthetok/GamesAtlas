@@ -5,15 +5,36 @@
 /* eslint-disable prefer-const */
 import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch, retrieveFormattedMapID, parseNullable, retrieveRatingDateFormatted, parseLargeBody } from '../helpers/requests'
 import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, GlobalAuxiliaryObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SearchObj, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
-import { ExternalCategories, WebsiteCategories, placeholderImages } from '../../frontendga/assets/ratingsvglinks'
+import { ExternalCategories, WebsiteCategories, placeholderImages } from '../helpers/ratingsvglinks'
 require('dotenv').config()
 import express, { NextFunction, Request, Response } from 'express'
+import { pool } from './db'
+// const pool: Pool = require('./database')
 import axios from 'axios'
 import cors from 'cors'
-import pg, { QueryResult } from 'pg'
+import SQL from 'sql-template-strings'
+import pg, { Client, QueryResult } from 'pg'
 import bcrypt from 'bcrypt'
 import { sortMap, platformMap, genreMap, categoryMap } from '../helpers/enums'
+import { Pool } from 'pg'
 const app = express()
+// const pool = new Pool({
+// 	host: 'db',
+// 	port: 5432,
+// 	user: 'user123',
+// 	password: 'password123',
+// 	database: 'db123'
+// })
+
+// const client = new Client({
+// 	host: 'localhost',
+// 	user: 'postgres',
+// 	port: 5432,
+// 	password: 'rootUser',
+// 	database: 'postgres'
+// })
+
+// client.connect()
 
 app.use(express.json())
 app.use(requestLogger)
@@ -57,7 +78,7 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 	}
 	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings,category,cover,first_release_date,external_games,follows,game_modes,genres,hypes,involved_companies,keywords,name,platforms,player_perspectives,total_rating,total_rating_count,slug,storyline,summary,tags,themes,url,websites,game_localizations', '', '', true, searchterm, 1, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data[0]
 			responseObj = {
 				id: searchResults.id,
@@ -85,7 +106,7 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 				url: searchResults.url
 			}
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			errSearch = true
 			console.log(err)
 		})
@@ -100,7 +121,7 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 
 	searchConfig = updateIGDBSearchConfig('age_ratings', 'category,rating', responseObj!.age_ratings, 'category=(1,2)', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			let age_ratingsobj: AgeRatings = {
 				'ESRB': response.data[0].rating,
@@ -108,25 +129,25 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 			}
 			responseObj.age_ratings = age_ratingsobj
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 		})
 
 	searchConfig = updateIGDBSearchConfig('covers', 'url', responseObj.cover, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			response.data[0].url = response.data[0].url.replace('thumb', 'cover_big')
 			responseObj.cover = `https:${response.data[0].url}`
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 		})
 	responseObj.external_games = await getExternalGamesIter(responseObj.external_games)
 
 	searchConfig = updateIGDBSearchConfig('game_modes', 'name', responseObj.game_modes, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			let arrOfGameModes: string[] = []
 			for (let i = 0; i < searchResults.length; i++) {
@@ -134,14 +155,14 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 			}
 			responseObj.game_modes = arrOfGameModes
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 		})
 
 
 	searchConfig = updateIGDBSearchConfig('genres', 'name', responseObj.genres, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			let arrOfGenres: string[] = []
 			for (let i = 0; i < searchResults.length; i++) {
@@ -149,7 +170,7 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 			}
 			responseObj.genres = arrOfGenres
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 
 		})
@@ -157,7 +178,7 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 	searchConfig = updateIGDBSearchConfig('involved_companies', 'company', responseObj.involved_companies, '', false, '', 0, '')
 	let idofCompanies = ''
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			for (let i = 0; i < searchResults.length; i++) {
 				if (i === searchResults.length - 1) {
@@ -168,7 +189,7 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 				}
 			}
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 
 		})
@@ -177,7 +198,7 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 	let arrOfCompanies: Companies[] = []
 	let logoids = ''
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			for (let i = 0; i < searchResults.length; i++) {
 				arrOfCompanies.push({
@@ -197,7 +218,7 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 
 	searchConfig = updateIGDBSearchConfig('company_logos', 'url', logoids, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			for (let i = 0; i < searchResults.length; i++) {
 				// let objIndex = arrOfCompanies.findIndex((obj => obj.logoid === searchResults[i].id))
@@ -214,7 +235,7 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 
 	searchConfig = updateIGDBSearchConfig('keywords', 'name', responseObj.keywords, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			let arrOfKeywords: string[] = []
 			for (let i = 0; i < searchResults.length; i++) {
@@ -222,7 +243,7 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 			}
 			responseObj.keywords = arrOfKeywords
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 
 		})
@@ -232,7 +253,7 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 
 	searchConfig = updateIGDBSearchConfig('platforms', 'name,category,platform_logo', responseObj.platforms, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			for (let i = 0; i < searchResults.length; i++) {
 				arrOfPlatforms.push({
@@ -251,14 +272,14 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 				}
 			}
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 
 		})
 
 	searchConfig = updateIGDBSearchConfig('platform_logos', 'url', platformlogoids, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			for (let i = 0; i < searchResults.length; i++) {
 				// let objIndex = arrOfPlatforms.findIndex((obj => obj.platform_logo === searchResults[i].id))
@@ -274,7 +295,7 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 
 	searchConfig = updateIGDBSearchConfig('player_perspectives', 'name', responseObj.player_perspectives, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			let arrOfPerspectives: string[] = []
 			for (let i = 0; i < searchResults.length; i++) {
@@ -282,14 +303,14 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 			}
 			responseObj.player_perspectives = arrOfPerspectives
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 
 		})
 
 	searchConfig = updateIGDBSearchConfig('themes', 'name', responseObj.themes, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			let arrOfThemes: string[] = []
 			for (let i = 0; i < searchResults.length; i++) {
@@ -300,7 +321,7 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 
 	searchConfig = updateIGDBSearchConfig('websites', 'category,url', responseObj.websites, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			let arrOfSites: Categories[] = []
 			for (let i = 0; i < searchResults.length; i++) {
@@ -311,18 +332,18 @@ app.post('/api/deprecated/overview', async (request: Request, response: Response
 			}
 			responseObj.websites = arrOfSites
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 
 		})
 
 	searchConfig = updateIGDBSearchConfig('game_localizations', 'name', responseObj.game_localizations, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data[0]
 			responseObj.game_localizations = searchResults.name
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 
 		})
@@ -347,13 +368,13 @@ app.post('/api/deprecated/artwork', async (request: Request, response: Response)
 	searchConfig = updateIGDBSearchConfig('games', 'artworks', gameid, '', false, '', 0, '')
 
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data[0]
 			responseObj = {
 				artworks: searchResults.artworks.join(',')
 			}
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 		})
 	if (errSearch) {
@@ -364,7 +385,7 @@ app.post('/api/deprecated/artwork', async (request: Request, response: Response)
 
 	searchConfig = updateIGDBSearchConfig('artworks', 'url', responseObj.artworks, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			let arrOfImages: string[] = []
 			for (let i = 0; i < searchResults.length; i++) {
@@ -373,7 +394,7 @@ app.post('/api/deprecated/artwork', async (request: Request, response: Response)
 			}
 			responseObj.artworks = arrOfImages
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 		})
 	return response.status(200).json(responseObj)
@@ -395,13 +416,13 @@ app.post('/api/deprecated/language', async (request: Request, response: Response
 	}
 	searchConfig = updateIGDBSearchConfig('games', 'language_supports', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data[0]
 			responseObj = {
 				language_supports: searchResults.language_supports
 			}
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 		})
 	if (errSearch) {
@@ -432,13 +453,13 @@ app.post('/api/deprecated/screenshots', async (request: Request, response: Respo
 	}
 	searchConfig = updateIGDBSearchConfig('games', 'screenshots', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data[0]
 			responseObj = {
 				screenshots: searchResults.screenshots.join(',')
 			}
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 		})
 	if (errSearch) {
@@ -449,7 +470,7 @@ app.post('/api/deprecated/screenshots', async (request: Request, response: Respo
 
 	searchConfig = updateIGDBSearchConfig('screenshots', 'url', responseObj.screenshots, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			let arrOfScreenshots: string[] = []
 			for (let i = 0; i < searchResults.length; i++) {
@@ -458,7 +479,7 @@ app.post('/api/deprecated/screenshots', async (request: Request, response: Respo
 			}
 			responseObj.screenshots = arrOfScreenshots
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 
 		})
@@ -484,13 +505,13 @@ app.post('/api/deprecated/similargames', async (request: Request, response: Resp
 	}
 	searchConfig = updateIGDBSearchConfig('games', 'similar_games', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data[0]
 			responseObj = {
 				similar_games: searchResults.similar_games.join(',')
 			}
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 		})
 	if (errSearch) {
@@ -501,7 +522,7 @@ app.post('/api/deprecated/similargames', async (request: Request, response: Resp
 
 	searchConfig = updateIGDBSearchConfig('games', 'name,cover', responseObj.similar_games, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			for (let i = 0; i < searchResults.length; i++) {
 				arrOfSimilarGames.push(
@@ -518,7 +539,7 @@ app.post('/api/deprecated/similargames', async (request: Request, response: Resp
 	searchConfig = updateIGDBSearchConfig('covers', 'url', coverids, '', false, '', 0, '')
 
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			searchResults = searchResults.map((cov: any) => {
 				return { ...cov, url: cov.url.replace('thumb', 'cover_big') }
@@ -533,7 +554,7 @@ app.post('/api/deprecated/similargames', async (request: Request, response: Resp
 			}
 			responseObj.similar_games = arrOfSimilarGames
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 		})
 
@@ -556,13 +577,13 @@ app.post('/api/deprecated/videos', async (request: Request, response: Response) 
 	}
 	searchConfig = updateIGDBSearchConfig('games', 'videos', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data[0]
 			responseObj = {
 				videos: searchResults.videos.join(',')
 			}
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 		})
 	if (errSearch) {
@@ -574,7 +595,7 @@ app.post('/api/deprecated/videos', async (request: Request, response: Response) 
 	searchConfig = updateIGDBSearchConfig('game_videos', 'name,video_id', responseObj.videos, '', false, '', 0, '')
 
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			let arrOfVideos: Videos[] = []
 			for (let i = 0; i < searchResults.length; i++) {
@@ -585,7 +606,7 @@ app.post('/api/deprecated/videos', async (request: Request, response: Response) 
 			}
 			responseObj.videos = arrOfVideos
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 		})
 
@@ -608,13 +629,13 @@ app.post('/api/deprecated/websites', async (request: Request, response: Response
 	}
 	searchConfig = updateIGDBSearchConfig('games', 'websites', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data[0]
 			responseObj = {
 				websites: searchResults.websites.join(',')
 			}
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 		})
 	if (errSearch) {
@@ -626,7 +647,7 @@ app.post('/api/deprecated/websites', async (request: Request, response: Response
 	searchConfig = updateIGDBSearchConfig('websites', 'category,url', responseObj.websites, '', false, '', 0, '')
 
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			let arrOfSites: Categories[] = []
 			for (let i = 0; i < searchResults.length; i++) {
@@ -637,7 +658,7 @@ app.post('/api/deprecated/websites', async (request: Request, response: Response
 			}
 			responseObj.websites = arrOfSites
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 
 		})
@@ -674,7 +695,7 @@ app.post('/api/deprecated/explore', async (request: Request, response: Response)
 
 	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings,cover,first_release_date,follows,name,platforms,total_rating,total_rating_count', '', externalFilter, false, '', limit, sortBy)
 	await axios(searchConfig)
-		.then(async (response) => {
+		.then(async (response: any) => {
 			searchResults = response.data
 			for (let i = 0; i < searchResults.length; i++) {
 				let otherSearchResults: any
@@ -696,7 +717,7 @@ app.post('/api/deprecated/explore', async (request: Request, response: Response)
 
 				searchConfig = updateIGDBSearchConfig('age_ratings', 'category,rating', indResponseObj!.age_ratings, 'category=(1,2)', false, '', 0, '')
 				await axios(searchConfig)
-					.then((response) => {
+					.then((response: any) => {
 						otherSearchResults = response.data
 						let age_ratingsobj: AgeRatings = {
 							'ESRB': response.data[0].rating,
@@ -704,18 +725,18 @@ app.post('/api/deprecated/explore', async (request: Request, response: Response)
 						}
 						indResponseObj.age_ratings = age_ratingsobj
 					})
-					.catch((err) => {
+					.catch((err: any) => {
 						console.log(err)
 					})
 
 				searchConfig = updateIGDBSearchConfig('covers', 'url', indResponseObj.cover, '', false, '', 0, '')
 				await axios(searchConfig)
-					.then((response) => {
+					.then((response: any) => {
 						otherSearchResults = response.data
 						response.data[0].url = response.data[0].url.replace('thumb', 'cover_big')
 						indResponseObj.cover = `https:${response.data[0].url}`
 					})
-					.catch((err) => {
+					.catch((err: any) => {
 						console.log(err)
 					})
 
@@ -723,7 +744,7 @@ app.post('/api/deprecated/explore', async (request: Request, response: Response)
 				let platformlogoids = ''
 				searchConfig = updateIGDBSearchConfig('platforms', 'name,category,platform_logo', indResponseObj.platforms, '', false, '', 0, '')
 				await axios(searchConfig)
-					.then((response) => {
+					.then((response: any) => {
 						otherSearchResults = response.data
 						for (let i = 0; i < otherSearchResults.length; i++) {
 							arrOfPlatforms.push({
@@ -742,13 +763,13 @@ app.post('/api/deprecated/explore', async (request: Request, response: Response)
 							}
 						}
 					})
-					.catch((err) => {
+					.catch((err: any) => {
 						console.log(err)
 					})
 
 				searchConfig = updateIGDBSearchConfig('platform_logos', 'url', platformlogoids, '', false, '', 0, '')
 				await axios(searchConfig)
-					.then((response) => {
+					.then((response: any) => {
 						otherSearchResults = response.data
 						for (let i = 0; i < otherSearchResults.length; i++) {
 							// let objIndex = arrOfPlatforms.findIndex((obj => obj.platform_logo === otherSearchResults[i].id))
@@ -761,13 +782,13 @@ app.post('/api/deprecated/explore', async (request: Request, response: Response)
 						}
 						indResponseObj.platforms = arrOfPlatforms
 					})
-					.catch((err) => {
+					.catch((err: any) => {
 						console.log(err)
 					})
 				responseObj.push(indResponseObj)
 			}
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			console.log(err)
 		})
 	if (errSearch) {
@@ -818,7 +839,7 @@ app.post('/api/deprecated/exploreplatformlogos', async (request: Request, respon
 	searchConfig = updateIGDBSearchConfigMulti('multiquery','id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count, genres.name, involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category', externalFilter, platformFamily, limit, sortBy)
 	console.log(searchConfig)
 	await axios(searchConfig)
-		.then(async (response) => {
+		.then(async (response: any) => {
 			searchResults = response.data[0].result
 			for (let i = 0; i < searchResults.length; i++) {
 				let platformlogoids = ''
@@ -882,7 +903,7 @@ app.post('/api/deprecated/exploreplatformlogos', async (request: Request, respon
 				responseObj.push(indResponseObj)
 			}
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			errSearch = true
 			console.log(err)
 		})
@@ -938,7 +959,7 @@ app.use('/api/explore', async (request: Request, response: Response, next: NextF
 	searchConfig = updateIGDBSearchConfigMulti('multiquery','id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count, genres.name, involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category', externalFilter, platformFamily, limit, sortBy)
 	// console.log(searchConfig)
 	await axios(searchConfig)
-		.then(async (response) => {
+		.then(async (response: any) => {
 			searchResults = response.data[0].result
 			for (let i = 0; i < searchResults.length; i++) {
 				indResponseObj = {
@@ -972,7 +993,7 @@ app.use('/api/explore', async (request: Request, response: Response, next: NextF
 				responseObj.push(indResponseObj)
 			}
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			errSearch = true
 			console.log(err)
 		})
@@ -1020,7 +1041,7 @@ app.post('/api/explore', async (request: Request, response: Response, next: Next
 	// searchConfig = updateIGDBSearchConfigMulti('multiquery','id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count, genres.name, involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category', externalFilter, platformFamily, limit, sortBy)
 	// //console.log(searchConfig)
 	// await axios(searchConfig)
-	// 	.then(async (response) => {
+	// 	.then(async (response: any) => {
 	// 		searchResults = response.data[0].result
 	// 		for (let i = 0; i < searchResults.length; i++) {
 	// 			indResponseObj = {
@@ -1054,7 +1075,7 @@ app.post('/api/explore', async (request: Request, response: Response, next: Next
 	// 			responseObj.push(indResponseObj)
 	// 		}
 	// 	})
-	// 	.catch((err) => {
+	// 	.catch((err: any) => {
 	// 		errSearch = true
 	// 		console.log(err)
 	// 	})
@@ -1090,7 +1111,7 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 
 	console.log(searchConfig)
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data[0]
 			// console.log(searchResults)
 			responseObj = {
@@ -1163,7 +1184,7 @@ app.post('/api/overview', async (request: Request, response: Response) => {
 			}
 			responseObj.age_ratings = ageRatingsobj
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			errSearch = true
 			console.log(err)
 		})
@@ -1191,7 +1212,7 @@ app.post('/api/artwork', async (request: Request, response: Response) => {
 	}
 	searchConfig = updateIGDBSearchConfig('games', 'id,artworks.url,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,storyline,first_release_date', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data[0]
 			responseObj = {
 				artworks: searchResults.artworks ? searchResults.artworks.map((indImage: any) => (`https:${indImage.url.replace('thumb', '1080p')}`)) : [placeholderImages.NoArtworkScreenshotImage] ,
@@ -1206,7 +1227,7 @@ app.post('/api/artwork', async (request: Request, response: Response) => {
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			errSearch = true
 			console.log(err)
 		})
@@ -1233,7 +1254,7 @@ app.post('/api/screenshots', async (request: Request, response: Response) => {
 	}
 	searchConfig = updateIGDBSearchConfig('games', 'id,screenshots.url,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,storyline,first_release_date', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data[0]
 			responseObj = {
 				screenshots: searchResults.screenshots ? searchResults.screenshots.map((indImage: any) => (`https:${indImage.url.replace('thumb', '1080p')}`)) : [placeholderImages.NoArtworkScreenshotImage] ,
@@ -1248,7 +1269,7 @@ app.post('/api/screenshots', async (request: Request, response: Response) => {
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			errSearch = true
 			console.log(err)
 		})
@@ -1275,7 +1296,7 @@ app.post('/api/language', async (request: Request, response: Response) => {
 	}
 	searchConfig = updateIGDBSearchConfig('games', 'language_supports.language.name,language_supports.language.locale,language_supports.language.native_name,language_supports.language_support_type.name,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,storyline,first_release_date', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data[0]
 			responseObj = {
 				language_supports: searchResults.language_supports ? searchResults.language_supports.map((indLanguage: any) => ({
@@ -1296,7 +1317,7 @@ app.post('/api/language', async (request: Request, response: Response) => {
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			errSearch = true
 			console.log(err)
 		})
@@ -1323,7 +1344,7 @@ app.post('/api/similargames', async (request: Request, response: Response) => {
 	}
 	searchConfig = updateIGDBSearchConfig('games', 'id,similar_games.name,similar_games.id,similar_games.age_ratings.category,similar_games.age_ratings.rating,similar_games.cover.url,similar_games.platforms.name,similar_games.platforms.category,similar_games.platforms.platform_logo.url,similar_games.platforms.platform_family,similar_games.first_release_date,similar_games.follows,similar_games.name,similar_games.total_rating,similar_games.total_rating_count, similar_games.genres.name, similar_games.involved_companies.company.name, similar_games.involved_companies.company.logo.url, similar_games.involved_companies.developer, similar_games.involved_companies.company.websites.url, similar_games.involved_companies.company.websites.category,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,storyline,first_release_date', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data[0]
 			responseObj = {
 				similar_games: populateSimilarGames(searchResults.similar_games),
@@ -1338,7 +1359,7 @@ app.post('/api/similargames', async (request: Request, response: Response) => {
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			errSearch = true
 			console.log(err)
 		})
@@ -1365,7 +1386,7 @@ app.post('/api/videos', async (request: Request, response: Response) => {
 	}
 	searchConfig = updateIGDBSearchConfig('games', 'id,videos.name,videos.video_id,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,storyline,first_release_date', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data[0]
 			responseObj = {
 				videos: searchResults.videos ? searchResults.videos.map((indVideo: any) => ({
@@ -1383,7 +1404,7 @@ app.post('/api/videos', async (request: Request, response: Response) => {
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			errSearch = true
 			console.log(err)
 		})
@@ -1410,7 +1431,7 @@ app.post('/api/websites', async (request: Request, response: Response) => {
 	}
 	searchConfig= updateIGDBSearchConfig('games', 'id,websites.game,websites.category,websites.url,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,storyline,first_release_date', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data[0]
 			responseObj = {
 				websites: searchResults.websites ? searchResults.websites.filter((indWeb: any) => indWeb.url && indWeb.url !== '').filter((indCategory: any) => WebsiteCategories.map((indExternal) => indExternal.source).includes(indCategory.category)).map((indCategory: any) => ({
@@ -1428,7 +1449,7 @@ app.post('/api/websites', async (request: Request, response: Response) => {
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			errSearch = true
 			console.log(err)
 		})
@@ -1460,11 +1481,11 @@ app.post('/api/search', async (request: Request, response: Response) => {
 
 	console.log(searchConfig)
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			responseObj = populateSearchItems(searchResults)
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			errSearch = true
 			console.log(err)
 		})
@@ -1494,11 +1515,11 @@ app.post('/api/companysearch', async (request: Request, response: Response) => {
 	searchConfig = updateIGDBSearchConfigSpec('companies', 'name,logo.url,websites.url,websites.category', nullable, 'name', searchterm, 'start_date asc')
 	console.log(searchConfig)
 	await axios(searchConfig)
-		.then((response) => {
+		.then((response: any) => {
 			searchResults = response.data
 			responseObj = populateCompanySearch(searchResults)
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			errSearch = true
 			console.log(err)
 		})
@@ -1583,11 +1604,11 @@ app.post('/api/advsearchdeprecated', async (request: Request, response: Response
 	console.log(searchConfig.data)
 
 	await axios(searchConfig)
-		.then(async (response) => {
+		.then(async (response: any) => {
 			searchResults = response.data
 			responseObj = populateSimilarGames(searchResults)
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			errSearch = true
 			console.log(err)
 		})
@@ -1615,11 +1636,11 @@ app.use('/api/advsearch', async (request: Request, response: Response, next: Nex
 
 	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count,genres.name,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer,involved_companies.company.websites.url,involved_companies.company.websites.category,game_modes,category', '', externalFilter, false, '', limit, sortBy)
 	await axios(searchConfig)
-		.then(async (response) => {
+		.then(async (response: any) => {
 			searchResults = response.data
 			responseObj = populateSimilarGames(searchResults)
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			errSearch = true
 			console.log(err)
 		})
@@ -1647,28 +1668,28 @@ app.post('/api/advsearchalt', async (request: Request, response: Response) => {
 	const { externalFilter, platformFamily, limit, sortBy } = parseLargeBody(body)
 
 	if (body.sortBy === null || body.sortBy === '' || !body.sortBy) {
-		response.status(400).json({
+		return response.status(400).json({
 			error: `No direction and sort specified: ${body.sortBy}`
 		})
 	}
 	else if (body.limit === null || body.limit === 0 || !body.limit) {
-		response.status(400).json({
+		return response.status(400).json({
 			error: `No limit specified or limit equal to: ${body.limit}`
 		})
 	}
 	else if (body.sortDirection === null || body.sortDirection === '' || !body.sortDirection) {
-		response.status(400).json({
+		return response.status(400).json({
 			error: `No limit specified or limit equal to: ${body.limit}`
 		})
 	}
 
 	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count,genres.name,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer,involved_companies.company.websites.url,involved_companies.company.websites.category,game_modes,category', '', externalFilter, false, '', limit, sortBy)
 	await axios(searchConfig)
-		.then(async (response) => {
+		.then(async (response: any) => {
 			searchResults = response.data
 			responseObj = populateSimilarGames(searchResults)
 		})
-		.catch((err) => {
+		.catch((err: any) => {
 			errSearch = true
 			console.log(err)
 		})
@@ -1678,6 +1699,76 @@ app.post('/api/advsearchalt', async (request: Request, response: Response) => {
 		})
 	}
 	return response.status(200).json(responseObj!)
+})
+
+app.get('/api/createUser', async (request: Request, response: Response) => {
+	await pool.query('CREATE TABLE users( id SERIAL PRIMARY KEY, username VARCHAR(100) UNIQUE NOT NULL, email VARCHAR(100) UNIQUE NOT NULL, password VARCHAR(100) NOT NULL)')
+		.then(() => {
+			console.log(pool.query)
+			return response.status(200).json({
+				Message: 'Successfully created table: users'
+			})
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(500).json({
+				Message: 'Unable to create table: users'
+			})
+		})
+})
+
+app.post('/api/createUser', async (request: Request, response: Response) => {
+	const body = request.body
+	const username: string = body.username
+	const email: string = body.email
+	const password: string =  body.password
+	let queryResult: any
+	let userExists: boolean = false
+
+	if (!username || username === '' || username === null) {
+		return response.status(400).json({
+			error: 'No username provided'
+		})
+	}
+	else if (!email || email === '' || email === null) {
+		return response.status(400).json({
+			error: 'No email provided'
+		})
+	}
+	else if (!password || password === '' || password === null) {
+		return response.status(400).json({
+			error: 'No password provided'
+		})
+	}
+
+	await pool.query(SQL`SELECT 1 WHERE EXISTS (SELECT * FROM users WHERE username=${username} OR email=${email})`)
+		.then((response: any) => {
+			console.log(response)
+			if (response.rows.length !== 0) {
+				userExists = !userExists
+			}
+		})
+	if (userExists) {
+		return response.status(400).json({
+			Message: `There already exists a user with username: ${username} or email:${email}`
+		})
+	}
+	await pool.query(SQL`
+	INSERT INTO users
+		(username, email, password)
+		VALUES (${username}, ${email}, ${password})
+	RETURNING *
+	`)
+		.then(async(response: any) => {
+			queryResult = response.rows[0] !== null ? response.rows[0] : { Message: `Failed to insert record for ${username}, ${email}` }
+		})
+		.catch((err: any) => {
+			return response.status(404).json({
+				Message: `Failed to insert record for ${username}, ${email}`
+			})
+		})
+	console.log(queryResult)
+	return response.status(200).json(queryResult)
 })
 
 const PORT = process.env.API_PORT || 3001

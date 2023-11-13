@@ -7,7 +7,7 @@ import axios from 'axios'
 import { Request, Response, NextFunction } from 'express'
 import { AgeRatings, MultiSearchObj, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SimilarObj, VideoObj, Videos, WebsiteObj, SearchObj } from './betypes'
 import { sortMap, platformMap, genreMap, categoryMap, platformSpecificMap, themeMap, gameModeMap, categorySpecificMap } from '../helpers/enums'
-import { ExternalCategories, WebsiteCategories, placeholderImages } from '../../frontendga/assets/ratingsvglinks'
+import { ExternalCategories, WebsiteCategories, placeholderImages } from './ratingsvglinks'
 require('dotenv').config()
 
 const requestLogger = (request: Request, response: Response, next: NextFunction): void => {

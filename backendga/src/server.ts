@@ -1684,7 +1684,7 @@ app.post('/api/advsearchalt', async (request: Request, response: Response) => {
 })
 
 app.get('/api/createUser', async (request: Request, response: Response) => {
-	await pool.query('CREATE TABLE users( id SERIAL PRIMARY KEY, username VARCHAR(100) UNIQUE NOT NULL, email VARCHAR(100) UNIQUE NOT NULL, password VARCHAR(100) NOT NULL)')
+	await pool.query('CREATE TABLE users( id SERIAL PRIMARY KEY, username VARCHAR(100), email VARCHAR(100) UNIQUE NOT NULL, password VARCHAR(100) NOT NULL)')
 		.then(() => {
 			console.log(pool.query)
 			return response.status(200).json({
@@ -1694,7 +1694,7 @@ app.get('/api/createUser', async (request: Request, response: Response) => {
 		.catch((err: any) => {
 			console.log(err)
 			return response.status(500).json({
-				Message: 'Unable to create table: users'
+				error: 'Unable to create table: users'
 			})
 		})
 })
@@ -1708,12 +1708,12 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 	let userExists: boolean = false
 	let hashPass: string = ''
 
-	if (!username || username === '' || username === null) {
-		return response.status(400).json({
-			error: 'No username provided'
-		})
-	}
-	else if (!email || email === '' || email === null) {
+	// if (!username || username === '' || username === null) {
+	// 	return response.status(400).json({
+	// 		error: 'No username provided'
+	// 	})
+	// }
+	if (!email || email === '' || email === null) {
 		return response.status(400).json({
 			error: 'No email provided'
 		})
@@ -1724,16 +1724,16 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 		})
 	}
 
-	await pool.query(SQL`SELECT 1 WHERE EXISTS (SELECT * FROM users WHERE username=${username} OR email=${email})`)
+	// await pool.query(SQL`SELECT 1 WHERE EXISTS (SELECT * FROM users WHERE username=${username} OR email=${email})`)
+	await pool.query(SQL`SELECT 1 WHERE EXISTS (SELECT * FROM users WHERE email=${email})`)
 		.then((response: any) => {
-			console.log(response)
 			if (response.rows.length !== 0) {
 				userExists = !userExists
 			}
 		})
 	if (userExists) {
 		return response.status(400).json({
-			Message: `There already exists a user with username: ${username} or email:${email}`
+			error: `There already exists a user with username: ${username} or email:${email}`
 		})
 	}
 	hashPass = await hashPassword(10, password)
@@ -1741,18 +1741,68 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 	INSERT INTO users
 		(username, email, password)
 		VALUES (${username}, ${email}, ${hashPass})
-	RETURNING *
+	RETURNING id, username, email
 	`)
 		.then(async(response: any) => {
-			queryResult = response.rows[0] !== null ? response.rows[0] : { Message: `Failed to insert record for ${username}, ${email}` }
+			queryResult = response.rows[0] !== null ? response.rows[0] : { error: `Failed to insert record for username: ${username}, email: ${email}` }
 		})
 		.catch((err: any) => {
 			return response.status(404).json({
-				Message: `Failed to insert record for ${username}, ${email}`
+				error: `Failed to insert record for ${username}, ${email}`
 			})
 		})
-	console.log(queryResult)
 	return response.status(200).json(queryResult)
+})
+
+app.post('/api/login', async (request: Request, response: Response) => {
+	const body = request.body
+	// const username: string = body.username
+	const email: string = body.email
+	const password: string = body.password
+	let invalidUser: boolean = false
+	let matchPass: boolean = false
+	let queryResult: any
+
+	// if (!username || username === '' || username === null) {
+	// 	return response.status(400).json({
+	// 		error: 'No username provided'
+	// 	})
+	// }
+	if (!email || email === '' || email === null) {
+		return response.status(400).json({
+			error: 'No email provided'
+		})
+	}
+	else if (!password || password === '' || password === null) {
+		return response.status(400).json({
+			error: 'No password provided'
+		})
+	}
+
+	await pool.query(SQL`SELECT id, email, username, password FROM users WHERE email=${email}`)
+		.then(async (response: any) => {
+			queryResult = response
+			if (queryResult.rows.length === 0) {
+				invalidUser = !invalidUser
+			}
+			else {
+				matchPass = await authPassword(password, queryResult.rows[0].password)
+			}
+		})
+	if (invalidUser) {
+		return response.status(400).json({
+			error: 'User with this email was not found'
+		})
+	}
+	if (!matchPass) {
+		return response.status(400).json({
+			error: 'Incorrect password'
+		})
+	}
+	return response.status(200).json({
+		id: queryResult.rows[0].id,
+		email: queryResult.rows[0].email
+	})
 })
 
 const PORT = process.env.API_PORT || 3001

@@ -1684,7 +1684,8 @@ app.post('/api/advsearchalt', async (request: Request, response: Response) => {
 })
 
 app.get('/api/createUser', async (request: Request, response: Response) => {
-	await pool.query('CREATE TABLE users( id SERIAL PRIMARY KEY, username VARCHAR(100), email VARCHAR(100) UNIQUE NOT NULL, password VARCHAR(100) NOT NULL)')
+	// await pool.query('CREATE TABLE users( id SERIAL PRIMARY KEY, username VARCHAR(100), email VARCHAR(100) UNIQUE NOT NULL, password VARCHAR(100) NOT NULL)')
+	await pool.query('CREATE TABLE users( id SERIAL PRIMARY KEY, username VARCHAR(100), email VARCHAR(100) UNIQUE NOT NULL, password VARCHAR(100), emailVerified BOOLEAN, prevlogin TIMESTAMP, image VARCHAR(200), externalid VARCHAR(200) )')
 		.then(() => {
 			console.log(pool.query)
 			return response.status(200).json({
@@ -1739,19 +1740,75 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 	hashPass = await hashPassword(10, password)
 	await pool.query(SQL`
 	INSERT INTO users
-		(username, email, password)
-		VALUES (${username}, ${email}, ${hashPass})
-	RETURNING id, username, email
+		(username, email, password, emailVerified, prevlogin)
+		VALUES (${username}, ${email}, ${hashPass}, FALSE, ${new Date().getTime()})
+	RETURNING id, username, email, emailVerified
 	`)
-		.then(async(response: any) => {
-			queryResult = response.rows[0] !== null ? response.rows[0] : { error: `Failed to insert record for username: ${username}, email: ${email}` }
+		.then((response: any) => {
+			queryResult = response !== null ? response.rows[0] : null
 		})
 		.catch((err: any) => {
 			return response.status(404).json({
 				error: `Failed to insert record for ${username}, ${email}`
 			})
 		})
-	return response.status(200).json(queryResult)
+	return queryResult === null ? response.status(404).json({ error: `Failed to insert record for ${username}, ${email}` }) : response.status(200).json(queryResult)
+	// return response.status(200).json(queryResult)
+})
+
+app.post('/api/loginOAuthUser', async (request: Request, response: Response) => {
+	const body = request.body
+	const username: string = body.username
+	const email: string = body.email
+	const emailVerified = body.emailVerified
+	const externalId: string = body.externalId
+	const image = body.image
+	let queryResult: any
+	let userExists: boolean = false
+
+	if (!email || email === '' || email === null) {
+		return response.status(400).json({
+			error: 'No email provided'
+		})
+	}
+	else if (!username || username === '' || username === null) {
+		return response.status(400).json({
+			error: 'No username provided'
+		})
+	}
+
+	await pool.query(SQL`SELECT 1 WHERE EXISTS (SELECT * FROM users WHERE email=${email} AND externalId=${externalId})`)
+		.then((response: any) => {
+			if (response.rows.length !== 0) {
+				userExists = !userExists
+			}
+		})
+	if (userExists) {
+		await pool.query(SQL`UPDATE users SET prevlogin=${new Date().getTime} WHERE email=${email} AND externalId=${externalId} returning id, username, email`)
+			.then((response: any) => {
+				queryResult = response !== null ? response.rows[0] : null
+			})
+			.catch((err: any) => {
+				return response.status(404).json({
+					error: `Failed to update record for ${username}, ${email}`
+				})
+			})
+		return queryResult === null ? response.status(400).json({ error: `Failed to update record for ${username}, ${email}` }) : response.status(200).json(queryResult)
+	}
+	else {
+		await pool.query(SQL`INSERT INTO users (username, email, emailVerified, prevlogin, image, externalId) VALUES(${username}, ${email}, ${emailVerified}, ${new Date().getTime()}, ${image}, ${externalId}) 
+		RETURNING id, username, email, emailVerified`)
+			.then((response: any) => {
+				queryResult = response !== null ? response.rows[0] : null
+			})
+			.catch((err: any) => {
+				return response.status(404).json({
+					error: `Failed to insert record for ${username}, ${email} with externalid: ${externalId}`
+				})
+			})
+		return queryResult === null ? response.status(404).json({ error: `Failed to insert record for ${username}, ${email} with externalid: ${externalId}` }): response.status(200).json(queryResult)
+	}
+
 })
 
 app.post('/api/login', async (request: Request, response: Response) => {
@@ -1799,10 +1856,16 @@ app.post('/api/login', async (request: Request, response: Response) => {
 			error: 'Incorrect password'
 		})
 	}
-	return response.status(200).json({
-		id: queryResult.rows[0].id,
-		email: queryResult.rows[0].email
-	})
+	await pool.query(SQL`UPDATE users SET prevlogin=${new Date().getTime()} WHERE id=${queryResult.rows[0].id} AND email=${queryResult.rows[0].email} RETURNING id, username, email, emailVerified`)
+		.then((response: any) => {
+			queryResult = response !== null ? response.rows[0] : null
+		})
+		.catch((err: any) => {
+			return response.status(404).json({
+				error: `Failed to login user with email:${email}`
+			})
+		})
+	return queryResult === null ? response.status(404).json({ error: `Failed to login user with email:${email}` }) : response.status(200).json(queryResult)
 })
 
 const PORT = process.env.API_PORT || 3001

@@ -1684,8 +1684,7 @@ app.post('/api/advsearchalt', async (request: Request, response: Response) => {
 })
 
 app.get('/api/createUser', async (request: Request, response: Response) => {
-	// await pool.query('CREATE TABLE users( id SERIAL PRIMARY KEY, username VARCHAR(100), email VARCHAR(100) UNIQUE NOT NULL, password VARCHAR(100) NOT NULL)')
-	await pool.query('CREATE TABLE users( id SERIAL PRIMARY KEY, username VARCHAR(100), email VARCHAR(100) UNIQUE NOT NULL, password VARCHAR(100), emailVerified BOOLEAN, prevlogin TIMESTAMP, image VARCHAR(200), externalid VARCHAR(200) )')
+	await pool.query(SQL`CREATE TABLE users( id SERIAL PRIMARY KEY, username VARCHAR(100) DEFAULT '', email VARCHAR(100) NOT NULL, password VARCHAR(100) DEFAULT '', emailVerified BOOLEAN DEFAULT FALSE, prevlogin TIMESTAMP, image VARCHAR(500) DEFAULT '', externalid VARCHAR(200) DEFAULT '', provider VARCHAR(100) NOT NULL )`)
 		.then(() => {
 			console.log(pool.query)
 			return response.status(200).json({
@@ -1705,6 +1704,7 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 	const username: string = body.username
 	const email: string = body.email
 	const password: string =  body.password
+	const provider: string = body.provider
 	let queryResult: any
 	let userExists: boolean = false
 	let hashPass: string = ''
@@ -1726,7 +1726,7 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 	}
 
 	// await pool.query(SQL`SELECT 1 WHERE EXISTS (SELECT * FROM users WHERE username=${username} OR email=${email})`)
-	await pool.query(SQL`SELECT 1 WHERE EXISTS (SELECT * FROM users WHERE email=${email})`)
+	await pool.query(SQL`SELECT 1 WHERE EXISTS (SELECT * FROM users WHERE email=${email} AND provider=${provider})`)
 		.then((response: any) => {
 			if (response.rows.length !== 0) {
 				userExists = !userExists
@@ -1740,11 +1740,12 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 	hashPass = await hashPassword(10, password)
 	await pool.query(SQL`
 	INSERT INTO users
-		(username, email, password, emailVerified, prevlogin)
-		VALUES (${username}, ${email}, ${hashPass}, FALSE, ${new Date().getTime()})
-	RETURNING id, username, email, emailVerified
+		(username, email, password, emailVerified, prevlogin, provider)
+		VALUES (${username}, ${email}, ${hashPass}, FALSE, to_timestamp(${Date.now()} / 1000.0), ${provider} )
+	RETURNING id, username, email, emailVerified, provider
 	`)
 		.then((response: any) => {
+			console.log(response.rows[0])
 			queryResult = response !== null ? response.rows[0] : null
 		})
 		.catch((err: any) => {
@@ -1763,6 +1764,7 @@ app.post('/api/loginOAuthUser', async (request: Request, response: Response) => 
 	const emailVerified = body.emailVerified
 	const externalId: string = body.externalId
 	const image = body.image
+	const provider: string = body.provider
 	let queryResult: any
 	let userExists: boolean = false
 
@@ -1776,15 +1778,20 @@ app.post('/api/loginOAuthUser', async (request: Request, response: Response) => 
 			error: 'No username provided'
 		})
 	}
+	else if (!provider || provider === '' || provider === null) {
+		return response.status(400).json({
+			error: 'No username provided'
+		})
+	}
 
-	await pool.query(SQL`SELECT 1 WHERE EXISTS (SELECT * FROM users WHERE email=${email} AND externalId=${externalId})`)
+	await pool.query(SQL`SELECT 1 WHERE EXISTS (SELECT * FROM users WHERE email=${email} AND externalId=${externalId} AND provider=${provider})`)
 		.then((response: any) => {
 			if (response.rows.length !== 0) {
 				userExists = !userExists
 			}
 		})
 	if (userExists) {
-		await pool.query(SQL`UPDATE users SET prevlogin=${new Date().getTime} WHERE email=${email} AND externalId=${externalId} returning id, username, email`)
+		await pool.query(SQL`UPDATE users SET prevlogin=to_timestamp(${Date.now()} / 1000.0) WHERE email=${email} AND externalId=${externalId} AND provider=${provider} RETURNING id, username, email, provider`)
 			.then((response: any) => {
 				queryResult = response !== null ? response.rows[0] : null
 			})
@@ -1796,8 +1803,8 @@ app.post('/api/loginOAuthUser', async (request: Request, response: Response) => 
 		return queryResult === null ? response.status(400).json({ error: `Failed to update record for ${username}, ${email}` }) : response.status(200).json(queryResult)
 	}
 	else {
-		await pool.query(SQL`INSERT INTO users (username, email, emailVerified, prevlogin, image, externalId) VALUES(${username}, ${email}, ${emailVerified}, ${new Date().getTime()}, ${image}, ${externalId}) 
-		RETURNING id, username, email, emailVerified`)
+		await pool.query(SQL`INSERT INTO users (username, email, emailVerified, prevlogin, image, externalId, provider) VALUES(${username}, ${email}, ${emailVerified}, to_timestamp(${Date.now()} / 1000.0), ${image}, ${externalId}, ${provider}) 
+		RETURNING id, username, email, emailVerified, provider`)
 			.then((response: any) => {
 				queryResult = response !== null ? response.rows[0] : null
 			})
@@ -1816,6 +1823,7 @@ app.post('/api/login', async (request: Request, response: Response) => {
 	// const username: string = body.username
 	const email: string = body.email
 	const password: string = body.password
+	const provider: string = body.provider
 	let invalidUser: boolean = false
 	let matchPass: boolean = false
 	let queryResult: any
@@ -1835,8 +1843,13 @@ app.post('/api/login', async (request: Request, response: Response) => {
 			error: 'No password provided'
 		})
 	}
+	else if (!provider || provider === '' || provider === null) {
+		return response.status(400).json({
+			error: 'No provider specified'
+		})
+	}
 
-	await pool.query(SQL`SELECT id, email, username, password FROM users WHERE email=${email}`)
+	await pool.query(SQL`SELECT id, email, username, password, provider FROM users WHERE email=${email} AND provider=${provider}`)
 		.then(async (response: any) => {
 			queryResult = response
 			if (queryResult.rows.length === 0) {
@@ -1856,7 +1869,7 @@ app.post('/api/login', async (request: Request, response: Response) => {
 			error: 'Incorrect password'
 		})
 	}
-	await pool.query(SQL`UPDATE users SET prevlogin=${new Date().getTime()} WHERE id=${queryResult.rows[0].id} AND email=${queryResult.rows[0].email} RETURNING id, username, email, emailVerified`)
+	await pool.query(SQL`UPDATE users SET prevlogin=to_timestamp(${Date.now()} / 1000.0) WHERE id=${queryResult.rows[0].id} AND email=${queryResult.rows[0].email} RETURNING id, username, email, emailVerified, provider`)
 		.then((response: any) => {
 			queryResult = response !== null ? response.rows[0] : null
 		})

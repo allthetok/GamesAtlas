@@ -1699,6 +1699,23 @@ app.get('/api/createUser', async (request: Request, response: Response) => {
 		})
 })
 
+app.get('/api/createProfile', async (request: Request, response: Response) => {
+	await pool.query(SQL`CREATE TABLE userprofiles ( 
+		userid SERIAL PRIMARY KEY, platform VARCHAR(200)[], genres VARCHAR(200)[], themes VARCHAR(200)[], gameModes VARCHAR(200)[], CONSTRAINT FOREIGN_USER FOREIGN KEY(userid) REFERENCES users(id) )`)
+		.then(() => {
+			console.log(pool.query)
+			return response.status(200).json({
+				Message: 'Successfully created table: userprofiles'
+			})
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(500).json({
+				error: 'Unable to create table: userprofiles'
+			})
+		})
+})
+
 app.post('/api/createUser', async (request: Request, response: Response) => {
 	const body = request.body
 	const username: string = body.username

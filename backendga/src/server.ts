@@ -1716,6 +1716,23 @@ app.get('/api/createProfile', async (request: Request, response: Response) => {
 		})
 })
 
+// app.get('/api/editProfile', async (request: Request, response: Response) => {
+// 	await pool.query(SQL`ALTER TABLE userprofiles
+// 		ALTER COLUMN platform SET DEFAULT '{}', ALTER COLUMN genres SET DEFAULT '{}', ALTER COLUMN themes SET DEFAULT '{}', ALTER COLUMN gameModes SET DEFAULT '{}'`)
+// 		.then(() => {
+// 			console.log(pool.query)
+// 			return response.status(200).json({
+// 				Message: 'Successfully updated table: userprofiles'
+// 			})
+// 		})
+// 		.catch((err: any) => {
+// 			console.log(err)
+// 			return response.status(500).json({
+// 				error: 'Unable to create table: userprofiles'
+// 			})
+// 		})
+// })
+
 app.post('/api/createUser', async (request: Request, response: Response) => {
 	const body = request.body
 	const username: string = body.username

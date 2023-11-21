@@ -1742,6 +1742,7 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 	let queryResult: any
 	let userExists: boolean = false
 	let hashPass: string = ''
+	let userInsert: any
 
 	// if (!username || username === '' || username === null) {
 	// 	return response.status(400).json({
@@ -1784,15 +1785,20 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 	// 	SELECT * FROM (INSERT INTO userprofiles (userid) VALUES (new_user.id) RETURNING new_user.*)
 	// `)
 
-	await pool.query(SQL`CREATE VIEW userview AS WITH new_user AS (
-		INSERT INTO users (username, email, password, emailVerified, prevlogin, provider)
+	await pool.query(`SQL
+		INSERT INTO users
+		(username, email, password, emailVerified, prevlogin, provider)
 		VALUES (${username}, ${email}, ${hashPass}, FALSE, to_timestamp(${Date.now()} / 1000.0), ${provider} )
-		RETURNING id, username, email, emailVerified, provider )
-		INSERT INTO userprofiles (userid) SELECT new_user.id FROM new_user
-		
-		;
-		
+		RETURNING id, username, email, emailVerified, provider
 	`)
+
+	// await pool.query(SQL`CREATE VIEW userview AS WITH new_user AS (
+	// 	INSERT INTO users (username, email, password, emailVerified, prevlogin, provider)
+	// 	VALUES (${username}, ${email}, ${hashPass}, FALSE, to_timestamp(${Date.now()} / 1000.0), ${provider} )
+	// 	RETURNING id, username, email, emailVerified, provider )
+	// 	INSERT INTO userprofiles (userid) SELECT new_user.id FROM new_user
+	// 	;
+	// `)
 	// await pool.query(SQL`WITH new_user AS (
 	// 	INSERT INTO users (username, email, password, emailVerified, prevlogin, provider)
 	// 	VALUES (${username}, ${email}, ${hashPass}, FALSE, to_timestamp(${Date.now()} / 1000.0), ${provider} )
@@ -1801,10 +1807,31 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 	// 	SELECT * FROM new_user
 	// `)
 	// new_user.id, new_user.username, new_user.email, new_user.emailVerified, new_user.provider, up.profileid FROM new_user INNER JOIN userprofiles up ON new_user.id = up.userid;
-		.then((response: any) => {
+		.then(async (response: any) => {
+			userInsert = response.rows[0]
 			console.log(response)
 			console.log(response.rows[0])
-			queryResult = response !== null ? response.rows[0] : null
+			// queryResult = response !== null ? response.rows[0] : null
+			await pool.query(SQL`
+			INSERT into userprofiles
+			(userid) VALUES (${userInsert.id}) 
+			RETURNING profileid`)
+				.then((response: any) => {
+					queryResult = response.rowCount === 1 ? {
+						id: userInsert.id,
+						username: userInsert.username,
+						email: userInsert.email,
+						emailVerified: userInsert.emailVerified,
+						provider: userInsert.provider,
+						profileid: response.rows[0].profileid
+					} : null
+				})
+				.catch((err: any) => {
+					console.log(err)
+					return response.status(404).json({
+						error: `Failed to insert profile record for ${userInsert.id}`
+					})
+				})
 		})
 		.catch((err: any) => {
 			console.log(err)

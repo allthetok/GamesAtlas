@@ -1701,7 +1701,7 @@ app.get('/api/createUser', async (request: Request, response: Response) => {
 
 app.get('/api/createProfile', async (request: Request, response: Response) => {
 	await pool.query(SQL`CREATE TABLE userprofiles ( 
-		userid SERIAL PRIMARY KEY, platform VARCHAR(200)[], genres VARCHAR(200)[], themes VARCHAR(200)[], gameModes VARCHAR(200)[], CONSTRAINT FOREIGN_USER FOREIGN KEY(userid) REFERENCES users(id) )`)
+		profileid SERIAL PRIMARY KEY, userid INT UNIQUE NOT NULL, platform VARCHAR(200)[] DEFAULT '{}', genres VARCHAR(200)[] DEFAULT '{}', themes VARCHAR(200)[] DEFAULT '{}', gameModes VARCHAR(200)[] DEFAULT '{}', CONSTRAINT FOREIGN_USER FOREIGN KEY(userid) REFERENCES users(id) )`)
 		.then(() => {
 			console.log(pool.query)
 			return response.status(200).json({
@@ -1760,7 +1760,7 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 	}
 
 	// await pool.query(SQL`SELECT 1 WHERE EXISTS (SELECT * FROM users WHERE username=${username} OR email=${email})`)
-	await pool.query(SQL`SELECT 1 WHERE EXISTS (SELECT * FROM users WHERE email=${email} AND provider=${provider})`)
+	await pool.query(SQL`SELECT 1 WHERE EXISTS (SELECT * FROM users u INNER JOIN userprofiles up ON u.id = up.userid WHERE u.email=${email} AND u.provider=${provider})`)
 		.then((response: any) => {
 			if (response.rows.length !== 0) {
 				userExists = !userExists
@@ -1772,12 +1772,12 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 		})
 	}
 	hashPass = await hashPassword(10, password)
-	await pool.query(SQL`
-	INSERT INTO users
-		(username, email, password, emailVerified, prevlogin, provider)
-		VALUES (${username}, ${email}, ${hashPass}, FALSE, to_timestamp(${Date.now()} / 1000.0), ${provider} )
-	RETURNING id, username, email, emailVerified, provider
-	`)
+	// INSERT INTO users
+	// 	(username, email, password, emailVerified, prevlogin, provider)
+	// 	VALUES (${username}, ${email}, ${hashPass}, FALSE, to_timestamp(${Date.now()} / 1000.0), ${provider} )
+	// RETURNING id, username, email, emailVerified, provider
+	// `)
+	await pool.query(SQL`WITH `)
 		.then((response: any) => {
 			console.log(response.rows[0])
 			queryResult = response !== null ? response.rows[0] : null
@@ -1788,7 +1788,6 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 			})
 		})
 	return queryResult === null ? response.status(404).json({ error: `Failed to insert record for ${username}, ${email}` }) : response.status(200).json(queryResult)
-	// return response.status(200).json(queryResult)
 })
 
 app.post('/api/loginOAuthUser', async (request: Request, response: Response) => {

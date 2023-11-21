@@ -1777,12 +1777,37 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 	// 	VALUES (${username}, ${email}, ${hashPass}, FALSE, to_timestamp(${Date.now()} / 1000.0), ${provider} )
 	// RETURNING id, username, email, emailVerified, provider
 	// `)
-	await pool.query(SQL`WITH `)
+	// await pool.query(SQL`WITH new_user AS (
+	// 	INSERT INTO users (username, email, password, emailVerified, prevlogin, provider)
+	// 	VALUES (${username}, ${email}, ${hashPass}, FALSE, to_timestamp(${Date.now()} / 1000.0), ${provider} )
+	// 	RETURNING id, username, email, emailVerified, provider )
+	// 	SELECT * FROM (INSERT INTO userprofiles (userid) VALUES (new_user.id) RETURNING new_user.*)
+	// `)
+
+	await pool.query(SQL`CREATE VIEW userview AS WITH new_user AS (
+		INSERT INTO users (username, email, password, emailVerified, prevlogin, provider)
+		VALUES (${username}, ${email}, ${hashPass}, FALSE, to_timestamp(${Date.now()} / 1000.0), ${provider} )
+		RETURNING id, username, email, emailVerified, provider )
+		INSERT INTO userprofiles (userid) SELECT new_user.id FROM new_user
+		
+		;
+		
+	`)
+	// await pool.query(SQL`WITH new_user AS (
+	// 	INSERT INTO users (username, email, password, emailVerified, prevlogin, provider)
+	// 	VALUES (${username}, ${email}, ${hashPass}, FALSE, to_timestamp(${Date.now()} / 1000.0), ${provider} )
+	// 	RETURNING id, username, email, emailVerified, provider)
+	// 	INSERT INTO userprofiles (userid) SELECT new_user.id AS userid FROM new_user;
+	// 	SELECT * FROM new_user
+	// `)
+	// new_user.id, new_user.username, new_user.email, new_user.emailVerified, new_user.provider, up.profileid FROM new_user INNER JOIN userprofiles up ON new_user.id = up.userid;
 		.then((response: any) => {
+			console.log(response)
 			console.log(response.rows[0])
 			queryResult = response !== null ? response.rows[0] : null
 		})
 		.catch((err: any) => {
+			console.log(err)
 			return response.status(404).json({
 				error: `Failed to insert record for ${username}, ${email}`
 			})

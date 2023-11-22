@@ -1684,7 +1684,17 @@ app.post('/api/advsearchalt', async (request: Request, response: Response) => {
 })
 
 app.get('/api/createUser', async (request: Request, response: Response) => {
-	await pool.query(SQL`CREATE TABLE users( id SERIAL PRIMARY KEY, username VARCHAR(100) DEFAULT '', email VARCHAR(100) NOT NULL, password VARCHAR(100) DEFAULT '', emailVerified BOOLEAN DEFAULT FALSE, prevlogin TIMESTAMP, image VARCHAR(500) DEFAULT '', externalid VARCHAR(200) DEFAULT '', provider VARCHAR(100) NOT NULL )`)
+	await pool.query(SQL`
+		CREATE TABLE users
+			( id SERIAL PRIMARY KEY, 
+			username VARCHAR(100) DEFAULT '', 
+			email VARCHAR(100) NOT NULL, 
+			password VARCHAR(100) DEFAULT '', 
+			emailVerified BOOLEAN DEFAULT FALSE, 
+			prevlogin TIMESTAMP, 
+			image VARCHAR(500) DEFAULT '',
+			externalid VARCHAR(200) DEFAULT '', 
+			provider VARCHAR(100) NOT NULL )`)
 		.then(() => {
 			console.log(pool.query)
 			return response.status(200).json({
@@ -1700,8 +1710,15 @@ app.get('/api/createUser', async (request: Request, response: Response) => {
 })
 
 app.get('/api/createProfile', async (request: Request, response: Response) => {
-	await pool.query(SQL`CREATE TABLE userprofiles ( 
-		profileid SERIAL PRIMARY KEY, userid INT UNIQUE NOT NULL, platform VARCHAR(200)[] DEFAULT '{}', genres VARCHAR(200)[] DEFAULT '{}', themes VARCHAR(200)[] DEFAULT '{}', gameModes VARCHAR(200)[] DEFAULT '{}', CONSTRAINT FOREIGN_USER FOREIGN KEY(userid) REFERENCES users(id) )`)
+	await pool.query(SQL`
+		CREATE TABLE userprofiles 
+			( profileid SERIAL PRIMARY KEY, 
+			userid INT UNIQUE NOT NULL, 
+			platform VARCHAR(200)[] DEFAULT '{}', 
+			genres VARCHAR(200)[] DEFAULT '{}', 
+			themes VARCHAR(200)[] DEFAULT '{}', 
+			gameModes VARCHAR(200)[] DEFAULT '{}', 
+			CONSTRAINT FOREIGN_USER FOREIGN KEY(userid) REFERENCES users(id) )`)
 		.then(() => {
 			console.log(pool.query)
 			return response.status(200).json({
@@ -1715,23 +1732,6 @@ app.get('/api/createProfile', async (request: Request, response: Response) => {
 			})
 		})
 })
-
-// app.get('/api/editProfile', async (request: Request, response: Response) => {
-// 	await pool.query(SQL`ALTER TABLE userprofiles
-// 		ALTER COLUMN platform SET DEFAULT '{}', ALTER COLUMN genres SET DEFAULT '{}', ALTER COLUMN themes SET DEFAULT '{}', ALTER COLUMN gameModes SET DEFAULT '{}'`)
-// 		.then(() => {
-// 			console.log(pool.query)
-// 			return response.status(200).json({
-// 				Message: 'Successfully updated table: userprofiles'
-// 			})
-// 		})
-// 		.catch((err: any) => {
-// 			console.log(err)
-// 			return response.status(500).json({
-// 				error: 'Unable to create table: userprofiles'
-// 			})
-// 		})
-// })
 
 app.post('/api/createUser', async (request: Request, response: Response) => {
 	const body = request.body
@@ -1754,12 +1754,13 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 		})
 	}
 
-	await pool.query(SQL`SELECT 1 WHERE EXISTS 
-		(SELECT * FROM users u 
-			INNER JOIN userprofiles up 
-			ON u.id = up.userid 
-		WHERE u.email=${email} 
-		AND u.provider=${provider})`)
+	await pool.query(SQL`
+		SELECT 1 WHERE EXISTS 
+			(SELECT * FROM users u 
+				INNER JOIN userprofiles up 
+				ON u.id = up.userid 
+				WHERE u.email=${email} 
+				AND u.provider=${provider})`)
 		.then((response: any) => {
 			if (response.rows.length !== 0) {
 				userExists = !userExists
@@ -1772,16 +1773,16 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 	}
 	hashPass = await hashPassword(10, password)
 	await pool.query(SQL`
-	WITH new_user AS (
-		INSERT INTO users (username, email, password, emailVerified, prevlogin, provider)
-		VALUES (${username}, ${email}, ${hashPass}, FALSE, to_timestamp(${Date.now()} / 1000.0), ${provider})
-		RETURNING id, username, email, emailVerified, provider
-	),
-	new_profile AS (   
-		INSERT INTO userprofiles (userid) SELECT id FROM new_user RETURNING profileid
-	)
-	SELECT u.id, u.username, u.email, u.emailVerified, u.provider, up.profileid 
-	FROM new_user u, new_profile up;`)
+		WITH new_user AS (
+			INSERT INTO users (username, email, password, emailVerified, prevlogin, provider)
+			VALUES (${username}, ${email}, ${hashPass}, FALSE, to_timestamp(${Date.now()} / 1000.0), ${provider})
+			RETURNING id, username, email, emailVerified, provider
+		),
+		new_profile AS (   
+			INSERT INTO userprofiles (userid) SELECT id FROM new_user RETURNING profileid
+		)
+		SELECT u.id, u.username, u.email, u.emailVerified, u.provider, up.profileid 
+		FROM new_user u, new_profile up;`)
 		.then(async (response: any) => {
 			console.log(response)
 			console.log(response.rows[0])
@@ -1823,14 +1824,26 @@ app.post('/api/loginOAuthUser', async (request: Request, response: Response) => 
 		})
 	}
 
-	await pool.query(SQL`SELECT 1 WHERE EXISTS (SELECT * FROM users WHERE email=${email} AND externalId=${externalId} AND provider=${provider})`)
+	await pool.query(SQL`
+		SELECT 1 WHERE EXISTS 
+			(SELECT * FROM users u 
+				INNER JOIN userprofiles up 
+				ON u.id = up.userid 
+				WHERE u.email=${email} 
+				AND u.provider=${provider})`)
 		.then((response: any) => {
 			if (response.rows.length !== 0) {
 				userExists = !userExists
 			}
 		})
 	if (userExists) {
-		await pool.query(SQL`UPDATE users SET prevlogin=to_timestamp(${Date.now()} / 1000.0) WHERE email=${email} AND externalId=${externalId} AND provider=${provider} RETURNING id, username, email, provider`)
+		await pool.query(SQL`
+			UPDATE users SET 
+				prevlogin=to_timestamp(${Date.now()} / 1000.0) 
+				WHERE email=${email} 
+				AND externalId=${externalId} 
+				AND provider=${provider} 
+				RETURNING id, username, email, provider`)
 			.then((response: any) => {
 				queryResult = response !== null ? response.rows[0] : null
 			})
@@ -1842,8 +1855,19 @@ app.post('/api/loginOAuthUser', async (request: Request, response: Response) => 
 		return queryResult === null ? response.status(400).json({ error: `Failed to update record for ${username}, ${email}` }) : response.status(200).json(queryResult)
 	}
 	else {
-		await pool.query(SQL`INSERT INTO users (username, email, emailVerified, prevlogin, image, externalId, provider) VALUES(${username}, ${email}, ${emailVerified}, to_timestamp(${Date.now()} / 1000.0), ${image}, ${externalId}, ${provider}) 
-		RETURNING id, username, email, emailVerified, provider`)
+		// await pool.query(SQL`INSERT INTO users (username, email, emailVerified, prevlogin, image, externalId, provider) VALUES(${username}, ${email}, ${emailVerified}, to_timestamp(${Date.now()} / 1000.0), ${image}, ${externalId}, ${provider})
+		// RETURNING id, username, email, emailVerified, provider`)
+		await pool.query(SQL`
+		WITH new_user AS (
+			INSERT INTO users (username, email, emailVerified, prevlogin, provider)
+			VALUES (${username}, ${email}, ${emailVerified}, to_timestamp(${Date.now()} / 1000.0), ${provider})
+			RETURNING id, username, email, emailVerified, provider
+		),
+		new_profile AS (   
+			INSERT INTO userprofiles (userid) SELECT id FROM new_user RETURNING profileid
+		)
+		SELECT u.id, u.username, u.email, u.emailVerified, u.provider, up.profileid 
+		FROM new_user u, new_profile up;`)
 			.then((response: any) => {
 				queryResult = response !== null ? response.rows[0] : null
 			})

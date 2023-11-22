@@ -1855,8 +1855,6 @@ app.post('/api/loginOAuthUser', async (request: Request, response: Response) => 
 		return queryResult === null ? response.status(400).json({ error: `Failed to update record for ${username}, ${email}` }) : response.status(200).json(queryResult)
 	}
 	else {
-		// await pool.query(SQL`INSERT INTO users (username, email, emailVerified, prevlogin, image, externalId, provider) VALUES(${username}, ${email}, ${emailVerified}, to_timestamp(${Date.now()} / 1000.0), ${image}, ${externalId}, ${provider})
-		// RETURNING id, username, email, emailVerified, provider`)
 		await pool.query(SQL`
 		WITH new_user AS (
 			INSERT INTO users (username, email, emailVerified, prevlogin, provider)
@@ -1912,14 +1910,21 @@ app.post('/api/login', async (request: Request, response: Response) => {
 		})
 	}
 
-	await pool.query(SQL`SELECT id, email, username, password, provider FROM users WHERE email=${email} AND provider=${provider}`)
+	await pool.query(SQL`
+		SELECT u.id, u.email, u.username, u.password, u.provider, up.profileid
+		FROM users u 
+		INNER JOIN userprofiles up 
+		ON u.id = up.userid
+		WHERE u.email=${email} 
+		AND u.provider=${provider}`)
 		.then(async (response: any) => {
 			queryResult = response
 			if (queryResult.rows.length === 0) {
 				invalidUser = !invalidUser
 			}
 			else {
-				matchPass = await authPassword(password, queryResult.rows[0].password)
+				queryResult = queryResult.rows[0]
+				matchPass = await authPassword(password, queryResult.password)
 			}
 		})
 	if (invalidUser) {
@@ -1932,7 +1937,12 @@ app.post('/api/login', async (request: Request, response: Response) => {
 			error: 'Incorrect password'
 		})
 	}
-	await pool.query(SQL`UPDATE users SET prevlogin=to_timestamp(${Date.now()} / 1000.0) WHERE id=${queryResult.rows[0].id} AND email=${queryResult.rows[0].email} RETURNING id, username, email, emailVerified, provider`)
+	await pool.query(SQL`
+		UPDATE users SET 
+			prevlogin=to_timestamp(${Date.now()} / 1000.0) 
+			WHERE id=${queryResult.id} 
+			AND email=${queryResult.email}
+			RETURNING id, username, email, emailVerified, provider, ${queryResult.profileid} AS profileid`)
 		.then((response: any) => {
 			queryResult = response !== null ? response.rows[0] : null
 		})

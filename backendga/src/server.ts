@@ -2015,6 +2015,105 @@ app.post('/api/profileDetails', async (request: Request, response: Response) => 
 	return queryResult === null ? response.status(404).json({ error: `Failed to retrieve game preferences for userid: ${userid}, profileid: ${profileid}` }) : response.status(200).json(queryResult)
 })
 
+app.patch('/api/profileArrays', async (request: Request, response: Response) => {
+	const body = request.body
+	const userid = body.userid
+	const profileid = body.profileid
+	let platforms = body.platforms
+	let genres = body.genres
+	let themes = body.themes
+	let gameModes = body.gameModes
+	let queryResult: any
+	let userExists: boolean = true
+
+	if (userid === null || !userid || userid === undefined) {
+		return response.status(400).json({
+			error: 'No userid provided'
+		})
+	}
+	else if (profileid === null || !profileid || profileid === undefined) {
+		return response.status(400).json({
+			error: 'No profileid provided'
+		})
+	}
+	else if (platforms === null || !platforms || platforms === undefined) {
+		return response.status(400).json({
+			error: 'No platforms provided'
+		})
+	}
+	else if (genres === null || !genres || genres === undefined) {
+		return response.status(400).json({
+			error: 'No genres provided'
+		})
+	}
+	else if (themes === null || !themes || themes === undefined) {
+		return response.status(400).json({
+			error: 'No themes provided'
+		})
+	}
+	else if (gameModes === null || !gameModes || gameModes === undefined) {
+		return response.status(400).json({
+			error: 'No game modes provided'
+		})
+	}
+	await pool.query(SQL`
+		SELECT 1 WHERE EXISTS 
+			(SELECT * FROM users u 
+				INNER JOIN userprofiles up 
+				ON u.id = up.userid 
+				WHERE u.id = ${userid} 
+				AND up.profileid = ${profileid})`)
+		.then((response: any) => {
+			if (response.rows.length !== 1) {
+				userExists = !userExists
+			}
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(400).json({
+				error: 'Unable to retrieve data from user and profile tables'
+			})
+		})
+	if (!userExists) {
+		return response.status(400).json({
+			error: `User with this userid: ${userid} and profileid: ${profileid} does not exist`
+		})
+	}
+	// await pool.query(SQL`
+	// 	UPDATE userprofiles SET
+	// 		platform = ARRAY${platforms},
+	// 		genres = ARRAY${genres},
+	// 		themes = ARRAY${themes},
+	// 		gameModes = ARRAY${gameModes}
+	// 	WHERE userid = ${userid}
+	// 	AND profileid = ${profileid}
+	// 	RETURNING platform, genres, themes, gameModes`)
+	const platformsFormatted = platforms.map((platform: string) => `'${JSON.stringify(platform)}'`)
+	const genresFormatted = genres.map((genre: string) => `'${JSON.stringify(genre)}'`)
+	const themesFormatted = themes.map((theme: string) => `'${JSON.stringify(theme)}'`)
+	const gameModesFormatted = gameModes.map((mode: string) => `'${JSON.stringify(mode)}'`)
+	console.log(platformsFormatted)
+	await pool.query(SQL`
+	UPDATE userprofiles SET 
+	 		platform = (array[ ${ platformsFormatted } ]::varchar[]),
+			 genres = (array[ ${ genresFormatted } ]::varchar[]),
+			 themes = (array[ ${ themesFormatted } ]::varchar[]),
+			 gameModes = (array[ ${ gameModesFormatted } ]::varchar[])
+	 	WHERE userid = ${userid} 
+	 	AND profileid = ${profileid}
+	 	RETURNING platform, genres, themes, gameModes`)
+		.then((response: any) => {
+			queryResult = response !== null ? response.rows[0] : null
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(400).json({
+				error: 'Unable to edit userprofiles arrays: platforms, genres, themes, gameModes'
+			})
+		})
+	return queryResult === null ? response.status(404).json({ error: `Failed to retrieve game preferences for userid: ${userid}, profileid: ${profileid}` }) : response.status(200).json(queryResult)
+})
+
 const PORT = process.env.API_PORT || 3001
 
 app.listen(PORT, () => {

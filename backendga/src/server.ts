@@ -1954,6 +1954,67 @@ app.post('/api/login', async (request: Request, response: Response) => {
 	return queryResult === null ? response.status(404).json({ error: `Failed to login user with email:${email}` }) : response.status(200).json(queryResult)
 })
 
+app.post('/api/profileDetails', async (request: Request, response: Response) => {
+	const body = request.body
+	const userid = body.userid
+	const profileid = body.profileid
+	let queryResult: any
+	let userExists: boolean = true
+
+	if (userid === null || !userid || userid === undefined) {
+		return response.status(400).json({
+			error: 'No userid provided'
+		})
+	}
+	else if (profileid === null || !profileid || profileid === undefined) {
+		return response.status(400).json({
+			error: 'No profileid provided'
+		})
+	}
+	await pool.query(SQL`
+		SELECT 1 WHERE EXISTS 
+			(SELECT * FROM users u 
+				INNER JOIN userprofiles up 
+				ON u.id = up.userid 
+				WHERE u.id = ${userid} 
+				AND up.profileid = ${profileid})`)
+		.then((response: any) => {
+			if (response.rows.length !== 1) {
+				userExists = !userExists
+			}
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(400).json({
+				error: 'Unable to retrieve data from user and profile tables'
+			})
+		})
+	if (!userExists) {
+		return response.status(400).json({
+			error: `User with this userid: ${userid} and profileid: ${profileid} does not exist`
+		})
+	}
+	await pool.query(SQL`
+		SELECT up.platform,
+			   up.genres,
+			   up.themes,
+			   up.gameModes
+		FROM userprofiles up 
+		INNER JOIN users u 
+		ON up.userid = u.id
+		WHERE up.profileid = ${profileid}
+		AND u.id = ${userid}`)
+		.then((response: any) => {
+			queryResult = response !== null ? response.rows[0] : null
+		})
+		.catch((err: any) => {
+			return response.status(404).json({
+				error: `Failed to retrieve game preferences for userid: ${userid}, profileid: ${profileid}`
+			})
+		})
+	return queryResult === null ? response.status(404).json({ error: `Failed to retrieve game preferences for userid: ${userid}, profileid: ${profileid}` }) : response.status(200).json(queryResult)
+})
+
 const PORT = process.env.API_PORT || 3001
 
 app.listen(PORT, () => {

@@ -1,9 +1,10 @@
+/* eslint-disable quotes */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch, retrieveFormattedMapID, parseNullable, retrieveRatingDateFormatted, parseLargeBody } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch, retrieveFormattedMapID, parseNullable, retrieveRatingDateFormatted, parseLargeBody, arrayToPostgresArray } from '../helpers/requests'
 import { hashPassword, authPassword } from '../helpers/auth'
 import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, GlobalAuxiliaryObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SearchObj, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
 import { ExternalCategories, WebsiteCategories, placeholderImages } from '../helpers/ratingsvglinks'
@@ -2092,13 +2093,49 @@ app.patch('/api/profileArrays', async (request: Request, response: Response) => 
 	const genresFormatted = genres.map((genre: string) => `'${JSON.stringify(genre)}'`)
 	const themesFormatted = themes.map((theme: string) => `'${JSON.stringify(theme)}'`)
 	const gameModesFormatted = gameModes.map((mode: string) => `'${JSON.stringify(mode)}'`)
-	console.log(platformsFormatted)
+	// console.log(platformsFormatted)
+	// // platforms = platforms.join(', ')
+	// console.log(platforms)
+	// console.log('{'.concat(platforms,'}'))
+
+	// let resultString: string = "'{"
+	// for (let i = 0; i < platforms.length; i++) {
+	// 	let intermediateEl: string = ''
+	// 	if (i === platforms.length - 1) {
+	// 		resultString = resultString.concat()
+	// 	}
+	// 	else {
+
+	// 	}
+	// 	resultString = resultString.concat(platforms[i])
+	// }
+
+	// platform = (array[ ${ platformsFormatted } ]::varchar[]),
+	// 		 genres = (array[ ${ genresFormatted } ]::varchar[]),
+	// 		 themes = (array[ ${ themesFormatted } ]::varchar[]),
+	// 		 gameModes = (array[ ${ gameModesFormatted } ]::varchar[])
+	// console.log(JSON.stringify(platforms))
+	// console.log(JSON.stringify(genres))
+
+	// console.log(JSON.stringify(gameModes))
+
+	console.log(arrayToPostgresArray(platforms))
+	console.log(arrayToPostgresArray(genres))
+	console.log(arrayToPostgresArray(themes))
+	console.log(arrayToPostgresArray(gameModes))
+
+
+
+	let formattedArrayString = "'{" + JSON.stringify(genres).replace('[', '').replace(']', '') + "}'"
+	console.log('formatted Array String: ' + '' + formattedArrayString)
+	console.log(platforms)
+	console.log(genres)
 	await pool.query(SQL`
 	UPDATE userprofiles SET 
-	 		platform = (array[ ${ platformsFormatted } ]::varchar[]),
-			 genres = (array[ ${ genresFormatted } ]::varchar[]),
-			 themes = (array[ ${ themesFormatted } ]::varchar[]),
-			 gameModes = (array[ ${ gameModesFormatted } ]::varchar[])
+	 		platform = ARRAY ${platforms},
+			 genres = ARRAY ${genres},
+			 themes = ARRAY ${themes},
+			 gameModes = ARRAY ${gameModes}
 	 	WHERE userid = ${userid} 
 	 	AND profileid = ${profileid}
 	 	RETURNING platform, genres, themes, gameModes`)

@@ -543,7 +543,7 @@ const retrieveRatingDateFormatted = (specified: string, input: number[]) => {
 const arrayToPostgresArray = (inputArray: string[]) => {
 	let stringifiedArray = JSON.stringify(inputArray)
 	stringifiedArray = stringifiedArray.replace('[', '').replace(']', '')
-	return `'{${stringifiedArray}}'`
+	return `{${stringifiedArray}}`
 }
 
 export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, updateIGDBSearchConfigSpec, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseLargeBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, populateCompanySearch, retrieveFormattedMapID, retrieveRatingDateFormatted, arrayToPostgresArray }

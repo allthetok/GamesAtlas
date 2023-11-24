@@ -2080,62 +2080,20 @@ app.patch('/api/profileArrays', async (request: Request, response: Response) => 
 			error: `User with this userid: ${userid} and profileid: ${profileid} does not exist`
 		})
 	}
-	// await pool.query(SQL`
-	// 	UPDATE userprofiles SET
-	// 		platform = ARRAY${platforms},
-	// 		genres = ARRAY${genres},
-	// 		themes = ARRAY${themes},
-	// 		gameModes = ARRAY${gameModes}
-	// 	WHERE userid = ${userid}
-	// 	AND profileid = ${profileid}
-	// 	RETURNING platform, genres, themes, gameModes`)
-	const platformsFormatted = platforms.map((platform: string) => `'${JSON.stringify(platform)}'`)
-	const genresFormatted = genres.map((genre: string) => `'${JSON.stringify(genre)}'`)
-	const themesFormatted = themes.map((theme: string) => `'${JSON.stringify(theme)}'`)
-	const gameModesFormatted = gameModes.map((mode: string) => `'${JSON.stringify(mode)}'`)
-	// console.log(platformsFormatted)
-	// // platforms = platforms.join(', ')
-	// console.log(platforms)
-	// console.log('{'.concat(platforms,'}'))
 
-	// let resultString: string = "'{"
-	// for (let i = 0; i < platforms.length; i++) {
-	// 	let intermediateEl: string = ''
-	// 	if (i === platforms.length - 1) {
-	// 		resultString = resultString.concat()
-	// 	}
-	// 	else {
+	const formattedArrays = {
+		platforms: arrayToPostgresArray(platforms),
+		genres: arrayToPostgresArray(genres),
+		themes: arrayToPostgresArray(themes),
+		gameModes: arrayToPostgresArray(gameModes)
+	}
 
-	// 	}
-	// 	resultString = resultString.concat(platforms[i])
-	// }
-
-	// platform = (array[ ${ platformsFormatted } ]::varchar[]),
-	// 		 genres = (array[ ${ genresFormatted } ]::varchar[]),
-	// 		 themes = (array[ ${ themesFormatted } ]::varchar[]),
-	// 		 gameModes = (array[ ${ gameModesFormatted } ]::varchar[])
-	// console.log(JSON.stringify(platforms))
-	// console.log(JSON.stringify(genres))
-
-	// console.log(JSON.stringify(gameModes))
-
-	console.log(arrayToPostgresArray(platforms))
-	console.log(arrayToPostgresArray(genres))
-	console.log(arrayToPostgresArray(themes))
-	console.log(arrayToPostgresArray(gameModes))
-
-
-
-	let formattedArrayString = "'{" + JSON.stringify(genres).replace('[', '').replace(']', '') + "}'"
-	console.log('formatted Array String: ' + '' + formattedArrayString)
-	console.log(platforms)
-	console.log(genres)
 	await pool.query(SQL`
 	UPDATE userprofiles SET 
-	 		platform = ARRAY ${platforms},
-			 genres = ARRAY ${genres},
-			 themes = ARRAY ${themes},
-			 gameModes = ARRAY ${gameModes}
+	 		platform = ${formattedArrays.platforms},
+			 genres = ${formattedArrays.genres},
+			 themes = ${formattedArrays.themes},
+			 gameModes = ${formattedArrays.gameModes}
 	 	WHERE userid = ${userid} 
 	 	AND profileid = ${profileid}
 	 	RETURNING platform, genres, themes, gameModes`)

@@ -2016,14 +2016,14 @@ app.post('/api/profileDetails', async (request: Request, response: Response) => 
 	return queryResult === null ? response.status(404).json({ error: `Failed to retrieve game preferences for userid: ${userid}, profileid: ${profileid}` }) : response.status(200).json(queryResult)
 })
 
-app.patch('/api/profileArrays', async (request: Request, response: Response) => {
+app.patch('/api/profileDetails', async (request: Request, response: Response) => {
 	const body = request.body
 	const userid = body.userid
 	const profileid = body.profileid
-	let platforms = body.platforms
-	let genres = body.genres
-	let themes = body.themes
-	let gameModes = body.gameModes
+	const platforms = body.platforms
+	const genres = body.genres
+	const themes = body.themes
+	const gameModes = body.gameModes
 	let queryResult: any
 	let userExists: boolean = true
 
@@ -2097,6 +2097,77 @@ app.patch('/api/profileArrays', async (request: Request, response: Response) => 
 	 	WHERE userid = ${userid} 
 	 	AND profileid = ${profileid}
 	 	RETURNING platform, genres, themes, gameModes`)
+		.then((response: any) => {
+			queryResult = response !== null ? response.rows[0] : null
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(400).json({
+				error: 'Unable to edit userprofiles arrays: platforms, genres, themes, gameModes'
+			})
+		})
+	return queryResult === null ? response.status(404).json({ error: `Failed to retrieve game preferences for userid: ${userid}, profileid: ${profileid}` }) : response.status(200).json(queryResult)
+})
+
+app.patch('/api/userDetails', async (request: Request, response: Response) => {
+	const body = request.body
+	const userid = body.userid
+	const profileid = body.profileid
+	const username = body.username
+	const email = body.email
+	let queryResult: any
+	let userExists: boolean = true
+
+	if (userid === null || !userid || userid === undefined) {
+		return response.status(400).json({
+			error: 'No userid provided'
+		})
+	}
+	else if (profileid === null || !profileid || profileid === undefined) {
+		return response.status(400).json({
+			error: 'No profileid provided'
+		})
+	}
+	else if (username === null || !username || username === undefined) {
+		return response.status(400).json({
+			error: 'No username provided'
+		})
+	}
+	else if (email === null || !email || email === undefined) {
+		return response.status(400).json({
+			error: 'No email provided'
+		})
+	}
+	await pool.query(SQL`
+		SELECT 1 WHERE EXISTS 
+			(SELECT * FROM users u 
+				INNER JOIN userprofiles up 
+				ON u.id = up.userid 
+				WHERE u.id = ${userid} 
+				AND up.profileid = ${profileid})`)
+		.then((response: any) => {
+			if (response.rows.length !== 1) {
+				userExists = !userExists
+			}
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(400).json({
+				error: 'Unable to retrieve data from user and profile tables'
+			})
+		})
+	if (!userExists) {
+		return response.status(400).json({
+			error: `User with this userid: ${userid} and profileid: ${profileid} does not exist`
+		})
+	}
+	await pool.query(SQL`
+	UPDATE users SET 
+	 		username = ${username},
+			email = ${email},
+			prevlogin = to_timestamp(${Date.now()} / 1000.0) 
+	 	WHERE id = ${userid}
+	 	RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
 		.then((response: any) => {
 			queryResult = response !== null ? response.rows[0] : null
 		})

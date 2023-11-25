@@ -1881,6 +1881,50 @@ app.post('/api/loginOAuthUser', async (request: Request, response: Response) => 
 
 })
 
+app.post('/api/resolveUser', async (request: Request, response: Response) => {
+	const body = request.body
+	const email: string = body.email
+	const provider: string = body.provider
+	let userExists: boolean = false
+
+	if (!email || email === '' || email === null) {
+		return response.status(400).json({
+			error: 'No email provided'
+		})
+	}
+	else if (!provider || provider === '' || provider === null) {
+		return response.status(400).json({
+			error: 'No provider specified'
+		})
+	}
+	await pool.query(SQL`
+		SELECT 1 WHERE EXISTS 
+			(SELECT * FROM users u 
+				INNER JOIN userprofiles up 
+				ON u.id = up.userid 
+				WHERE u.email=${email} 
+				AND u.provider=${provider})`)
+		.then((response: any) => {
+			if (response.rows.length !== 0) {
+				userExists = !userExists
+			}
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(404).json({
+				error: `Failed to retrieve records within users and userprofiles tables`
+			})
+		})
+
+	return userExists ? response.status(200).json({
+		userExists: userExists,
+		message: `User with this email: ${email} and provider: ${provider} does exist`
+	}) : response.status(200).json({
+		userExists: userExists,
+		message: `User with this email: ${email} and provider: ${provider} does not exist`
+	})
+})
+
 app.post('/api/login', async (request: Request, response: Response) => {
 	const body = request.body
 	// const username: string = body.username

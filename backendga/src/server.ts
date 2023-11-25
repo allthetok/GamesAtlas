@@ -1916,12 +1916,9 @@ app.post('/api/resolveUser', async (request: Request, response: Response) => {
 			})
 		})
 
-	return userExists ? response.status(200).json({
+	return response.status(200).json({
 		userExists: userExists,
-		message: `User with this email: ${email} and provider: ${provider} does exist`
-	}) : response.status(200).json({
-		userExists: userExists,
-		message: `User with this email: ${email} and provider: ${provider} does not exist`
+		message: userExists ? `User with this email: ${email} and provider: ${provider} does exist` : `User with this email: ${email} and provider: ${provider} doesn't exist`
 	})
 })
 

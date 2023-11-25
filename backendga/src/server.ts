@@ -2120,6 +2120,7 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 	const specField = body.specField
 	let queryResult: any
 	let userExists: boolean = true
+	let setSpecField: string = ''
 
 	if (specField === null || !specField || specField === undefined || specField === '') {
 		return response.status(400).json({
@@ -2168,21 +2169,23 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 				error: 'No username provided'
 			})
 		}
-		await pool.query(SQL`
-			UPDATE users SET 
-				username = ${username},
-				prevlogin = to_timestamp(${Date.now()} / 1000.0) 
-			WHERE id = ${userid}
-			RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
-			.then((response: any) => {
-				queryResult = response !== null ? response.rows[0] : null
-			})
-			.catch((err: any) => {
-				console.log(err)
-				return response.status(400).json({
-					error: 'Unable to edit users username'
-				})
-			})
+		setSpecField = `username = ${username},`
+
+		// await pool.query(SQL`
+		// 	UPDATE users SET
+		// 		username = ${username},
+		// 		prevlogin = to_timestamp(${Date.now()} / 1000.0)
+		// 	WHERE id = ${userid}
+		// 	RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
+		// 	.then((response: any) => {
+		// 		queryResult = response !== null ? response.rows[0] : null
+		// 	})
+		// 	.catch((err: any) => {
+		// 		console.log(err)
+		// 		return response.status(400).json({
+		// 			error: 'Unable to edit users username'
+		// 		})
+		// 	})
 		break
 	case 'email':
 		if (email === null || !email || email === undefined) {
@@ -2190,21 +2193,22 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 				error: 'No email provided'
 			})
 		}
-		await pool.query(SQL`
-				UPDATE users SET 
-					email = ${email},
-					prevlogin = to_timestamp(${Date.now()} / 1000.0) 
-				WHERE id = ${userid}
-				RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
-			.then((response: any) => {
-				queryResult = response !== null ? response.rows[0] : null
-			})
-			.catch((err: any) => {
-				console.log(err)
-				return response.status(400).json({
-					error: 'Unable to edit users email'
-				})
-			})
+		setSpecField = `email = ${email},`
+		// await pool.query(SQL`
+		// 		UPDATE users SET
+		// 			email = ${email},
+		// 			prevlogin = to_timestamp(${Date.now()} / 1000.0)
+		// 		WHERE id = ${userid}
+		// 		RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
+		// 	.then((response: any) => {
+		// 		queryResult = response !== null ? response.rows[0] : null
+		// 	})
+		// 	.catch((err: any) => {
+		// 		console.log(err)
+		// 		return response.status(400).json({
+		// 			error: 'Unable to edit users email'
+		// 		})
+		// 	})
 		break
 	case 'both':
 		if (email === null || !email || email === undefined || username === null || !username || username === undefined) {
@@ -2212,22 +2216,24 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 				error: 'No username/email provided when updating both'
 			})
 		}
-		await pool.query(SQL`
-				UPDATE users SET 
-					username=${username},
-					email = ${email},
-					prevlogin = to_timestamp(${Date.now()} / 1000.0) 
-				WHERE id = ${userid}
-				RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
-			.then((response: any) => {
-				queryResult = response !== null ? response.rows[0] : null
-			})
-			.catch((err: any) => {
-				console.log(err)
-				return response.status(400).json({
-					error: 'Unable to edit users email'
-				})
-			})
+		setSpecField = `username = ${username},
+						email = ${email},`
+		// await pool.query(SQL`
+		// 		UPDATE users SET
+		// 			username=${username},
+		// 			email = ${email},
+		// 			prevlogin = to_timestamp(${Date.now()} / 1000.0)
+		// 		WHERE id = ${userid}
+		// 		RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
+		// 	.then((response: any) => {
+		// 		queryResult = response !== null ? response.rows[0] : null
+		// 	})
+		// 	.catch((err: any) => {
+		// 		console.log(err)
+		// 		return response.status(400).json({
+		// 			error: 'Unable to edit users email'
+		// 		})
+		// 	})
 		break
 	case 'password':
 		if (password === null || !password || password === undefined) {
@@ -2236,14 +2242,30 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 			})
 		}
 		const hashPass = await hashPassword(10, password)
-		await pool.query(SQL`
-			UPDATE users SET 
-				password=${hashPass},
-				prevlogin = to_timestamp(${Date.now()} / 1000.0) 
-			WHERE id = ${userid}
-			RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
+		setSpecField = `password = ${hashPass},`
+		// await pool.query(SQL`
+		// 	UPDATE users SET
+		// 		password=${hashPass},
+		// 		prevlogin = to_timestamp(${Date.now()} / 1000.0)
+		// 	WHERE id = ${userid}
+		// 	RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
 	}
-	return queryResult === null ? response.status(404).json({ error: `Failed to retrieve game preferences for userid: ${userid}, profileid: ${profileid}` }) : response.status(200).json(queryResult)
+	await pool.query(SQL`
+				UPDATE users SET 
+					${setSpecField}
+					prevlogin = to_timestamp(${Date.now()} / 1000.0) 
+				WHERE id = ${userid}
+				RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
+		.then((response: any) => {
+			queryResult = response !== null ? response.rows[0] : null
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(400).json({
+				error: 'Unable to edit users email'
+			})
+		})
+	return queryResult === null ? response.status(404).json({ error: `Failed to retrieve and update user details for userid: ${userid}, profileid: ${profileid}` }) : response.status(200).json(queryResult)
 })
 
 const PORT = process.env.API_PORT || 3001

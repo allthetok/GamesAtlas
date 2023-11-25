@@ -1,3 +1,4 @@
+/* eslint-disable no-case-declarations */
 /* eslint-disable quotes */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -2115,10 +2116,17 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 	const profileid = body.profileid
 	const username = body.username
 	const email = body.email
+	const password = body.password
+	const specField = body.specField
 	let queryResult: any
 	let userExists: boolean = true
 
-	if (userid === null || !userid || userid === undefined) {
+	if (specField === null || !specField || specField === undefined || specField === '') {
+		return response.status(400).json({
+			error: `Did not specify which user attribute to update: ${specField}`
+		})
+	}
+	else if (userid === null || !userid || userid === undefined) {
 		return response.status(400).json({
 			error: 'No userid provided'
 		})
@@ -2128,16 +2136,7 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 			error: 'No profileid provided'
 		})
 	}
-	else if (username === null || !username || username === undefined) {
-		return response.status(400).json({
-			error: 'No username provided'
-		})
-	}
-	else if (email === null || !email || email === undefined) {
-		return response.status(400).json({
-			error: 'No email provided'
-		})
-	}
+
 	await pool.query(SQL`
 		SELECT 1 WHERE EXISTS 
 			(SELECT * FROM users u 
@@ -2161,22 +2160,89 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 			error: `User with this userid: ${userid} and profileid: ${profileid} does not exist`
 		})
 	}
-	await pool.query(SQL`
-	UPDATE users SET 
-	 		username = ${username},
-			email = ${email},
-			prevlogin = to_timestamp(${Date.now()} / 1000.0) 
-	 	WHERE id = ${userid}
-	 	RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
-		.then((response: any) => {
-			queryResult = response !== null ? response.rows[0] : null
-		})
-		.catch((err: any) => {
-			console.log(err)
+
+	switch (specField) {
+	case 'username':
+		if (username === null || !username || username === undefined) {
 			return response.status(400).json({
-				error: 'Unable to edit userprofiles arrays: platforms, genres, themes, gameModes'
+				error: 'No username provided'
 			})
-		})
+		}
+		await pool.query(SQL`
+			UPDATE users SET 
+				username = ${username},
+				prevlogin = to_timestamp(${Date.now()} / 1000.0) 
+			WHERE id = ${userid}
+			RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
+			.then((response: any) => {
+				queryResult = response !== null ? response.rows[0] : null
+			})
+			.catch((err: any) => {
+				console.log(err)
+				return response.status(400).json({
+					error: 'Unable to edit users username'
+				})
+			})
+		break
+	case 'email':
+		if (email === null || !email || email === undefined) {
+			return response.status(400).json({
+				error: 'No email provided'
+			})
+		}
+		await pool.query(SQL`
+				UPDATE users SET 
+					email = ${email},
+					prevlogin = to_timestamp(${Date.now()} / 1000.0) 
+				WHERE id = ${userid}
+				RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
+			.then((response: any) => {
+				queryResult = response !== null ? response.rows[0] : null
+			})
+			.catch((err: any) => {
+				console.log(err)
+				return response.status(400).json({
+					error: 'Unable to edit users email'
+				})
+			})
+		break
+	case 'both':
+		if (email === null || !email || email === undefined || username === null || !username || username === undefined) {
+			return response.status(400).json({
+				error: 'No username/email provided when updating both'
+			})
+		}
+		await pool.query(SQL`
+				UPDATE users SET 
+					username=${username},
+					email = ${email},
+					prevlogin = to_timestamp(${Date.now()} / 1000.0) 
+				WHERE id = ${userid}
+				RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
+			.then((response: any) => {
+				queryResult = response !== null ? response.rows[0] : null
+			})
+			.catch((err: any) => {
+				console.log(err)
+				return response.status(400).json({
+					error: 'Unable to edit users email'
+				})
+			})
+		break
+	case 'password':
+		if (password === null || !password || password === undefined) {
+			return response.status(400).json({
+				error: 'No password provided'
+			})
+		}
+		const hashPass = await hashPassword(10, password)
+		await pool.query(SQL`
+			UPDATE users SET 
+				password=${hashPass},
+				prevlogin = to_timestamp(${Date.now()} / 1000.0) 
+			WHERE id = ${userid}
+			RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
+	}
 	return queryResult === null ? response.status(404).json({ error: `Failed to retrieve game preferences for userid: ${userid}, profileid: ${profileid}` }) : response.status(200).json(queryResult)
 })
 

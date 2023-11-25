@@ -14,7 +14,7 @@ import express, { NextFunction, Request, Response } from 'express'
 import { pool } from './db'
 import axios from 'axios'
 import cors from 'cors'
-import SQL from 'sql-template-strings'
+import SQL, { SQLStatement } from 'sql-template-strings'
 import pg, { Client, QueryResult } from 'pg'
 import bcrypt from 'bcrypt'
 import { sortMap, platformMap, genreMap, categoryMap } from '../helpers/enums'
@@ -2120,7 +2120,7 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 	const specField = body.specField
 	let queryResult: any
 	let userExists: boolean = true
-	let setSpecField: string = ''
+	let queryString: SQLStatement
 
 	if (specField === null || !specField || specField === undefined || specField === '') {
 		return response.status(400).json({
@@ -2169,23 +2169,11 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 				error: 'No username provided'
 			})
 		}
-		setSpecField = `username = ${username},`
-
-		// await pool.query(SQL`
-		// 	UPDATE users SET
-		// 		username = ${username},
-		// 		prevlogin = to_timestamp(${Date.now()} / 1000.0)
-		// 	WHERE id = ${userid}
-		// 	RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
-		// 	.then((response: any) => {
-		// 		queryResult = response !== null ? response.rows[0] : null
-		// 	})
-		// 	.catch((err: any) => {
-		// 		console.log(err)
-		// 		return response.status(400).json({
-		// 			error: 'Unable to edit users username'
-		// 		})
-		// 	})
+		queryString = SQL`
+			UPDATE users SET username=${username},
+			prevlogin = to_timestamp(${Date.now()} / 1000.0)
+			WHERE id = ${userid}
+			RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`
 		break
 	case 'email':
 		if (email === null || !email || email === undefined) {
@@ -2193,22 +2181,11 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 				error: 'No email provided'
 			})
 		}
-		setSpecField = `email = ${email},`
-		// await pool.query(SQL`
-		// 		UPDATE users SET
-		// 			email = ${email},
-		// 			prevlogin = to_timestamp(${Date.now()} / 1000.0)
-		// 		WHERE id = ${userid}
-		// 		RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
-		// 	.then((response: any) => {
-		// 		queryResult = response !== null ? response.rows[0] : null
-		// 	})
-		// 	.catch((err: any) => {
-		// 		console.log(err)
-		// 		return response.status(400).json({
-		// 			error: 'Unable to edit users email'
-		// 		})
-		// 	})
+		queryString = SQL`
+			UPDATE users SET email=${email},
+			prevlogin = to_timestamp(${Date.now()} / 1000.0)
+			WHERE id = ${userid}
+			RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`
 		break
 	case 'both':
 		if (email === null || !email || email === undefined || username === null || !username || username === undefined) {
@@ -2216,24 +2193,12 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 				error: 'No username/email provided when updating both'
 			})
 		}
-		setSpecField = `username = ${username},
-						email = ${email},`
-		// await pool.query(SQL`
-		// 		UPDATE users SET
-		// 			username=${username},
-		// 			email = ${email},
-		// 			prevlogin = to_timestamp(${Date.now()} / 1000.0)
-		// 		WHERE id = ${userid}
-		// 		RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
-		// 	.then((response: any) => {
-		// 		queryResult = response !== null ? response.rows[0] : null
-		// 	})
-		// 	.catch((err: any) => {
-		// 		console.log(err)
-		// 		return response.status(400).json({
-		// 			error: 'Unable to edit users email'
-		// 		})
-		// 	})
+		queryString = SQL`
+			UPDATE users SET username=${username},
+			email=${email},
+			prevlogin = to_timestamp(${Date.now()} / 1000.0)
+			WHERE id = ${userid}
+			RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`
 		break
 	case 'password':
 		if (password === null || !password || password === undefined) {
@@ -2242,27 +2207,26 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 			})
 		}
 		const hashPass = await hashPassword(10, password)
-		setSpecField = `password = ${hashPass},`
-		// await pool.query(SQL`
-		// 	UPDATE users SET
-		// 		password=${hashPass},
-		// 		prevlogin = to_timestamp(${Date.now()} / 1000.0)
-		// 	WHERE id = ${userid}
-		// 	RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
+		queryString = SQL`
+			UPDATE users SET password=${hashPass},
+			prevlogin = to_timestamp(${Date.now()} / 1000.0)
+			WHERE id = ${userid}
+			RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`
+		break
+	default:
+		return response.status(400).json({
+			error: `Specified case does not exist and is not within: username/email/password/both, it is currently: ${specField}`
+		})
 	}
-	await pool.query(SQL`
-				UPDATE users SET 
-					${setSpecField}
-					prevlogin = to_timestamp(${Date.now()} / 1000.0) 
-				WHERE id = ${userid}
-				RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`)
+
+	await pool.query(queryString)
 		.then((response: any) => {
 			queryResult = response !== null ? response.rows[0] : null
 		})
 		.catch((err: any) => {
 			console.log(err)
 			return response.status(400).json({
-				error: 'Unable to edit users email'
+				error: `Unable to edit user details for userid: ${userid}, profileid: ${profileid}`
 			})
 		})
 	return queryResult === null ? response.status(404).json({ error: `Failed to retrieve and update user details for userid: ${userid}, profileid: ${profileid}` }) : response.status(200).json(queryResult)

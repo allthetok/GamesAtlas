@@ -1924,7 +1924,6 @@ app.post('/api/resolveUser', async (request: Request, response: Response) => {
 
 app.post('/api/login', async (request: Request, response: Response) => {
 	const body = request.body
-	// const username: string = body.username
 	const email: string = body.email
 	const password: string = body.password
 	const provider: string = body.provider
@@ -1932,11 +1931,6 @@ app.post('/api/login', async (request: Request, response: Response) => {
 	let matchPass: boolean = false
 	let queryResult: any
 
-	// if (!username || username === '' || username === null) {
-	// 	return response.status(400).json({
-	// 		error: 'No username provided'
-	// 	})
-	// }
 	if (!email || email === '' || email === null) {
 		return response.status(400).json({
 			error: 'No email provided'
@@ -2271,6 +2265,48 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 			})
 		})
 	return queryResult === null ? response.status(404).json({ error: `Failed to retrieve and update user details for userid: ${userid}, profileid: ${profileid}` }) : response.status(200).json(queryResult)
+})
+
+app.post('/api/usernameEmail', async (request: Request, response: Response) => {
+	const body = request.body
+	const username: string = body.username
+	const provider: string = body.provider
+	let invalidUser: boolean = false
+	let queryResult: any
+
+	if (!username || username === '' || username === null) {
+		return response.status(400).json({
+			error: 'No username provided'
+		})
+	}
+	else if (!provider || provider === '' || provider === null) {
+		return response.status(400).json({
+			error: 'No provider specified'
+		})
+	}
+
+	await pool.query(SQL`
+		SELECT u.id, u.email, u.username, u.password, u.provider, up.profileid
+		FROM users u 
+		INNER JOIN userprofiles up 
+		ON u.id = up.userid
+		WHERE u.username=${username} 
+		AND u.provider=${provider}`)
+		.then(async (response: any) => {
+			queryResult = response
+			if (queryResult.rows.length === 0 || queryResult.rows === null) {
+				invalidUser = !invalidUser
+			}
+			else {
+				queryResult = queryResult.rows[0]
+			}
+		})
+	if (invalidUser) {
+		return response.status(400).json({
+			'email': null
+		})
+	}
+	return invalidUser ? response.status(400).json({ 'email': null }) : response.status(200).json({ 'email': queryResult.email })
 })
 
 const PORT = process.env.API_PORT || 3001

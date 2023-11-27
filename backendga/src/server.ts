@@ -2149,12 +2149,14 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 	const body = request.body
 	const userid = body.userid
 	const profileid = body.profileid
+	const provider = body.provider
 	const username = body.username
 	const email = body.email
 	const password = body.password
 	const specField = body.specField
 	let queryResult: any
 	let userExists: boolean = true
+	let fieldTaken: boolean = false
 	let queryString: SQLStatement
 
 	if (specField === null || !specField || specField === undefined || specField === '') {
@@ -2172,6 +2174,11 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 			error: 'No profileid provided'
 		})
 	}
+	else if (provider === null || !provider || provider === undefined) {
+		return response.status(400).json({
+			error: 'No provider provided'
+		})
+	}
 
 	await pool.query(SQL`
 		SELECT 1 WHERE EXISTS 
@@ -2179,7 +2186,8 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 				INNER JOIN userprofiles up 
 				ON u.id = up.userid 
 				WHERE u.id = ${userid} 
-				AND up.profileid = ${profileid})`)
+				AND up.profileid = ${profileid}
+				AND u.provider = ${provider})`)
 		.then((response: any) => {
 			if (response.rows.length !== 1) {
 				userExists = !userExists
@@ -2199,11 +2207,27 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 
 	switch (specField) {
 	case 'username':
-		if (username === null || !username || username === undefined) {
+		if (username === null || !username || username === undefined || username === '') {
 			return response.status(400).json({
 				error: 'No username provided'
 			})
 		}
+		await pool.query(SQL`
+			SELECT 1 WHERE EXISTS 
+				(SELECT * FROM users u 
+					INNER JOIN userprofiles up
+					ON u.id = up.userid
+					WHERE u.id <> ${userid}
+					AND up.profileid <> ${profileid}
+					AND u.provider = ${provider}
+					AND u.username = ${username})`)
+			.then((response: any) => {
+				fieldTaken = response.rows.length !== 0
+			})
+			.catch((err: any) => {
+				console.log(err)
+				return response.status(404).json({ error: 'Unable to check if username exists' })
+			})
 		queryString = SQL`
 			UPDATE users SET username=${username},
 			prevlogin = to_timestamp(${Date.now()} / 1000.0)
@@ -2211,11 +2235,27 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 			RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`
 		break
 	case 'email':
-		if (email === null || !email || email === undefined) {
+		if (email === null || !email || email === undefined || email === '') {
 			return response.status(400).json({
 				error: 'No email provided'
 			})
 		}
+		await pool.query(SQL`
+			SELECT 1 WHERE EXISTS 
+				(SELECT * FROM users u 
+					INNER JOIN userprofiles up
+					ON u.id = up.userid
+					WHERE u.id <> ${userid}
+					AND up.profileid <> ${profileid}
+					AND u.provider = ${provider}
+					AND u.email = ${email})`)
+			.then((response: any) => {
+				fieldTaken = response.rows.length !== 0
+			})
+			.catch((err: any) => {
+				console.log(err)
+				return response.status(404).json({ error: 'Unable to check if email exists' })
+			})
 		queryString = SQL`
 			UPDATE users SET email=${email},
 			prevlogin = to_timestamp(${Date.now()} / 1000.0)
@@ -2223,11 +2263,27 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 			RETURNING id, email, emailVerified, username, prevlogin, externalId, provider, ${profileid} AS profileid`
 		break
 	case 'both':
-		if (email === null || !email || email === undefined || username === null || !username || username === undefined) {
+		if (email === null || !email || email === undefined || username === null || !username || username === undefined || username === '' || email === '') {
 			return response.status(400).json({
 				error: 'No username/email provided when updating both'
 			})
 		}
+		await pool.query(SQL`
+			SELECT 1 WHERE EXISTS 
+				(SELECT * FROM users u 
+					INNER JOIN userprofiles up
+					ON u.id = up.userid
+					WHERE u.id <> ${userid}
+					AND up.profileid <> ${profileid}
+					AND u.provider = ${provider}
+					AND (u.email = ${email} OR u.username = ${username})`)
+			.then((response: any) => {
+				fieldTaken = response.rows.length !== 0
+			})
+			.catch((err: any) => {
+				console.log(err)
+				return response.status(404).json({ error: 'Unable to check if email exists' })
+			})
 		queryString = SQL`
 			UPDATE users SET username=${username},
 			email=${email},
@@ -2252,6 +2308,10 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 		return response.status(400).json({
 			error: `Specified case does not exist and is not within: username/email/password/both, it is currently: ${specField}`
 		})
+	}
+
+	if (fieldTaken) {
+		return response.status(400).json({ error: 'This username or email is already taken' })
 	}
 
 	await pool.query(queryString)

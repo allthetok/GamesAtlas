@@ -1750,6 +1750,11 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 			error: 'No email provided'
 		})
 	}
+	else if (!username || username === '' || username === null) {
+		return response.status(400).json({
+			error: 'No username provided'
+		})
+	}
 	else if (!password || password === '' || password === null) {
 		return response.status(400).json({
 			error: 'No password provided'
@@ -1761,7 +1766,7 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 			(SELECT * FROM users u 
 				INNER JOIN userprofiles up 
 				ON u.id = up.userid 
-				WHERE u.email=${email} 
+				WHERE (u.email=${email} OR u.username=${username})
 				AND u.provider=${provider})`)
 		.then((response: any) => {
 			if (response.rows.length !== 0) {
@@ -1927,6 +1932,7 @@ app.post('/api/check', async (request: Request, response: Response) => {
 app.post('/api/resolveUser', async (request: Request, response: Response) => {
 	const body = request.body
 	const email: string = body.email
+	const username: string = body.username
 	const provider: string = body.provider
 	let userExists: boolean = false
 
@@ -1940,24 +1946,46 @@ app.post('/api/resolveUser', async (request: Request, response: Response) => {
 			error: 'No provider specified'
 		})
 	}
-	await pool.query(SQL`
+	if (username !== '') {
+		await pool.query(SQL`
+		SELECT 1 WHERE EXISTS 
+			(SELECT * FROM users u 
+				INNER JOIN userprofiles up 
+				ON u.id = up.userid 
+				WHERE (u.email=${email} OR u.username=${username}) 
+				AND u.provider=${provider})`)
+			.then((response: any) => {
+				if (response.rows.length !== 0) {
+					userExists = !userExists
+				}
+			})
+			.catch((err: any) => {
+				console.log(err)
+				return response.status(404).json({
+					error: `Failed to retrieve records within users and userprofiles tables`
+				})
+			})
+	}
+	else {
+		await pool.query(SQL`
 		SELECT 1 WHERE EXISTS 
 			(SELECT * FROM users u 
 				INNER JOIN userprofiles up 
 				ON u.id = up.userid 
 				WHERE u.email=${email} 
 				AND u.provider=${provider})`)
-		.then((response: any) => {
-			if (response.rows.length !== 0) {
-				userExists = !userExists
-			}
-		})
-		.catch((err: any) => {
-			console.log(err)
-			return response.status(404).json({
-				error: `Failed to retrieve records within users and userprofiles tables`
+			.then((response: any) => {
+				if (response.rows.length !== 0) {
+					userExists = !userExists
+				}
 			})
-		})
+			.catch((err: any) => {
+				console.log(err)
+				return response.status(404).json({
+					error: `Failed to retrieve records within users and userprofiles tables`
+				})
+			})
+	}
 
 	return response.status(200).json({
 		userExists: userExists,
@@ -2385,8 +2413,9 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 					WHERE u.id <> ${userid}
 					AND up.profileid <> ${profileid}
 					AND u.provider = ${provider}
-					AND (u.email = ${email} OR u.username = ${username})`)
+					AND (u.email = ${email} OR u.username = ${username}) )`)
 			.then((response: any) => {
+				console.log(response)
 				fieldTaken = response.rows.length !== 0
 			})
 			.catch((err: any) => {
@@ -2423,17 +2452,19 @@ app.patch('/api/userDetails', async (request: Request, response: Response) => {
 		return response.status(400).json({ error: 'This username or email is already taken' })
 	}
 
-	await pool.query(queryString)
-		.then((response: any) => {
-			queryResult = response !== null ? response.rows[0] : null
-		})
-		.catch((err: any) => {
-			console.log(err)
-			return response.status(400).json({
-				error: `Unable to edit user details for userid: ${userid}, profileid: ${profileid}`
+	else {
+		await pool.query(queryString)
+			.then((response: any) => {
+				queryResult = response !== null ? response.rows[0] : null
 			})
-		})
-	return queryResult === null ? response.status(404).json({ error: `Failed to retrieve and update user details for userid: ${userid}, profileid: ${profileid}` }) : response.status(200).json(queryResult)
+			.catch((err: any) => {
+				console.log(err)
+				return response.status(400).json({
+					error: `Unable to edit user details for userid: ${userid}, profileid: ${profileid}`
+				})
+			})
+		return queryResult === null ? response.status(404).json({ error: `Failed to retrieve and update user details for userid: ${userid}, profileid: ${profileid}` }) : response.status(200).json(queryResult)
+	}
 })
 
 app.post('/api/usernameEmail', async (request: Request, response: Response) => {

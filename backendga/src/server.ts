@@ -12,7 +12,7 @@ import { ExternalCategories, WebsiteCategories, placeholderImages } from '../hel
 require('dotenv').config()
 import express, { NextFunction, Request, Response } from 'express'
 import { pool } from './db'
-import axios from 'axios'
+import axios, { AxiosResponse } from 'axios'
 import cors from 'cors'
 import SQL, { SQLStatement } from 'sql-template-strings'
 import pg, { Client, QueryResult } from 'pg'
@@ -2050,6 +2050,72 @@ app.post('/api/profileDetails', async (request: Request, response: Response) => 
 			})
 		})
 	return queryResult === null ? response.status(404).json({ error: `Failed to retrieve game preferences for userid: ${userid}, profileid: ${profileid}` }) : response.status(200).json(queryResult)
+})
+
+app.post('/api/userDetails', async (request: Request, response: Response) => {
+	const body = request.body
+	const userid = body.userid
+	const profileid = body.profileid
+	const provider = body.provider
+	let queryResult: any
+	let userExists: boolean = true
+
+	if (userid === null || !userid || userid === undefined) {
+		return response.status(400).json({
+			error: 'No userid provided'
+		})
+	}
+	else if (profileid === null || !profileid || profileid === undefined) {
+		return response.status(400).json({
+			error: 'No profileid provided'
+		})
+	}
+	else if (provider === null || !provider || provider === undefined || provider === '') {
+		return response.status(400).json({
+			error: 'No provider provided'
+		})
+	}
+	await pool.query(SQL`
+		SELECT 1 WHERE EXISTS 
+			(SELECT * FROM users u 
+				INNER JOIN userprofiles up 
+				ON u.id = up.userid 
+				WHERE u.id = ${userid} 
+				AND up.profileid = ${profileid}
+				AND u.provider = ${provider})`)
+		.then((response: any) => {
+			if (response.rows.length !== 1) {
+				userExists = !userExists
+			}
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(400).json({
+				error: 'Unable to retrieve data from user and profile tables'
+			})
+		})
+	if (!userExists) {
+		return response.status(400).json({
+			error: `User with this userid: ${userid} and profileid: ${profileid} does not exist`
+		})
+	}
+	await pool.query(SQL`
+		SELECT u.username, u.email, u.provider FROM users u 
+			INNER JOIN userprofiles up 
+			ON u.id = up.userid 
+			WHERE u.id = ${userid} 
+			AND up.profileid = ${profileid}
+			AND u.provider = ${provider}`)
+		.then((response: any) => {
+			queryResult = response.rows.length !== 0 ? response.rows[0] : null
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(404).json({
+				error: 'Unable to query users and userprofiles tables'
+			})
+		})
+	return queryResult !== null ? response.status(200).json(queryResult) : response.status(400).json({ error: `Unable to retrieve username, email and provider with specified userid: ${userid} and profileid: ${profileid}` })
 })
 
 app.patch('/api/profileDetails', async (request: Request, response: Response) => {

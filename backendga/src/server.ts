@@ -1809,6 +1809,7 @@ app.post('/api/loginOAuthUser', async (request: Request, response: Response) => 
 	const provider: string = body.provider
 	let queryResult: any
 	let userExists: boolean = false
+	let userId: number
 
 	if (!email || email === '' || email === null) {
 		return response.status(400).json({
@@ -1839,28 +1840,49 @@ app.post('/api/loginOAuthUser', async (request: Request, response: Response) => 
 			}
 		})
 	if (userExists) {
+		console.log(userExists)
 		await pool.query(SQL`
-			UPDATE users SET 
-				prevlogin=to_timestamp(${Date.now()} / 1000.0) 
-				WHERE email=${email} 
-				AND externalId=${externalId} 
-				AND provider=${provider} 
-				RETURNING id, username, email, provider`)
+			UPDATE users SET
+				prevlogin=to_timestamp(${Date.now()} / 1000.0)
+				WHERE email=${email}
+				AND externalId=${externalId}
+				AND provider=${provider}
+				RETURNING id, username, email, provider, 0 AS profileid`)
 			.then((response: any) => {
+				console.log(response)
 				queryResult = response !== null ? response.rows[0] : null
+				console.log(queryResult)
+				userId = queryResult.id
 			})
 			.catch((err: any) => {
 				return response.status(404).json({
 					error: `Failed to update record for ${username}, ${email}`
 				})
 			})
+		if (queryResult === null) {
+			return response.status(400).json({
+				error: `Failed to update record for ${username}, ${email}`
+			})
+		}
+		await pool.query(SQL`
+			SELECT profileid
+			FROM userprofiles
+			WHERE userid = ${userId}`)
+			.then((response: any) => {
+				console.log(response)
+				queryResult.profileid = response.rows.length !== 0 ? response.rows[0].profileid : 0
+			})
+			.catch((err: any) => {
+				console.log(err)
+				queryResult.profileid = 0
+			})
 		return queryResult === null ? response.status(400).json({ error: `Failed to update record for ${username}, ${email}` }) : response.status(200).json(queryResult)
 	}
 	else {
 		await pool.query(SQL`
 		WITH new_user AS (
-			INSERT INTO users (username, email, emailVerified, prevlogin, provider)
-			VALUES (${username}, ${email}, ${emailVerified}, to_timestamp(${Date.now()} / 1000.0), ${provider})
+			INSERT INTO users (username, email, emailVerified, externalId, prevlogin, provider)
+			VALUES (${username}, ${email}, ${emailVerified}, ${externalId}, to_timestamp(${Date.now()} / 1000.0), ${provider})
 			RETURNING id, username, email, emailVerified, provider
 		),
 		new_profile AS (   
@@ -1879,6 +1901,27 @@ app.post('/api/loginOAuthUser', async (request: Request, response: Response) => 
 		return queryResult === null ? response.status(404).json({ error: `Failed to insert record for ${username}, ${email} with externalid: ${externalId}` }): response.status(200).json(queryResult)
 	}
 
+})
+
+app.post('/api/check', async (request: Request, response: Response) => {
+	const body = request.body
+	let queryResult: any
+
+	await pool.query(SQL`
+		SELECT * FROM users u 
+			WHERE u.email=${body.email} 
+			AND u.provider=${body.provider}`)
+		.then((response: any) => {
+			queryResult = response.rows[0]
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(404).json({
+				error: `Failed to retrieve records within users and userprofiles tables`
+			})
+		})
+
+	return response.status(200).json(queryResult)
 })
 
 app.post('/api/resolveUser', async (request: Request, response: Response) => {

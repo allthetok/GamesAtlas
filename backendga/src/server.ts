@@ -5,7 +5,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch, retrieveFormattedMapID, parseNullable, retrieveRatingDateFormatted, parseLargeBody, arrayToPostgresArray } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch, retrieveFormattedMapID, parseNullable, retrieveRatingDateFormatted, parseLargeBody, arrayToPostgresArray, parseProfileBody } from '../helpers/requests'
 import { hashPassword, authPassword } from '../helpers/auth'
 import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, GlobalAuxiliaryObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SearchObj, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
 import { ExternalCategories, WebsiteCategories, placeholderImages } from '../helpers/ratingsvglinks'
@@ -2511,13 +2511,30 @@ app.post('/api/usernameEmail', async (request: Request, response: Response) => {
 
 app.post('/api/recommendPrefs', async (request: Request, response: Response) => {
 	const body = request.body
-	const limit: number = body.limit
-	const sortBy: string = body.sortBy
-	const sortDirection: string = body.sortDirection
-	const platforms: string[] = body.platforms
-	const genres: string[] = body.genres
-	const themes: string[] = body.themes
-	const gameModes: string[] = body.gameModes
+	let searchResults: any
+	let errSearch = false
+	let searchConfig: SearchConfig
+	let responseObj: Explore[] = []
+
+	const profilePrefBody = parseProfileBody(body)
+
+	if (profilePrefBody.userPref.platforms === '' && profilePrefBody.userPref.genres === '' && profilePrefBody.userPref.themes === '' && profilePrefBody.userPref.gameModes === '') {
+		return response.status(400).json({
+			message: 'Update atleast one of Your Platform, Favorite Genres, Favorite Themes, Favorite Game Types on Profile Page'
+		})
+	}
+
+	searchConfig = upda
+
+
+
+	// const limit: number = body.limit
+	// const sortBy: string = body.sortBy
+	// const sortDirection: string = body.sortDirection
+	// const platforms: string[] = body.platforms
+	// const genres: string[] = body.genres
+	// const themes: string[] = body.themes
+	// const gameModes: string[] = body.gameModes
 })
 
 const PORT = process.env.API_PORT || 3001

@@ -81,6 +81,28 @@ const updateIGDBSearchConfigSpec = (endpoint: string, datafields: string, nullab
 	return searchConfig
 }
 
+const updateIGDBSearchConfigMultiProfile = (endpoint: string, datafields: string, additionalFilter: string, limit: number, sortby: string, platforms: string, genres: string, themes: string, gameModes: string): SearchConfig => {
+	const searchConfig: SearchConfig = {
+		method: 'post',
+		url: `${process.env.API_ROOT_URL}${endpoint}`,
+		headers: {
+			'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
+			'Client-ID': process.env.CLIENT_ID,
+			'Content-Type': 'text/plain',
+			'Cookie': '__cf_bm=Utg5TKlZGdxCgCn2UeuGW.LLOCZm6oHCCazU5AOMZjM-1692063194-0-AUdu+e0vn6rY+xWhK86IVLzsp03BXN3Wgq3P2CkRrTl56PwoVdQdbQaa1ysHtYnuWmX/WNREfgqIMVkEQEc9AEs='
+		},
+		data: ''
+	}
+	const formattedPlatformsQuery: string = platforms !== '' ? `query games "User Platforms" {fields ${datafields}; where ${additionalFilter} & platforms=${platforms}; sort ${sortby}; limit ${limit};};` : ''
+	const formattedGenresQuery: string = genres !== '' ? `query games "User Genres" {fields ${datafields}; where ${additionalFilter} & genres=${genres}; sort ${sortby}; limit ${limit};};` : ''
+	const formattedThemesQuery: string = themes !== '' ? `query games "User Themes" {fields ${datafields}; where ${additionalFilter} & themes=${themes}; sort ${sortby}; limit ${limit};};` : ''
+	const formattedGameModesQuery: string = gameModes !== '' ? `query games "User Game Modes" {fields ${datafields}; where ${additionalFilter} & game_modes=${gameModes}; sort ${sortby}; limit ${limit};};` : ''
+
+	searchConfig.data = formattedPlatformsQuery + formattedGenresQuery + formattedThemesQuery + formattedGameModesQuery
+
+	return searchConfig
+}
+
 const iterateResponse = (data: any[], type: string | undefined, toPush: string[]): string[] => {
 	let arr: any[] = []
 	if (toPush[0] === 'url' && toPush.length === 1) {
@@ -565,4 +587,4 @@ const arrayToPostgresArray = (inputArray: string[]) => {
 	return `{${stringifiedArray}}`
 }
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, updateIGDBSearchConfigSpec, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseLargeBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, populateCompanySearch, retrieveFormattedMapID, retrieveRatingDateFormatted, arrayToPostgresArray, parseProfileBody }
+export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, updateIGDBSearchConfigSpec, updateIGDBSearchConfigMultiProfile, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseLargeBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, populateCompanySearch, retrieveFormattedMapID, retrieveRatingDateFormatted, arrayToPostgresArray, parseProfileBody }

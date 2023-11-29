@@ -247,6 +247,25 @@ const parseBody = (requestBody: any): MultiSearchObj => {
 	}
 }
 
+const parseProfileBody = (requestBody: any): any => {
+	const { sortBy, sortDirection, nullable, limit, platforms, genres, themes, gameModes } = requestBody
+	const sortJoined = `${sortMap.get(sortBy)} ${sortDirection}`
+	const nullableFormatted = parseNullable(nullable)
+	const userPref: any = {
+		platforms: retrieveFormattedMapID('platforms', platforms),
+		genres: retrieveFormattedMapID('genres', genres),
+		themes: retrieveFormattedMapID('themes', themes),
+		gameModes: retrieveFormattedMapID('game_modes', gameModes)
+	}
+
+	return {
+		sortBy: sortJoined,
+		externalFilter: nullableFormatted,
+		limit: limit,
+		userPref: userPref
+	}
+}
+
 const parseLargeBody = (requestBody: any): MultiSearchObj => {
 	const { sortBy, sortDirection, externalFilter, nullable, limit, platforms, genres, themes, gameModes, categories, rating, releaseDate, companies } = requestBody
 	const sortJoined = `${sortMap.get(sortBy)} ${sortDirection}`
@@ -546,4 +565,4 @@ const arrayToPostgresArray = (inputArray: string[]) => {
 	return `{${stringifiedArray}}`
 }
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, updateIGDBSearchConfigSpec, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseLargeBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, populateCompanySearch, retrieveFormattedMapID, retrieveRatingDateFormatted, arrayToPostgresArray }
+export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, updateIGDBSearchConfigSpec, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseLargeBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, populateCompanySearch, retrieveFormattedMapID, retrieveRatingDateFormatted, arrayToPostgresArray, parseProfileBody }

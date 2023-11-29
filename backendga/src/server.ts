@@ -2509,6 +2509,17 @@ app.post('/api/usernameEmail', async (request: Request, response: Response) => {
 	return invalidUser ? response.status(400).json({ 'email': null }) : response.status(200).json({ 'email': queryResult.email })
 })
 
+app.post('/api/recommendPrefs', async (request: Request, response: Response) => {
+	const body = request.body
+	const limit: number = body.limit
+	const sortBy: string = body.sortBy
+	const sortDirection: string = body.sortDirection
+	const platforms: string[] = body.platforms
+	const genres: string[] = body.genres
+	const themes: string[] = body.themes
+	const gameModes: string[] = body.gameModes
+})
+
 const PORT = process.env.API_PORT || 3001
 
 app.listen(PORT, () => {

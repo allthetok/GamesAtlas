@@ -5,7 +5,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch, retrieveFormattedMapID, parseNullable, retrieveRatingDateFormatted, parseLargeBody, arrayToPostgresArray, parseProfileBody } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch, retrieveFormattedMapID, parseNullable, retrieveRatingDateFormatted, parseLargeBody, arrayToPostgresArray, parseProfileBody, updateIGDBSearchConfigMultiProfile } from '../helpers/requests'
 import { hashPassword, authPassword } from '../helpers/auth'
 import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, GlobalAuxiliaryObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SearchObj, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
 import { ExternalCategories, WebsiteCategories, placeholderImages } from '../helpers/ratingsvglinks'
@@ -2512,9 +2512,11 @@ app.post('/api/usernameEmail', async (request: Request, response: Response) => {
 app.post('/api/recommendPrefs', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
+	let filledResults: any
 	let errSearch = false
 	let searchConfig: SearchConfig
-	let responseObj: Explore[] = []
+	let indPrefResponseObj: Explore[] = []
+	let responseObj: any
 
 	const profilePrefBody = parseProfileBody(body)
 
@@ -2524,17 +2526,24 @@ app.post('/api/recommendPrefs', async (request: Request, response: Response) => 
 		})
 	}
 
-	searchConfig = upda
+	searchConfig = updateIGDBSearchConfigMultiProfile('multiquery', 'id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count,genres.name,involved_companies.company.name,involved_companies.company.logo.url,involved_companies.developer,involved_companies.company.websites.url,involved_companies.company.websites.category,game_modes,category', profilePrefBody.externalFilter, profilePrefBody.limit, profilePrefBody.sortBy, profilePrefBody.userPref.platforms, profilePrefBody.userPref.genres, profilePrefBody.userPref.themes, profilePrefBody.userPref.gameModes)
 
-
-
-	// const limit: number = body.limit
-	// const sortBy: string = body.sortBy
-	// const sortDirection: string = body.sortDirection
-	// const platforms: string[] = body.platforms
-	// const genres: string[] = body.genres
-	// const themes: string[] = body.themes
-	// const gameModes: string[] = body.gameModes
+	await axios(searchConfig)
+		.then(async (response: any) => {
+			searchResults = response.data
+			if (searchResults.length === 0 || searchResults === null || searchResults === undefined) {
+				errSearch = !errSearch
+			}
+			else {
+				filledResults = searchResults.filter((indResult: any) => indResult.name && indResult.result.length !== 0)
+				responseObj = filledResults.map((indResult: any) => ({ name: indResult.name, result: populateSimilarGames(indResult.result) }))
+			}
+		})
+		.catch((err: any) => {
+			errSearch = true
+			console.log(err)
+		})
+	return errSearch ? response.status(404).json({ Message: 'With this set of preferences, search yielded no results' }) : response.status(200).json(responseObj)
 })
 
 const PORT = process.env.API_PORT || 3001

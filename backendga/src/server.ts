@@ -1836,7 +1836,7 @@ app.post('/api/createUser', async (request: Request, response: Response) => {
 			console.log(response.rows[0])
 			queryResult = response.rows[0]
 		})
-		.catch(async (err: any) => {
+		.catch((err: any) => {
 			console.log(err)
 			return response.status(404).json({
 				error: `Failed to insert record for ${username}, ${email}`
@@ -2585,6 +2585,52 @@ app.post('/api/recommendPrefs', async (request: Request, response: Response) => 
 			console.log(err)
 		})
 	return errSearch ? response.status(404).json({ Message: 'With this set of preferences, search yielded no results' }) : response.status(200).json(responseObj)
+})
+
+app.post('/api/userlike', async (request: Request, response: Response) => {
+	const body = request.body
+	const userid: number = body.userid
+	const gameid: number = body.gameid
+	const gameExploreFormat: any = body.game
+	const similarExploreFormat: any = body.similargames
+	let queryLikeResult: any
+	let likeExists: boolean = false
+
+	if (!userid || userid === null || userid === undefined) {
+		return response.status(400).json({
+			error: 'No email provided'
+		})
+	}
+	else if (!gameid || gameid === null || gameid === undefined) {
+		return response.status(400).json({
+			error: 'No gameid provided'
+		})
+	}
+
+	await pool.query(SQL`
+		SELECT 1 WHERE EXISTS
+			(SELECT * from userlikes ul
+				WHERE ul.userid = ${userid} AND ul.gameid = ${gameid})`)
+		.then((response: any) => {
+			if (response.rows.length !== 0) {
+				likeExists = !likeExists
+			}
+		})
+	if (likeExists) {
+		return response.status(400).json({
+			error: `This game has already been liked by user: ${userid}`
+		})
+	}
+	await pool.query(SQL`
+		INSERT INTO userlikes (userid, gameid, gameobj)
+		VALUES (${userid}, ${gameid}, ${gameExploreFormat})
+		RETURNING likeid, userid, gameid, gameobj `)
+		.then(async (response: any) => {
+			console.log(response)
+			console.log(response.rows[0])
+			queryLikeResult = response.rows[0]
+		})
+		.catch()
 })
 
 const PORT = process.env.API_PORT || 3001

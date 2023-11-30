@@ -1735,6 +1735,47 @@ app.get('/api/createProfile', async (request: Request, response: Response) => {
 		})
 })
 
+app.get('/api/createLikes', async (request: Request, response: Response) => {
+	await pool.query(SQL`
+		CREATE TABLE userlikes
+			( likeid SERIAL PRIMARY KEY,
+			userid INT NOT NULL,
+			gameid INT NOT NULL,
+			gameobj JSON,
+			CONSTRAINT FOREIGN_USER FOREIGN KEY(userid) REFERENCES users(id) )`)
+		.then(() => {
+			console.log(pool.query)
+			return response.status(200).json({
+				Message: 'Successfully created table: userlikes'
+			})
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(500).json({
+				error: 'Unable to create table: userlikes'
+			})
+		})
+})
+
+app.get('/api/createRecommend', async (request: Request, response: Response) => {
+	await pool.query(SQL`
+		CREATE TABLE likesrecommend
+			( igdbid INT UNIQUE NOT NULL PRIMARY KEY,
+			recommendobjarr JSON[] DEFAULT '{}' )`)
+		.then(() => {
+			console.log(pool.query)
+			return response.status(200).json({
+				Message: 'Successfully created table: likesrecommend'
+			})
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(500).json({
+				error: 'Unable to create table: likesrecommend'
+			})
+		})
+})
+
 app.post('/api/createUser', async (request: Request, response: Response) => {
 	const body = request.body
 	const username: string = body.username

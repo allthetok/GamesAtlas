@@ -12,9 +12,7 @@ const sortMap = new Map<string, string>([
 ])
 
 const platformMap = new Map<string, string[]>([
-	// ['Xbox', ['169', '12', '49']],
 	['Xbox', ['12', '49']],
-	// ['Playstation', ['7', '8', '9', '48', '167', '165']],
 	['Playstation', ['9', '48', '167']],
 	['Linux', ['3']],
 	['Nintendo', ['130', '4', '41', '18', '22', '20', '21', '33', '5']],

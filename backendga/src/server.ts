@@ -5,7 +5,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch, retrieveFormattedMapID, parseNullable, retrieveRatingDateFormatted, parseLargeBody, arrayToPostgresArray, parseProfileBody, updateIGDBSearchConfigMultiProfile } from '../helpers/requests'
+import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch, retrieveFormattedMapID, parseNullable, retrieveRatingDateFormatted, parseLargeBody, parseProfileBody, updateIGDBSearchConfigMultiProfile, stringArrayToPostgresArray } from '../helpers/requests'
 import { hashPassword, authPassword } from '../helpers/auth'
 import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, GlobalAuxiliaryObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SearchObj, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
 import { ExternalCategories, WebsiteCategories, placeholderImages } from '../helpers/ratingsvglinks'
@@ -2296,10 +2296,10 @@ app.patch('/api/profileDetails', async (request: Request, response: Response) =>
 	}
 
 	const formattedArrays = {
-		platforms: arrayToPostgresArray(platforms),
-		genres: arrayToPostgresArray(genres),
-		themes: arrayToPostgresArray(themes),
-		gameModes: arrayToPostgresArray(gameModes)
+		platforms: stringArrayToPostgresArray(platforms),
+		genres: stringArrayToPostgresArray(genres),
+		themes: stringArrayToPostgresArray(themes),
+		gameModes: stringArrayToPostgresArray(gameModes)
 	}
 
 	await pool.query(SQL`
@@ -2658,7 +2658,7 @@ app.post('/api/userLike', async (request: Request, response: Response) => {
 			await pool.query(SQL`
 				INSERT INTO likesrecommend 
 				(igdbid, recommendobjarr)
-				VALUES (${gameid}, array[${similarExploreFormat}]::json[])
+				VALUES (${gameid}, ${similarExploreFormat})
 				RETURNING igdbid, recommendobjarr`)
 				.then((response: any) => {
 					console.log(response)
@@ -2733,9 +2733,73 @@ app.delete('/api/userLike', async (request: Request, response: Response) => {
 				Message: `Failed to delete like for game: ${gameid} on user: ${userid}`
 			})
 		})
-	return success ? response.status(200).json({ Message: `Successfully deleted like for game: ${gameid} on user: ${userid}` }) : response.status(404).json({ Message: `Successfully deleted like for game: ${gameid} on user: ${userid}` })
+	return success ? response.status(200).json({ Message: `Successfully deleted like for game: ${gameid} on user: ${userid}` }) : response.status(404).json({ Message: `Unable to delete like for game: ${gameid} on user: ${userid}` })
 })
 
+app.delete('/api/likeRecommend', async (request: Request, response: Response) => {
+	const body = request.body
+	const gameid: number = body.gameid
+	let likeExists: boolean
+	let success: boolean = false
+
+	await pool.query(SQL`
+		SELECT 1 WHERE EXISTS
+			(SELECT lr.* from likesrecommend lr
+				WHERE lr.igdbid = ${gameid})`)
+		.then((response: any) => {
+			likeExists = response.rows.length !== 0
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(404).json({
+				error: `Failed to check if record exists for game: ${gameid} in recommendation table`
+			})
+		})
+	if (!likeExists) {
+		return response.status(400).json({
+			error: `This game doesn't exist in recommendations: ${gameid}`
+		})
+	}
+
+	await pool.query(SQL`
+		DELETE FROM likesrecommend 
+		WHERE igdbid = ${gameid}`)
+		.then((response: any) => {
+			success = response.rowCount === 1
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(404).json({
+				Message: `Failed to delete recommendation record for game: ${gameid}`
+			})
+		})
+	return success ? response.status(200).json({ Message: `Successfully deleted recommendation record for game: ${gameid}` }) : response.status(404).json({ Message: `Failed to delete recommendation record for game: ${gameid}` })
+})
+
+app.post('/api/likeRecommend', async (request: Request, response: Response) => {
+	const body = request.body
+	const gameid: number = body.gameid
+	const similarExploreFormat: any = body.similargames
+	let queryResult: any
+
+	await pool.query(SQL`
+				INSERT INTO likesrecommend 
+				(igdbid, recommendobjarr)
+				VALUES (${gameid}, ${similarExploreFormat})
+				RETURNING igdbid, recommendobjarr`)
+		.then((response: any) => {
+			console.log(response)
+			console.log(response.rows[0])
+			queryResult = response.rows[0]
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(404).json({
+				error: `Failed to insert recommendations for game: ${gameid}`
+			})
+		})
+	return response.status(200).json(queryResult)
+})
 const PORT = process.env.API_PORT || 3001
 
 app.listen(PORT, () => {

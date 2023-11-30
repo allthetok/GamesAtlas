@@ -581,10 +581,16 @@ const retrieveRatingDateFormatted = (specified: string, input: number[]) => {
 	return formatted
 }
 
-const arrayToPostgresArray = (inputArray: string[]) => {
+const stringArrayToPostgresArray = (inputArray: string[]) => {
 	let stringifiedArray = JSON.stringify(inputArray)
 	stringifiedArray = stringifiedArray.replace('[', '').replace(']', '')
 	return `{${stringifiedArray}}`
 }
 
-export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, updateIGDBSearchConfigSpec, updateIGDBSearchConfigMultiProfile, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseLargeBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, populateCompanySearch, retrieveFormattedMapID, retrieveRatingDateFormatted, arrayToPostgresArray, parseProfileBody }
+const objectArrayToPostgresArray = (inputArray: any[]) => {
+	let stringifiedArray = JSON.stringify(inputArray)
+	stringifiedArray = stringifiedArray.replace('[', '').replace(']', '')
+	return `{${stringifiedArray}}`
+}
+
+export { requestLogger, corsOptions, updateIGDBSearchConfig, updateIGDBSearchConfigMulti, updateIGDBSearchConfigSpec, updateIGDBSearchConfigMultiProfile, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, getPlatformLogosIter, platformFamilyQuerified, parseBody, parseLargeBody, parseNullable, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, populateCompanySearch, retrieveFormattedMapID, retrieveRatingDateFormatted, stringArrayToPostgresArray, objectArrayToPostgresArray, parseProfileBody }

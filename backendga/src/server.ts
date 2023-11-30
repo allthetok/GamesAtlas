@@ -2684,6 +2684,58 @@ app.post('/api/userLike', async (request: Request, response: Response) => {
 	}
 })
 
+app.delete('/api/userLike', async (request: Request, response: Response) => {
+	const body = request.body
+	const userid: number = body.userid
+	const gameid: number = body.gameid
+	let likeExists: boolean
+	let success: boolean = false
+
+	if (!userid || userid === null || userid === undefined) {
+		return response.status(400).json({
+			error: 'No email provided'
+		})
+	}
+	else if (!gameid || gameid === null || gameid === undefined) {
+		return response.status(400).json({
+			error: 'No gameid provided'
+		})
+	}
+
+	await pool.query(SQL`
+		SELECT 1 WHERE EXISTS
+			(SELECT ul.* from userlikes ul
+				WHERE ul.userid = ${userid} AND ul.gameid = ${gameid})`)
+		.then((response: any) => {
+			likeExists = response.rows.length !== 0
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(404).json({
+				error: `Failed to check if record exists for userid: ${userid} on this game: ${gameid}`
+			})
+		})
+	if (!likeExists) {
+		return response.status(400).json({
+			error: `This game has not been liked by user: ${userid}`
+		})
+	}
+
+	await pool.query(SQL`
+		DELETE FROM userlikes 
+		WHERE userid = ${userid} AND gameid = ${gameid}`)
+		.then((response: any) => {
+			success = response.rowCount === 1
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(404).json({
+				Message: `Failed to delete like for game: ${gameid} on user: ${userid}`
+			})
+		})
+	return success ? response.status(200).json({ Message: `Successfully deleted like for game: ${gameid} on user: ${userid}` }) : response.status(404).json({ Message: `Successfully deleted like for game: ${gameid} on user: ${userid}` })
+})
+
 const PORT = process.env.API_PORT || 3001
 
 app.listen(PORT, () => {

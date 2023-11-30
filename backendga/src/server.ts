@@ -2600,7 +2600,7 @@ app.post('/api/userLike', async (request: Request, response: Response) => {
 
 	if (!userid || userid === null || userid === undefined) {
 		return response.status(400).json({
-			error: 'No email provided'
+			error: 'No userid provided'
 		})
 	}
 	else if (!gameid || gameid === null || gameid === undefined) {
@@ -2693,7 +2693,7 @@ app.delete('/api/userLike', async (request: Request, response: Response) => {
 
 	if (!userid || userid === null || userid === undefined) {
 		return response.status(400).json({
-			error: 'No email provided'
+			error: 'No userid provided'
 		})
 	}
 	else if (!gameid || gameid === null || gameid === undefined) {
@@ -2799,6 +2799,56 @@ app.post('/api/likeRecommend', async (request: Request, response: Response) => {
 			})
 		})
 	return response.status(200).json(queryResult)
+})
+
+app.post('/api/userRecommend', async (request: Request, response: Response) => {
+	const body = request.body
+	const userid: number = body.userid
+	let queryResult: any
+	let likeExists: any = true
+
+	if (!userid || userid === null || userid === undefined) {
+		return response.status(400).json({
+			error: 'No userid provided'
+		})
+	}
+
+	await pool.query(SQL`
+		SELECT 1 WHERE EXISTS
+			(SELECT ul.* from userlikes ul
+				WHERE ul.userid = ${userid})`)
+		.then((response: any) => {
+			if (response.rows.length === 0) {
+				likeExists = !likeExists
+			}
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(404).json({
+				error: 'Failed to retrieve records from userlikes'
+			})
+		})
+	if (!likeExists) {
+		return response.status(400).json({
+			error: `This user: ${userid} has not liked any games and hence has no recommendations`
+		})
+	}
+
+	await pool.query(SQL`
+		SELECT lr.recommendobjarr FROM userlikes ul
+		INNER JOIN likesrecommend lr
+		ON ul.gameid = lr.igdbid
+		WHERE ul.userid = ${userid}`)
+		.then((response: any) => {
+			queryResult = response.rows
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(404).json({
+				error: `Failed to retrieve records from userlikes and likesrecommend tables`
+			})
+		})
+	return queryResult !== null ? response.status(200).json(queryResult) : response.status(400).json({ error: `This user: ${userid} has not liked any games and hence has no recommendations` })
 })
 const PORT = process.env.API_PORT || 3001
 

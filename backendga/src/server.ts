@@ -2587,14 +2587,16 @@ app.post('/api/recommendPrefs', async (request: Request, response: Response) => 
 	return errSearch ? response.status(404).json({ Message: 'With this set of preferences, search yielded no results' }) : response.status(200).json(responseObj)
 })
 
-app.post('/api/userlike', async (request: Request, response: Response) => {
+app.post('/api/userLike', async (request: Request, response: Response) => {
 	const body = request.body
 	const userid: number = body.userid
 	const gameid: number = body.gameid
 	const gameExploreFormat: any = body.game
 	const similarExploreFormat: any = body.similargames
 	let queryLikeResult: any
+	let queryResult: any
 	let likeExists: boolean = false
+	let recommendExists: boolean = false
 
 	if (!userid || userid === null || userid === undefined) {
 		return response.status(400).json({
@@ -2609,7 +2611,7 @@ app.post('/api/userlike', async (request: Request, response: Response) => {
 
 	await pool.query(SQL`
 		SELECT 1 WHERE EXISTS
-			(SELECT * from userlikes ul
+			(SELECT ul.* from userlikes ul
 				WHERE ul.userid = ${userid} AND ul.gameid = ${gameid})`)
 		.then((response: any) => {
 			if (response.rows.length !== 0) {
@@ -2630,7 +2632,56 @@ app.post('/api/userlike', async (request: Request, response: Response) => {
 			console.log(response.rows[0])
 			queryLikeResult = response.rows[0]
 		})
-		.catch()
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(404).json({
+				error: `Failed to insert record for userid: ${userid} on this game: ${gameid}`
+			})
+		})
+	if (queryLikeResult !== null) {
+		await pool.query(SQL`
+		SELECT 1 WHERE EXISTS
+			(SELECT lr.* from likesrecommend lr
+				WHERE lr.igdbid = ${gameid} )`)
+			.then((response: any) => {
+				if (response.rows.length !== 0) {
+					recommendExists = !recommendExists
+				}
+			})
+			.catch((err: any) => {
+				console.log(err)
+				return response.status(404).json({
+					error: `Failed to check if this gameid: ${gameid} record already exists in recommendation table`
+				})
+			})
+		if (!recommendExists) {
+			await pool.query(SQL`
+				INSERT INTO likesrecommend 
+				(igdbid, recommendobjarr)
+				VALUES (${gameid}, array[${similarExploreFormat}]::json[])
+				RETURNING igdbid, recommendobjarr`)
+				.then((response: any) => {
+					console.log(response)
+					console.log(response.rows[0])
+					queryResult = {
+						...queryLikeResult,
+						recommendObj: response.rows[0].recommendobjarr
+					}
+				})
+				.catch((err: any) => {
+					console.log(err)
+					return response.status(404).json({
+						error: `Failed to insert recommendations for game: ${gameid}`
+					})
+				})
+			return response.status(200).json(queryResult)
+		}
+		else {
+			return response.status(200).json({
+				message: `Successfully inserted record into userlikes table, record already exists in recommendation table`
+			})
+		}
+	}
 })
 
 const PORT = process.env.API_PORT || 3001

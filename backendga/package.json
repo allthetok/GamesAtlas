@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "ts-node --esm src/server.ts",
+	"oldstart2": "ts-node --esm src/server.ts",
     "oldstart": "node src/server.ts",
     "devapi": "nodemon src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"

@@ -93,10 +93,10 @@ const updateIGDBSearchConfigMultiProfile = (endpoint: string, datafields: string
 		},
 		data: ''
 	}
-	const formattedPlatformsQuery: string = platforms !== '' ? `query games "User Platforms" {fields ${datafields}; where ${platforms} ${additionalFilter}; sort ${sortby}; limit ${limit};};` : ''
-	const formattedGenresQuery: string = genres !== '' ? `query games "User Genres" {fields ${datafields}; where ${genres} ${additionalFilter}; sort ${sortby}; limit ${limit};};` : ''
-	const formattedThemesQuery: string = themes !== '' ? `query games "User Themes" {fields ${datafields}; where ${themes} ${additionalFilter}; sort ${sortby}; limit ${limit};};` : ''
-	const formattedGameModesQuery: string = gameModes !== '' ? `query games "User Game Modes" {fields ${datafields}; where ${gameModes} ${additionalFilter}; sort ${sortby}; limit ${limit};};` : ''
+	const formattedPlatformsQuery: string = platforms !== '' ? `query games "Platforms" {fields ${datafields}; where ${platforms} ${additionalFilter}; sort ${sortby}; limit ${limit};};` : ''
+	const formattedGenresQuery: string = genres !== '' ? `query games "Genres" {fields ${datafields}; where ${genres} ${additionalFilter}; sort ${sortby}; limit ${limit};};` : ''
+	const formattedThemesQuery: string = themes !== '' ? `query games "Themes" {fields ${datafields}; where ${themes} ${additionalFilter}; sort ${sortby}; limit ${limit};};` : ''
+	const formattedGameModesQuery: string = gameModes !== '' ? `query games "Game Modes" {fields ${datafields}; where ${gameModes} ${additionalFilter}; sort ${sortby}; limit ${limit};};` : ''
 
 	searchConfig.data = formattedPlatformsQuery + formattedGenresQuery + formattedThemesQuery + formattedGameModesQuery
 

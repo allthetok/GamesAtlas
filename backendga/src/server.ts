@@ -1970,6 +1970,26 @@ app.post('/api/check', async (request: Request, response: Response) => {
 	return response.status(200).json(queryResult)
 })
 
+app.post('/api/check2user', async (request: Request, response: Response) => {
+	const body = request.body
+	let queryResult: any
+
+	await pool.query(SQL`
+		SELECT * FROM users u 
+			WHERE u.id = ${body.userid}`)
+		.then((response: any) => {
+			queryResult = response.rows[0]
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(404).json({
+				error: `Failed to retrieve records within users and userprofiles tables`
+			})
+		})
+
+	return response.status(200).json(queryResult)
+})
+
 app.post('/api/resolveUser', async (request: Request, response: Response) => {
 	const body = request.body
 	const email: string = body.email
@@ -2592,11 +2612,13 @@ app.post('/api/userLike', async (request: Request, response: Response) => {
 	const userid: number = body.userid
 	const gameid: number = body.gameid
 	const gameExploreFormat: any = body.game
-	const similarExploreFormat: any = body.similargames
+	let similarExploreFormat: any = body.similargames
 	let queryLikeResult: any
 	let queryResult: any
 	let likeExists: boolean = false
 	let recommendExists: boolean = false
+	let searchResults: any
+	let errSearch = false
 
 	if (!userid || userid === null || userid === undefined) {
 		return response.status(400).json({
@@ -2654,7 +2676,31 @@ app.post('/api/userLike', async (request: Request, response: Response) => {
 					error: `Failed to check if this gameid: ${gameid} record already exists in recommendation table`
 				})
 			})
+
+
 		if (!recommendExists) {
+			if (similarExploreFormat === null) {
+				let searchConfig: SearchConfig
+				let responseObj: { similar_games: Explore[]}
+				searchConfig = updateIGDBSearchConfig('games', 'id,similar_games.name,similar_games.id,similar_games.age_ratings.category,similar_games.age_ratings.rating,similar_games.cover.url,similar_games.platforms.name,similar_games.platforms.category,similar_games.platforms.platform_logo.url,similar_games.platforms.platform_family,similar_games.first_release_date,similar_games.follows,similar_games.name,similar_games.total_rating,similar_games.total_rating_count, similar_games.genres.name, similar_games.involved_companies.company.name, similar_games.involved_companies.company.logo.url, similar_games.involved_companies.developer, similar_games.involved_companies.company.websites.url, similar_games.involved_companies.company.websites.category', gameid, '', false, '', 0, '')
+				await axios(searchConfig)
+					.then((response: any) => {
+						searchResults = response.data[0]
+						responseObj = {
+							similar_games: populateSimilarGames(searchResults.similar_games)
+						}
+					})
+					.catch((err: any) => {
+						errSearch = true
+						console.log(err)
+					})
+				similarExploreFormat = responseObj.similar_games
+				if (errSearch) {
+					return response.status(404).json({
+						Message: `Unable to retrieve similar games for game id: ${gameid}`
+					})
+				}
+			}
 			await pool.query(SQL`
 				INSERT INTO likesrecommend 
 				(igdbid, recommendobjarr)
@@ -2801,7 +2847,7 @@ app.post('/api/likeRecommend', async (request: Request, response: Response) => {
 	return response.status(200).json(queryResult)
 })
 
-app.post('/api/userRecommend', async (request: Request, response: Response) => {
+app.post('/api/recommendLikes', async (request: Request, response: Response) => {
 	const body = request.body
 	const userid: number = body.userid
 	let queryResult: any

@@ -2908,9 +2908,8 @@ app.post('/api/userLikes', async (request: Request, response: Response) => {
 	}
 
 	await pool.query(SQL`
-		SELECT 1 WHERE EXISTS
-			(SELECT ul.* from userlikes ul
-				WHERE ul.userid = ${userid})`)
+		SELECT ul.likeid, ul.gameobj from userlikes ul
+		WHERE ul.userid = ${userid}`)
 		.then((response: any) => {
 			queryResult = response.rows
 			if (response.rows.length === 0) {

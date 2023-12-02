@@ -2707,8 +2707,6 @@ app.post('/api/userLike', async (request: Request, response: Response) => {
 				VALUES (${gameid}, ${similarExploreFormat})
 				RETURNING igdbid, recommendobjarr`)
 				.then((response: any) => {
-					console.log(response)
-					console.log(response.rows[0])
 					queryResult = {
 						...queryLikeResult,
 						recommendObj: response.rows[0].recommendobjarr
@@ -2895,6 +2893,38 @@ app.post('/api/recommendLikes', async (request: Request, response: Response) => 
 			})
 		})
 	return queryResult !== null ? response.status(200).json(queryResult) : response.status(400).json({ error: `This user: ${userid} has not liked any games and hence has no recommendations` })
+})
+
+app.post('/api/userLikes', async (request: Request, response: Response) => {
+	const body = request.body
+	const userid: number = body.userid
+	let queryResult: any
+	let recordsExists: any = true
+
+	if (userid === null || !userid || userid === undefined) {
+		return response.status(400).json({
+			error: `No userid provided: ${userid}`
+		})
+	}
+
+	await pool.query(SQL`
+		SELECT 1 WHERE EXISTS
+			(SELECT ul.* from userlikes ul
+				WHERE ul.userid = ${userid})`)
+		.then((response: any) => {
+			queryResult = response.rows
+			if (response.rows.length === 0) {
+				recordsExists = !recordsExists
+			}
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(404).json({
+				error: 'Failed to retrieve records from userlikes'
+			})
+		})
+
+	return recordsExists ? response.status(200).json(queryResult) : response.status(400).json({ error: `This user: ${userid} has not liked any games and hence has no recommendations` })
 })
 const PORT = process.env.API_PORT || 3001
 

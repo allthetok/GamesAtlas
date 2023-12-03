@@ -2611,7 +2611,7 @@ app.post('/api/userLike', async (request: Request, response: Response) => {
 	const body = request.body
 	const userid: number = body.userid
 	const gameid: number = body.gameid
-	const gameExploreFormat: any = body.game
+	let gameExploreFormat: any = body.game
 	let similarExploreFormat: any = body.similargames
 	let queryLikeResult: any
 	let queryResult: any
@@ -2645,6 +2645,29 @@ app.post('/api/userLike', async (request: Request, response: Response) => {
 			error: `This game has already been liked by user: ${userid}`
 		})
 	}
+	if (gameExploreFormat === null) {
+		let searchConfig: SearchConfig
+		let responseObj: Explore
+		let intermediaryGameExplore: any
+		searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings.category,age_ratings.rating,category,cover.url,first_release_date,follows,genres.name,involved_companies,name,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,total_rating,total_rating_count,themes.name,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category', gameid, '', false, '', 0, '')
+		await axios(searchConfig)
+			.then((response: any) => {
+				searchResults = response.data
+				intermediaryGameExplore = populateSimilarGames(searchResults)
+				gameExploreFormat = intermediaryGameExplore[0]
+			})
+			.catch((err: any) => {
+				errSearch = true
+				console.log(err)
+			})
+		console.log(gameExploreFormat)
+		if (errSearch) {
+			return response.status(404).json({
+				Message: `Unable to retrieve game object for game id: ${gameid}`
+			})
+		}
+	}
+
 	await pool.query(SQL`
 		INSERT INTO userlikes (userid, gameid, gameobj)
 		VALUES (${userid}, ${gameid}, ${gameExploreFormat})
@@ -2677,7 +2700,6 @@ app.post('/api/userLike', async (request: Request, response: Response) => {
 				})
 			})
 
-
 		if (!recommendExists) {
 			if (similarExploreFormat === null) {
 				let searchConfig: SearchConfig
@@ -2686,6 +2708,7 @@ app.post('/api/userLike', async (request: Request, response: Response) => {
 				await axios(searchConfig)
 					.then((response: any) => {
 						searchResults = response.data[0]
+						console.log(response.data[0])
 						responseObj = {
 							similar_games: populateSimilarGames(searchResults.similar_games)
 						}
@@ -2694,6 +2717,7 @@ app.post('/api/userLike', async (request: Request, response: Response) => {
 						errSearch = true
 						console.log(err)
 					})
+				console.log(responseObj.similar_games)
 				similarExploreFormat = responseObj.similar_games
 				if (errSearch) {
 					return response.status(404).json({

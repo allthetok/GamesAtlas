@@ -237,4 +237,11 @@ interface WebsitesObj {
 	websites: Categories[]
 }
 
-export { SearchConfig, MultiSearchObj, GameDetailObj, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, Explore, AgeRatings, Categories, Companies, Platforms, Videos, Languages, Covers, GameObj, SimilarGamesObj, GlobalAuxiliaryObj, ArtworksObj, ScreenshotObj, VideosObj, WebsitesObj, SearchObj }
+interface Mail {
+	from: string,
+	to: string,
+	subject: string,
+	text: string
+}
+
+export { Mail, SearchConfig, MultiSearchObj, GameDetailObj, OverviewObj, ArtworkObj, LanguageObj, ScreenshotsObj, SimilarObj, VideoObj, WebsiteObj, Explore, AgeRatings, Categories, Companies, Platforms, Videos, Languages, Covers, GameObj, SimilarGamesObj, GlobalAuxiliaryObj, ArtworksObj, ScreenshotObj, VideosObj, WebsitesObj, SearchObj }

@@ -7,15 +7,17 @@
 /* eslint-disable prefer-const */
 import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch, retrieveFormattedMapID, parseNullable, retrieveRatingDateFormatted, parseLargeBody, parseProfileBody, updateIGDBSearchConfigMultiProfile, stringArrayToPostgresArray } from '../helpers/requests'
 import { hashPassword, authPassword } from '../helpers/auth'
-import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, GlobalAuxiliaryObj, LanguageObj, Languages, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SearchObj, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
+import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, GlobalAuxiliaryObj, LanguageObj, Languages, Mail, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SearchObj, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
 import { ExternalCategories, WebsiteCategories, placeholderImages } from '../helpers/ratingsvglinks'
 require('dotenv').config()
 import express, { NextFunction, Request, Response } from 'express'
 import { pool } from './db'
+import { transport, generateVerificationCode } from './transport'
 import axios, { AxiosResponse } from 'axios'
 import cors from 'cors'
 import SQL, { SQLStatement } from 'sql-template-strings'
 import pg, { Client, QueryResult } from 'pg'
+import nodemailer from 'nodemailer'
 import bcrypt from 'bcrypt'
 import { sortMap, platformMap, genreMap, categoryMap } from '../helpers/enums'
 const app = express()
@@ -23,6 +25,16 @@ const app = express()
 app.use(express.json())
 app.use(requestLogger)
 app.use(cors(corsOptions))
+
+const transporter = nodemailer.createTransport(transport)
+transporter.verify((error: Error | null, success: true): void => {
+	if (error) {
+		console.error(error)
+	}
+	else {
+		console.log('Connected to transporter')
+	}
+})
 
 app.post('/api/deprecated/overview', async (request: Request, response: Response) => {
 	const body = request.body
@@ -1776,6 +1788,26 @@ app.get('/api/createRecommend', async (request: Request, response: Response) => 
 		})
 })
 
+app.get('/api/createUserCode', async (request: Request, response: Response) => {
+	await pool.query(SQL`
+		CREATE TABLE usercode
+			( verificationCode VARCHAR(100) NOT NULL,
+				userid INT NOT NULL PRIMARY KEY,
+				email VARCHAR(100) NOT NULL,
+				dateCreated TIMESTAMP )`)
+		.then(() => {
+			return response.status(200).json({
+				Message: 'Successfully created table: usercode'
+			})
+		})
+		.catch((err: any) => {
+			console.log(err)
+			return response.status(500).json({
+				error: 'Unable to create table: usercode'
+			})
+		})
+})
+
 app.post('/api/createUser', async (request: Request, response: Response) => {
 	const body = request.body
 	const username: string = body.username
@@ -2948,6 +2980,22 @@ app.post('/api/userLikes', async (request: Request, response: Response) => {
 		})
 
 	return recordsExists ? response.status(200).json(queryResult) : response.status(400).json({ error: `This user: ${userid} has not liked any games and hence has no recommendations` })
+})
+
+app.post('/api/verificationCode', async (request: Request, response: Response) => {
+	const body = request.body
+	const email = body.email
+	const userid = body.userid
+
+	const verificationCodeGenerated: number = generateVerificationCode()
+	const mail: Mail = {
+		from: process.env.SMTP_FROM_EMAIL,
+		to: email,
+		subject: 'Verification Code from GamesAtlas',
+		text: `Hello, Your GamesAtlas Verification Code is: ${verificationCodeGenerated} . Please do not respond to this email`
+	}
+
+
 })
 const PORT = process.env.API_PORT || 3001
 

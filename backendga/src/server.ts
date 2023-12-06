@@ -2986,6 +2986,7 @@ app.post('/api/verificationCode', async (request: Request, response: Response) =
 	const body = request.body
 	const email = body.email
 	let userid: number
+	let profileid: number
 	let queryResult: any
 
 	const verificationCodeGenerated: number = generateVerificationCode()
@@ -3010,10 +3011,13 @@ app.post('/api/verificationCode', async (request: Request, response: Response) =
 	})
 
 	await pool.query(SQL`
-		SELECT u.id FROM users u
+		SELECT u.id, up.profileid FROM users u 
+		INNER JOIN userprofiles up 
+		ON u.id = up.userid
 		WHERE u.email=${email} AND u.provider='GamesAtlas' `)
 		.then((response: any) => {
 			userid = response.rows[0].id
+			profileid = response.rows[0].id
 		})
 		.catch((err: any) => {
 			return response.status(400).json({ error: `Failed to query users table for userid on email: ${email}` })
@@ -3033,7 +3037,27 @@ app.post('/api/verificationCode', async (request: Request, response: Response) =
 			queryResult = null
 		})
 
-	return queryResult === null ? response.status(400).json({ error: `Failed to generate a verification code for: ${email}` }) : response.status(200).json({ Message: `Successfully generated verification code for: ${email}` })
+	return queryResult === null ? response.status(400).json({ error: `Failed to generate a verification code for: ${email}` }) : response.status(200).json({ userid: userid, profileid: profileid })
+})
+
+
+app.post('/api/resolveCode', async (request: Request, response: Response) => {
+	const body = request.body
+	const email = body.email
+	let queryResult: any
+
+	await pool.query(SQL`
+		SELECT TOP 1 verificationCode
+		FROM usercode 
+		WHERE email=${email}
+		ORDER BY dateCreated DESC `)
+		.then((response: any) => {
+			queryResult = response.rows.length !== 0 ? response.rows[0]: null
+		})
+		.catch((err: any) => {
+			queryResult = null
+		})
+	return queryResult === null ? response.status(400).json({ error: `Unable to retrieve verificationCode from usercode table for: ${email}` }) : response.status(200).json(queryResult)
 })
 const PORT = process.env.API_PORT || 3001
 

@@ -1792,9 +1792,11 @@ app.get('/api/createUserCode', async (request: Request, response: Response) => {
 	await pool.query(SQL`
 		CREATE TABLE usercode
 			( verificationCode VARCHAR(100) NOT NULL,
-				userid INT NOT NULL PRIMARY KEY,
-				email VARCHAR(100) NOT NULL,
-				dateCreated TIMESTAMP )`)
+			  verifyid SERIAL PRIMARY KEY,
+			  userid INT NOT NULL,
+			  email VARCHAR(100) NOT NULL,
+			  dateCreated TIMESTAMP,
+			  CONSTRAINT FOREIGN_USER FOREIGN KEY(userid) REFERENCES users(id) )`)
 		.then(() => {
 			return response.status(200).json({
 				Message: 'Successfully created table: usercode'
@@ -1807,6 +1809,22 @@ app.get('/api/createUserCode', async (request: Request, response: Response) => {
 			})
 		})
 })
+
+// app.get('/api/deleteUserCode', async (request: Request, response: Response) => {
+// 	await pool.query(SQL`
+// 		DROP TABLE usercode`)
+// 		.then(() => {
+// 			return response.status(200).json({
+// 				Message: 'Successfully deleted table: usercode'
+// 			})
+// 		})
+// 		.catch((err: any) => {
+// 			console.log(err)
+// 			return response.status(500).json({
+// 				error: 'Unable to create table: usercode'
+// 			})
+// 		})
+// })
 
 app.post('/api/createUser', async (request: Request, response: Response) => {
 	const body = request.body
@@ -3003,11 +3021,6 @@ app.post('/api/verificationCode', async (request: Request, response: Response) =
 				status: 'fail',
 			})
 		}
-		else {
-			return response.status(200).json({
-				status: 'success',
-			})
-		}
 	})
 
 	await pool.query(SQL`
@@ -3030,6 +3043,7 @@ app.post('/api/verificationCode', async (request: Request, response: Response) =
 		RETURNING dateCreated
 		`)
 		.then((response: any) => {
+			console.log(response.rows[0])
 			queryResult = response.rows.length !== 0 ? response.rows[0] : null
 		})
 		.catch((err: any) => {
@@ -3047,11 +3061,12 @@ app.post('/api/resolveCode', async (request: Request, response: Response) => {
 	let queryResult: any
 
 	await pool.query(SQL`
-		SELECT TOP 1 verificationCode
+		SELECT verificationCode
 		FROM usercode 
 		WHERE email=${email}
 		ORDER BY dateCreated DESC `)
 		.then((response: any) => {
+			console.log(response)
 			queryResult = response.rows.length !== 0 ? response.rows[0]: null
 		})
 		.catch((err: any) => {

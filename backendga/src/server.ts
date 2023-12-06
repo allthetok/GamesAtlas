@@ -2985,7 +2985,8 @@ app.post('/api/userLikes', async (request: Request, response: Response) => {
 app.post('/api/verificationCode', async (request: Request, response: Response) => {
 	const body = request.body
 	const email = body.email
-	const userid = body.userid
+	let userid: number
+	let queryResult: any
 
 	const verificationCodeGenerated: number = generateVerificationCode()
 	const mail: Mail = {
@@ -2995,7 +2996,44 @@ app.post('/api/verificationCode', async (request: Request, response: Response) =
 		text: `Hello, Your GamesAtlas Verification Code is: ${verificationCodeGenerated} . Please do not respond to this email`
 	}
 
+	transporter.sendMail(mail, (err: Error | null, data) => {
+		if (err) {
+			return response.status(400).json({
+				status: 'fail',
+			})
+		}
+		else {
+			return response.status(200).json({
+				status: 'success',
+			})
+		}
+	})
 
+	await pool.query(SQL`
+		SELECT u.id FROM users u
+		WHERE u.email=${email} AND u.provider='GamesAtlas' `)
+		.then((response: any) => {
+			userid = response.rows[0].id
+		})
+		.catch((err: any) => {
+			return response.status(400).json({ error: `Failed to query users table for userid on email: ${email}` })
+		})
+
+	await pool.query(SQL`
+		INSERT INTO usercode
+			(verificationCode, userid, email, dateCreated)
+			VALUES (${String(verificationCodeGenerated)}, ${userid}, ${email}, to_timestamp(${Date.now()} / 1000.0))
+		RETURNING dateCreated
+		`)
+		.then((response: any) => {
+			queryResult = response.rows.length !== 0 ? response.rows[0] : null
+		})
+		.catch((err: any) => {
+			console.log(err)
+			queryResult = null
+		})
+
+	return queryResult === null ? response.status(400).json({ error: `Failed to generate a verification code for: ${email}` }) : response.status(200).json({ Message: `Successfully generated verification code for: ${email}` })
 })
 const PORT = process.env.API_PORT || 3001
 

@@ -935,59 +935,141 @@ app.post('/api/deprecated/exploreplatformlogos', async (request: Request, respon
 	return response.status(200).json(responseObj)
 })
 
-app.use('/api/explore', (request: Request, response: Response, next: NextFunction) => {
-	const body = request.body
-	// console.log(request.baseUrl.replace('/api/',''))
+// app.use('/api/explore', (request: Request, response: Response, next: NextFunction) => {
+// 	const body = request.body
+// 	// console.log(request.baseUrl.replace('/api/',''))
 
-	errorHandleMiddleware(request.baseUrl, body, response)
-	next()
-})
+// 	errorHandleMiddleware(request.baseUrl, body, response)
+// 	next()
+// })
 
-app.use('/api/explore', async (request: Request, response: Response, next: NextFunction) => {
+// app.use('/api/explore', async (request: Request, response: Response, next: NextFunction) => {
+// 	const body = request.body
+// 	let searchResults: any
+// 	let errSearch = false
+// 	let searchConfig: SearchConfig
+// 	let responseObj: Explore[] = []
+// 	let indResponseObj: Explore
+// 	const { externalFilter, platformFamily, limit, sortBy } = parseBody(body)
+
+// 	searchConfig = updateIGDBSearchConfigMulti('multiquery','id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count, genres.name, involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category', externalFilter, platformFamily, limit, sortBy)
+// 	// console.log(searchConfig)
+// 	await axios(searchConfig)
+// 		.then(async (response: any) => {
+// 			searchResults = response.data[0].result
+// 			for (let i = 0; i < searchResults.length; i++) {
+// 				indResponseObj = {
+// 					id: searchResults[i].id,
+// 					age_ratings: searchResults[i].age_ratings !== undefined ? searchResults[i].age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
+// 					cover: `https:${searchResults[i].cover.url.replace('thumb', '1080p')}`,
+// 					platforms: searchResults[i].platforms.map((indPlatform: any) => ({
+// 						name: indPlatform.name,
+// 						category: indPlatform.category,
+// 						url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
+// 						id: indPlatform.id,
+// 						platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
+// 					})),
+// 					rating: searchResults[i].total_rating,
+// 					ratingCount: searchResults[i].total_rating_count,
+// 					releaseDate: searchResults[i].first_release_date ? new Date(searchResults[i].first_release_date*1000) : 'N/A',
+// 					likes: searchResults[i].follows,
+// 					title: searchResults[i].name,
+// 					genres: searchResults[i].genres,
+// 					involved_companies: searchResults[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({
+// 						name: indCompany.company.name,
+// 						url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
+// 						officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : '' }))
+// 				}
+
+// 				const ageRatingsobj: AgeRatings = {
+// 					'ESRB': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1)[0].rating : 0,
+// 					'PEGI': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2)[0].rating : 0
+// 				}
+// 				indResponseObj.age_ratings = ageRatingsobj
+// 				responseObj.push(indResponseObj)
+// 			}
+// 		})
+// 		.catch((err: any) => {
+// 			errSearch = true
+// 			console.log(err)
+// 		})
+// 	if (errSearch) {
+// 		return response.status(404).json({
+// 			Message: `Unable to retrieve filtered set of games when sorting on: ${body.sortBy} with direction ${body.sortDirection}, external filter ${body.externalFilter}, with limit ${body.limit} `
+// 		})
+// 	}
+// 	response.json(responseObj)
+// 	next()
+// })
+
+
+app.post('/api/explore', async (request: Request, response: Response, next: NextFunction) => {
 	const body = request.body
 	let searchResults: any
 	let errSearch = false
 	let searchConfig: SearchConfig
 	let responseObj: Explore[] = []
 	let indResponseObj: Explore
+
+	if (body.sortBy === null || body.sortBy === '' || !body.sortBy) {
+		return response.status(400).json({
+			error: `No direction and sort specified: ${body.sortBy}`
+		})
+	}
+	else if (body.externalFilter === null || body.externalFilter === '' || !body.externalFilter) {
+		return response.status(400).json({
+			error: `No filter specified: ${body.sortBy}`
+		})
+	}
+	else if (body.limit === null || body.limit === 0 || !body.limit) {
+		return response.status(400).json({
+			error: `No limit specified or limit equal to: ${body.limit}`
+		})
+	}
+	else if (body.sortDirection === null || body.sortDirection === '' || !body.sortDirection) {
+		return response.status(400).json({
+			error: `No limit specified or limit equal to: ${body.limit}`
+		})
+	}
+
 	const { externalFilter, platformFamily, limit, sortBy } = parseBody(body)
 
 	searchConfig = updateIGDBSearchConfigMulti('multiquery','id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count, genres.name, involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category', externalFilter, platformFamily, limit, sortBy)
-	// console.log(searchConfig)
 	await axios(searchConfig)
 		.then(async (response: any) => {
 			searchResults = response.data[0].result
-			for (let i = 0; i < searchResults.length; i++) {
-				indResponseObj = {
-					id: searchResults[i].id,
-					age_ratings: searchResults[i].age_ratings !== undefined ? searchResults[i].age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
-					cover: `https:${searchResults[i].cover.url.replace('thumb', '1080p')}`,
-					platforms: searchResults[i].platforms.map((indPlatform: any) => ({
-						name: indPlatform.name,
-						category: indPlatform.category,
-						url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
-						id: indPlatform.id,
-						platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
-					})),
-					rating: searchResults[i].total_rating,
-					ratingCount: searchResults[i].total_rating_count,
-					releaseDate: searchResults[i].first_release_date ? new Date(searchResults[i].first_release_date*1000) : 'N/A',
-					likes: searchResults[i].follows,
-					title: searchResults[i].name,
-					genres: searchResults[i].genres,
-					involved_companies: searchResults[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({
-						name: indCompany.company.name,
-						url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
-						officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : '' }))
-				}
+			responseObj = populateSimilarGames(searchResults)
+			// 	for (let i = 0; i < searchResults.length; i++) {
+			// 		indResponseObj = {
+			// 			id: searchResults[i].id,
+			// 			age_ratings: searchResults[i].age_ratings !== undefined ? searchResults[i].age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
+			// 			cover: `https:${searchResults[i].cover.url.replace('thumb', '1080p')}`,
+			// 			platforms: searchResults[i].platforms.map((indPlatform: any) => ({
+			// 				name: indPlatform.name,
+			// 				category: indPlatform.category,
+			// 				url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
+			// 				id: indPlatform.id,
+			// 				platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
+			// 			})),
+			// 			rating: searchResults[i].total_rating,
+			// 			ratingCount: searchResults[i].total_rating_count,
+			// 			releaseDate: searchResults[i].first_release_date ? new Date(searchResults[i].first_release_date*1000) : 'N/A',
+			// 			likes: searchResults[i].follows,
+			// 			title: searchResults[i].name,
+			// 			genres: searchResults[i].genres,
+			// 			involved_companies: searchResults[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({
+			// 				name: indCompany.company.name,
+			// 				url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
+			// 				officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : '' }))
+			// 		}
 
-				const ageRatingsobj: AgeRatings = {
-					'ESRB': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1)[0].rating : 0,
-					'PEGI': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2)[0].rating : 0
-				}
-				indResponseObj.age_ratings = ageRatingsobj
-				responseObj.push(indResponseObj)
-			}
+		// 		const ageRatingsobj: AgeRatings = {
+		// 			'ESRB': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1)[0].rating : 0,
+		// 			'PEGI': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2)[0].rating : 0
+		// 		}
+		// 		indResponseObj.age_ratings = ageRatingsobj
+		// 		responseObj.push(indResponseObj)
+		// 	}
 		})
 		.catch((err: any) => {
 			errSearch = true
@@ -998,90 +1080,8 @@ app.use('/api/explore', async (request: Request, response: Response, next: NextF
 			Message: `Unable to retrieve filtered set of games when sorting on: ${body.sortBy} with direction ${body.sortDirection}, external filter ${body.externalFilter}, with limit ${body.limit} `
 		})
 	}
-	response.json(responseObj)
-	next()
-})
-
-
-app.post('/api/explore', async (request: Request, response: Response, next: NextFunction) => {
-	// const body = request.body
-	// let searchResults: any
-	// let errSearch = false
-	// let searchConfig: SearchConfig
-	// let responseObj: Explore[] = []
-	// let indResponseObj: Explore
-
-	// if (body.sortBy === null || body.sortBy === '' || !body.sortBy) {
-	// 	return response.status(400).json({
-	// 		error: `No direction and sort specified: ${body.sortBy}`
-	// 	})
-	// }
-	// else if (body.externalFilter === null || body.externalFilter === '' || !body.externalFilter) {
-	// 	return response.status(400).json({
-	// 		error: `No filter specified: ${body.sortBy}`
-	// 	})
-	// }
-	// else if (body.limit === null || body.limit === 0 || !body.limit) {
-	// 	return response.status(400).json({
-	// 		error: `No limit specified or limit equal to: ${body.limit}`
-	// 	})
-	// }
-	// else if (body.sortDirection === null || body.sortDirection === '' || !body.sortDirection) {
-	// 	return response.status(400).json({
-	// 		error: `No limit specified or limit equal to: ${body.limit}`
-	// 	})
-	// }
-
-	// const { externalFilter, platformFamily, limit, sortBy } = parseBody(body)
-
-	// searchConfig = updateIGDBSearchConfigMulti('multiquery','id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count, genres.name, involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category', externalFilter, platformFamily, limit, sortBy)
-	// //console.log(searchConfig)
-	// await axios(searchConfig)
-	// 	.then(async (response: any) => {
-	// 		searchResults = response.data[0].result
-	// 		for (let i = 0; i < searchResults.length; i++) {
-	// 			indResponseObj = {
-	// 				id: searchResults[i].id,
-	// 				age_ratings: searchResults[i].age_ratings !== undefined ? searchResults[i].age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1 || ageRatingObj.category === 2) : [{ id: 0, category: 1, rating: 0 }, { id: 0, category: 2, rating: 0 }],
-	// 				cover: `https:${searchResults[i].cover.url.replace('thumb', '1080p')}`,
-	// 				platforms: searchResults[i].platforms.map((indPlatform: any) => ({
-	// 					name: indPlatform.name,
-	// 					category: indPlatform.category,
-	// 					url: indPlatform.platform_logo ? `https:${indPlatform.platform_logo.url}` : '',
-	// 					id: indPlatform.id,
-	// 					platform_family: indPlatform.platform_family ? indPlatform.platform_family : 0,
-	// 				})),
-	// 				rating: searchResults[i].total_rating,
-	// 				ratingCount: searchResults[i].total_rating_count,
-	// 				releaseDate: searchResults[i].first_release_date ? new Date(searchResults[i].first_release_date*1000) : 'N/A',
-	// 				likes: searchResults[i].follows,
-	// 				title: searchResults[i].name,
-	// 				genres: searchResults[i].genres,
-	// 				involved_companies: searchResults[i].involved_companies.filter((company: any) => company.developer === true).map((indCompany: any) => ({
-	// 					name: indCompany.company.name,
-	// 					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
-	// 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : '' }))
-	// 			}
-
-	// 			const ageRatingsobj: AgeRatings = {
-	// 				'ESRB': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 1)[0].rating : 0,
-	// 				'PEGI': indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2).length !== 0 ? indResponseObj.age_ratings.filter((ageRatingObj: any) => ageRatingObj.category === 2)[0].rating : 0
-	// 			}
-	// 			indResponseObj.age_ratings = ageRatingsobj
-	// 			responseObj.push(indResponseObj)
-	// 		}
-	// 	})
-	// 	.catch((err: any) => {
-	// 		errSearch = true
-	// 		console.log(err)
-	// 	})
-	// if (errSearch) {
-	// 	return response.status(404).json({
-	// 		Message: `Unable to retrieve filtered set of games when sorting on: ${body.sortBy} with direction ${body.sortDirection}, external filter ${body.externalFilter}, with limit ${body.limit} `
-	// 	})
-	// }
-	// return response.status(200).json(responseObj)
-	return response.status(200)
+	return response.status(200).json(responseObj)
+	// return response.status(200)
 })
 
 
@@ -3043,7 +3043,6 @@ app.post('/api/verificationCode', async (request: Request, response: Response) =
 		RETURNING dateCreated
 		`)
 		.then((response: any) => {
-			console.log(response.rows[0])
 			queryResult = response.rows.length !== 0 ? response.rows[0] : null
 		})
 		.catch((err: any) => {
@@ -3066,7 +3065,6 @@ app.post('/api/resolveCode', async (request: Request, response: Response) => {
 		WHERE email=${email}
 		ORDER BY dateCreated DESC `)
 		.then((response: any) => {
-			console.log(response)
 			queryResult = response.rows.length !== 0 ? response.rows[0]: null
 		})
 		.catch((err: any) => {

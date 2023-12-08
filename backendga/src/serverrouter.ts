@@ -9,15 +9,13 @@ import { router as tableRouter } from '../routes/db'
 import { router as userRouter } from '../routes/user'
 
 const app = express()
+app.use(express.json())
+app.use(requestLogger)
+app.use(cors(corsOptions))
 app.use('/api/deprecated', deprecatedRouter)
 app.use('/api/game', gameRouter)
 app.use('/api/table', tableRouter)
 app.use('/api/user', userRouter)
-
-
-app.use(express.json())
-app.use(requestLogger)
-app.use(cors(corsOptions))
 
 const PORT = process.env.API_PORT || 3001
 

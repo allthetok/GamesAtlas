@@ -1616,46 +1616,46 @@ app.post('/api/advsearchdeprecated', async (request: Request, response: Response
 	return response.status(200).json(responseObj!)
 })
 
-app.use('/api/advsearch', (request: Request, response: Response, next: NextFunction) => {
-	const body = request.body
-	errorHandleMiddleware(request.baseUrl, body, response)
-	next()
-})
+// app.use('/api/advsearch', (request: Request, response: Response, next: NextFunction) => {
+// 	const body = request.body
+// 	errorHandleMiddleware(request.baseUrl, body, response)
+// 	next()
+// })
 
-app.use('/api/advsearch', async (request: Request, response: Response, next: NextFunction) => {
-	const body = request.body
-	let searchResults: any
-	let errSearch = false
-	let searchConfig: SearchConfig
-	let responseObj: Explore[] = []
-	const { externalFilter, platformFamily, limit, sortBy } = parseLargeBody(body)
+// app.use('/api/advsearch', async (request: Request, response: Response, next: NextFunction) => {
+// 	const body = request.body
+// 	let searchResults: any
+// 	let errSearch = false
+// 	let searchConfig: SearchConfig
+// 	let responseObj: Explore[] = []
+// 	const { externalFilter, platformFamily, limit, sortBy } = parseLargeBody(body)
 
-	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count,genres.name,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer,involved_companies.company.websites.url,involved_companies.company.websites.category,game_modes,category', '', externalFilter, false, '', limit, sortBy)
-	await axios(searchConfig)
-		.then(async (response: any) => {
-			searchResults = response.data
-			responseObj = populateSimilarGames(searchResults)
-		})
-		.catch((err: any) => {
-			errSearch = true
-			console.log(err)
-		})
-	if (errSearch) {
-		return response.status(404).json({
-			Message: 'Search yielded no results'
-		})
-	}
-	else {
-		response.json(responseObj)
-		next()
-	}
-})
+// 	searchConfig = updateIGDBSearchConfig('games', 'id,age_ratings.category,age_ratings.rating,cover.url,platforms.name,platforms.category,platforms.platform_logo.url,platforms.platform_family,first_release_date,follows,name,total_rating,total_rating_count,genres.name,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer,involved_companies.company.websites.url,involved_companies.company.websites.category,game_modes,category', '', externalFilter, false, '', limit, sortBy)
+// 	await axios(searchConfig)
+// 		.then(async (response: any) => {
+// 			searchResults = response.data
+// 			responseObj = populateSimilarGames(searchResults)
+// 		})
+// 		.catch((err: any) => {
+// 			errSearch = true
+// 			console.log(err)
+// 		})
+// 	if (errSearch) {
+// 		return response.status(404).json({
+// 			Message: 'Search yielded no results'
+// 		})
+// 	}
+// 	else {
+// 		response.json(responseObj)
+// 		next()
+// 	}
+// })
 
-app.post('/api/advsearch', async (request: Request, response: Response, next: NextFunction) => {
-	return response.status(200)
-})
+// app.post('/api/advsearch', async (request: Request, response: Response, next: NextFunction) => {
+// 	return response.status(200)
+// })
 
-app.post('/api/advsearchalt', async (request: Request, response: Response) => {
+app.post('/api/advsearch', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any
 	let errSearch = false
@@ -1999,46 +1999,46 @@ app.post('/api/loginOAuthUser', async (request: Request, response: Response) => 
 
 })
 
-app.post('/api/check', async (request: Request, response: Response) => {
-	const body = request.body
-	let queryResult: any
+// app.post('/api/check', async (request: Request, response: Response) => {
+// 	const body = request.body
+// 	let queryResult: any
 
-	await pool.query(SQL`
-		SELECT * FROM users u 
-			WHERE u.email=${body.email} 
-			AND u.provider=${body.provider}`)
-		.then((response: any) => {
-			queryResult = response.rows[0]
-		})
-		.catch((err: any) => {
-			console.log(err)
-			return response.status(404).json({
-				error: `Failed to retrieve records within users and userprofiles tables`
-			})
-		})
+// 	await pool.query(SQL`
+// 		SELECT * FROM users u
+// 			WHERE u.email=${body.email}
+// 			AND u.provider=${body.provider}`)
+// 		.then((response: any) => {
+// 			queryResult = response.rows[0]
+// 		})
+// 		.catch((err: any) => {
+// 			console.log(err)
+// 			return response.status(404).json({
+// 				error: `Failed to retrieve records within users and userprofiles tables`
+// 			})
+// 		})
 
-	return response.status(200).json(queryResult)
-})
+// 	return response.status(200).json(queryResult)
+// })
 
-app.post('/api/check2user', async (request: Request, response: Response) => {
-	const body = request.body
-	let queryResult: any
+// app.post('/api/check2user', async (request: Request, response: Response) => {
+// 	const body = request.body
+// 	let queryResult: any
 
-	await pool.query(SQL`
-		SELECT * FROM users u 
-			WHERE u.id = ${body.userid}`)
-		.then((response: any) => {
-			queryResult = response.rows[0]
-		})
-		.catch((err: any) => {
-			console.log(err)
-			return response.status(404).json({
-				error: `Failed to retrieve records within users and userprofiles tables`
-			})
-		})
+// 	await pool.query(SQL`
+// 		SELECT * FROM users u
+// 			WHERE u.id = ${body.userid}`)
+// 		.then((response: any) => {
+// 			queryResult = response.rows[0]
+// 		})
+// 		.catch((err: any) => {
+// 			console.log(err)
+// 			return response.status(404).json({
+// 				error: `Failed to retrieve records within users and userprofiles tables`
+// 			})
+// 		})
 
-	return response.status(200).json(queryResult)
-})
+// 	return response.status(200).json(queryResult)
+// })
 
 app.post('/api/resolveUser', async (request: Request, response: Response) => {
 	const body = request.body

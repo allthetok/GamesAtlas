@@ -1,32 +1,26 @@
-/* eslint-disable no-case-declarations */
-/* eslint-disable quotes */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-var-requires */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable prefer-const */
-import { requestLogger, corsOptions, updateIGDBSearchConfig, iterateResponse, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, platformFamilyQuerified, parseBody, populateSimilarGames, categoriesCheck, errorHandleMiddleware, populateSearchItems, updateIGDBSearchConfigSpec, populateCompanySearch, retrieveFormattedMapID, parseNullable, retrieveRatingDateFormatted, parseLargeBody, parseProfileBody, updateIGDBSearchConfigMultiProfile, stringArrayToPostgresArray } from '../helpers/requests'
-import { hashPassword, authPassword } from '../helpers/auth'
-import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameDetailObj, GameObj, GlobalAuxiliaryObj, LanguageObj, Languages, Mail, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SearchObj, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
-import { ExternalCategories, WebsiteCategories, placeholderImages } from '../helpers/ratingsvglinks'
+import { requestLogger, corsOptions } from '../helpers/requests'
 require('dotenv').config()
-import express, { NextFunction, Request, Response } from 'express'
-import { pool } from './db'
-import { transport, generateVerificationCode } from './transport'
-import axios, { AxiosResponse } from 'axios'
+import express, {  } from 'express'
 import cors from 'cors'
-import SQL, { SQLStatement } from 'sql-template-strings'
-import pg, { Client, QueryResult } from 'pg'
-import nodemailer from 'nodemailer'
-import bcrypt from 'bcrypt'
-import { sortMap, platformMap, genreMap, categoryMap } from '../helpers/enums'
 import { router as deprecatedRouter } from '../routes/deprecated'
+import { router as gameRouter } from '../routes/game'
+import { router as tableRouter } from '../routes/db'
+import { router as userRouter } from '../routes/user'
 
 const app = express()
-
 app.use('/api/deprecated', deprecatedRouter)
+app.use('/api/game', gameRouter)
+app.use('/api/table', tableRouter)
+app.use('/api/user', userRouter)
 
 
 app.use(express.json())
 app.use(requestLogger)
 app.use(cors(corsOptions))
+
+const PORT = process.env.API_PORT || 3001
+
+app.listen(PORT, () => {
+	console.log(`Server running on port: ${PORT}`)
+})

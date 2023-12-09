@@ -4,9 +4,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import express, { NextFunction, Request, Response } from 'express'
 import axios from 'axios'
-import { updateIGDBSearchConfig, splitIGDBSearch, getExternalGamesIter, getLanguagesIter, updateIGDBSearchConfigMulti, getPlatformLogosIter, parseBody, errorHandleMiddleware, parseLargeBody, parseNullable, populateCompanySearch, populateSearchItems, populateSimilarGames, retrieveFormattedMapID, retrieveRatingDateFormatted, updateIGDBSearchConfigSpec } from '../helpers/requests'
-import { AgeRatings, ArtworkObj, Categories, Companies, Covers, Explore, GameObj, GlobalAuxiliaryObj, LanguageObj, OverviewObj, Platforms, ScreenshotsObj, SearchConfig, SearchObj, SimilarGamesObj, SimilarObj, VideoObj, Videos, WebsiteObj } from '../helpers/betypes'
-import { categoryMap, sortMap } from '../helpers/enums'
+import { updateIGDBSearchConfig, updateIGDBSearchConfigMulti, parseBody, parseLargeBody, populateCompanySearch, populateSearchItems, populateSimilarGames, updateIGDBSearchConfigSpec } from '../helpers/requests'
+import { AgeRatings, ArtworkObj, Companies, Explore, GameObj, GlobalAuxiliaryObj, LanguageObj, ScreenshotsObj, SearchConfig, SearchObj, SimilarGamesObj, VideoObj, WebsiteObj } from '../helpers/betypes'
+import { categoryMap } from '../helpers/enums'
 import { placeholderImages, ExternalCategories, WebsiteCategories } from '../helpers/ratingsvglinks'
 require('dotenv').config()
 const router = express.Router()

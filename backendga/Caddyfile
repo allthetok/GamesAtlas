@@ -1,0 +1,5 @@
+domain-here.io {
+	reverse_proxy backendga:5000 {
+		header_down Strict-Transport-Security max-age=3153600;
+	}
+}

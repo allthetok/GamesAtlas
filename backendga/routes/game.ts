@@ -11,6 +11,10 @@ import { placeholderImages, ExternalCategories, WebsiteCategories } from '../hel
 require('dotenv').config()
 const router = express.Router()
 
+router.get('/', async (request: Request, response: Response) => {
+	response.send('Welcome to GamesAtlas')
+})
+
 router.post('/overview', async (request: Request, response: Response) => {
 	const body = request.body
 	let searchResults: any

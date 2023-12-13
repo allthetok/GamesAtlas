@@ -11,5 +11,19 @@ services:
       POSTGRES_USER: "docker"
     volumes:
       - data:/var/lib/postgresql/data
+  caddy:
+    image: caddy/caddy:2.2.1-alpine
+    restart: unless-stopped
+    container_name: caddy-service
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./site:/srv
+      - caddy_data:/data
+      - caddy_config:/config
 volumes:
   data:
+  caddy_data:
+  caddy_config:

@@ -11,3 +11,5 @@ services:
       POSTGRES_USER: "docker"
     volumes:
       - data:/var/lib/postgresql/data
+volumes:
+  data:

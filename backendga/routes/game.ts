@@ -134,7 +134,7 @@ router.post('/artwork', async (request: Request, response: Response) => {
 			error: `No game id specified: ${gameid}`
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,artworks.url,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,storyline,first_release_date', gameid, '', false, '', 0, '')
+	searchConfig = updateIGDBSearchConfig('games', 'id,artworks.url,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,summary,storyline,first_release_date', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
 		.then((response: any) => {
 			searchResults = response.data[0]
@@ -146,7 +146,7 @@ router.post('/artwork', async (request: Request, response: Response) => {
 					url: indCompany.company.logo ? `https:${indCompany.company.logo.url}` : '',
 					officialSite: indCompany.company.websites && indCompany.company.websites.filter((site: any) => site.category === 1).length === 1 ? indCompany.company.websites.filter((site: any) => site.category === 1)[0].url : ''
 				})) : [{ name: 'No Developer/Publisher', url: '', officialSite: '' }],
-				summary: searchResults.summary ? searchResults.summary : 'there is no official summary published for this game.',
+				summary: searchResults.summary ? searchResults.summary : 'There is no official summary published for this game.',
 				story: searchResults.storyline ? searchResults.storyline : 'there is no official storyline published for this game.',
 				releaseDate: searchResults.first_release_date ? new Date(searchResults.first_release_date*1000) : 'N/A'
 			}
@@ -176,7 +176,7 @@ router.post('/screenshots', async (request: Request, response: Response) => {
 			error: `No game id specified: ${gameid}`
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,screenshots.url,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,storyline,first_release_date', gameid, '', false, '', 0, '')
+	searchConfig = updateIGDBSearchConfig('games', 'id,screenshots.url,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,summary,storyline,first_release_date', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
 		.then((response: any) => {
 			searchResults = response.data[0]
@@ -218,7 +218,7 @@ router.post('/language', async (request: Request, response: Response) => {
 			error: `No game id specified: ${gameid}`
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'language_supports.language.name,language_supports.language.locale,language_supports.language.native_name,language_supports.language_support_type.name,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,storyline,first_release_date', gameid, '', false, '', 0, '')
+	searchConfig = updateIGDBSearchConfig('games', 'language_supports.language.name,language_supports.language.locale,language_supports.language.native_name,language_supports.language_support_type.name,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,summary,storyline,first_release_date', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
 		.then((response: any) => {
 			searchResults = response.data[0]
@@ -266,7 +266,7 @@ router.post('/similargames', async (request: Request, response: Response) => {
 			error: `No game id specified: ${gameid}`
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,similar_games.name,similar_games.id,similar_games.age_ratings.category,similar_games.age_ratings.rating,similar_games.cover.url,similar_games.platforms.name,similar_games.platforms.category,similar_games.platforms.platform_logo.url,similar_games.platforms.platform_family,similar_games.first_release_date,similar_games.follows,similar_games.name,similar_games.total_rating,similar_games.total_rating_count, similar_games.genres.name, similar_games.involved_companies.company.name, similar_games.involved_companies.company.logo.url, similar_games.involved_companies.developer, similar_games.involved_companies.company.websites.url, similar_games.involved_companies.company.websites.category,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,storyline,first_release_date', gameid, '', false, '', 0, '')
+	searchConfig = updateIGDBSearchConfig('games', 'id,similar_games.name,similar_games.id,similar_games.age_ratings.category,similar_games.age_ratings.rating,similar_games.cover.url,similar_games.platforms.name,similar_games.platforms.category,similar_games.platforms.platform_logo.url,similar_games.platforms.platform_family,similar_games.first_release_date,similar_games.follows,similar_games.name,similar_games.total_rating,similar_games.total_rating_count, similar_games.genres.name, similar_games.involved_companies.company.name, similar_games.involved_companies.company.logo.url, similar_games.involved_companies.developer, similar_games.involved_companies.company.websites.url, similar_games.involved_companies.company.websites.category,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,summary,storyline,first_release_date', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
 		.then((response: any) => {
 			searchResults = response.data[0]
@@ -308,7 +308,7 @@ router.post('/videos', async (request: Request, response: Response) => {
 			error: `No game id specified: ${gameid}`
 		})
 	}
-	searchConfig = updateIGDBSearchConfig('games', 'id,videos.name,videos.video_id,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,storyline,first_release_date', gameid, '', false, '', 0, '')
+	searchConfig = updateIGDBSearchConfig('games', 'id,videos.name,videos.video_id,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,summary,storyline,first_release_date', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
 		.then((response: any) => {
 			searchResults = response.data[0]
@@ -353,7 +353,7 @@ router.post('/websites', async (request: Request, response: Response) => {
 			error: `No game id specified: ${gameid}`
 		})
 	}
-	searchConfig= updateIGDBSearchConfig('games', 'id,websites.game,websites.category,websites.url,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,storyline,first_release_date', gameid, '', false, '', 0, '')
+	searchConfig= updateIGDBSearchConfig('games', 'id,websites.game,websites.category,websites.url,name,involved_companies,involved_companies.company.name, involved_companies.company.logo.url, involved_companies.developer, involved_companies.company.websites.url, involved_companies.company.websites.category,summary,storyline,first_release_date', gameid, '', false, '', 0, '')
 	await axios(searchConfig)
 		.then((response: any) => {
 			searchResults = response.data[0]

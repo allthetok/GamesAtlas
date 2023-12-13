@@ -3,3 +3,19 @@ games-atlas.xyz {
 		header_down Strict-Transport-Security max-age=3153600;
 	}
 }
+
+// caddy:
+// image: caddy/caddy:2.2.1-alpine
+// container_name: caddy-service
+// ports:
+//   - "80:80"
+//   - "443:443"
+// volumes:
+//   - $PWD/Caddyfile:/etc/caddy/Caddyfile
+//   - $PWD/site:/srv
+//   - caddy_data:/data
+//   - caddy_config:/config
+// volumes:
+// data:
+// caddy_data:
+// caddy_config:

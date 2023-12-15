@@ -1,5 +1,5 @@
 server.games-atlas.xyz {
-	reverse_proxy server:5000 {
+	reverse_proxy server:3001 {
         header_down Strict-Transport-Security max-age=31536000;
 	}
 }

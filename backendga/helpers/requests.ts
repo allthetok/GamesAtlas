@@ -21,7 +21,8 @@ const requestLogger = (request: Request, response: Response, next: NextFunction)
 const corsOptions = {
 	// origin: 'http://localhost:3000',
 	// origin: 'https://gamesatlasfe-3l6d-b9w82vw26-allthetok.vercel.app',
-	origin: true,
+	origin: ['http://localhost:3000', 'https://at.games-atlas.xyz/', 'https://gamesatlas-allthetok.vercel.app/', 'https://gamesatlas-git-main-allthetok.vercel.app/'],
+	// origin: true,
 	credentials: true,	//access-control-allow-credentials:true
 	optionSuccessStatus: 200
 }
